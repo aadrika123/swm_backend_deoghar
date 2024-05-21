@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Consumer;
+use App\Models\Demand;
 use App\Models\Ward;
+use App\Repository\iMasterRepository;
+use App\Repository\MasterRepository;
 use App\Traits\Api\Helpers;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 use function App\Traits\Api\responseMsgs;
 
@@ -17,6 +21,7 @@ class CitizenController extends Controller
     protected $dbConn;
     protected $mConsumer;
     protected $mWard;
+    protected $mDemand;
 
     public function __construct(Request $request)
     {
@@ -24,7 +29,7 @@ class CitizenController extends Controller
 
         $this->mWard     = new Ward($this->dbConn);
         $this->mConsumer = new Consumer($this->dbConn);
-        // $this->Demand = new Demand($this->dbConn);
+        $this->mDemand   = new Demand($this->dbConn);
         // $this->Apartment = new Apartment($this->dbConn);
         // $this->ConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerCategory = new ConsumerCategory($this->dbConn);
@@ -70,19 +75,28 @@ class CitizenController extends Controller
     {
         try {
             $perPage = $request->perPage ?? 10;
-            $data    = $this->mConsumer->where('consumer_category_id', 1)->where('is_deactivate', 0);
+            $data    = $this->mConsumer
+                ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type')
+                ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
+                ->where('consumer_category_id', 1)
+                ->where('is_deactivate', 0);
 
             if (request()->has('consumerNo'))
                 $data->where('consumer_no', request()->input('consumerNo'));
 
             if (request()->has('consumerName'))
-                $data->where('name', 'like', '%' . request()->input('consumerName') . '%');
+                $data->where('swm_consumers.name', 'like', '%' . request()->input('consumerName') . '%');
 
             if (request()->has('mobileNo'))
                 $data->where('mobile_no', request()->input('mobileNo'));
 
             $data = $data->paginate($perPage);
-            return $this->responseMsgs(true, "Residential Consumer", $data);
+            $newData['data'] = $this->getDemandByConsumer($data);
+            $newData['total'] = $data->total();
+            $newData['last_page'] = $data->lastPage();
+            $newData['current_page'] = $data->currentPage();
+            $newData['per_page'] = $data->perPage();
+            return $this->responseMsgs(true, "Residential Consumer", $newData);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
@@ -95,21 +109,152 @@ class CitizenController extends Controller
     {
         try {
             $perPage = $request->perPage ?? 10;
-            $data    = $this->mConsumer->where('consumer_category_id', '<>', 1)->where('is_deactivate', 0);
+            $data    = $this->mConsumer
+                ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type')
+                ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
+                ->where('consumer_category_id', '<>', 1)
+                ->where('is_deactivate', 0);
 
             if (request()->has('consumerNo'))
                 $data->where('consumer_no', request()->input('consumerNo'));
 
             if (request()->has('consumerName'))
-                $data->where('name', 'like', '%' . request()->input('consumerName') . '%');
+                $data->where('swm_consumers.name', 'like', '%' . request()->input('consumerName') . '%');
 
             if (request()->has('mobileNo'))
                 $data->where('mobile_no', request()->input('mobileNo'));
 
             $data = $data->paginate($perPage);
-            return $this->responseMsgs(true, "Commercial Consumer", $data);
+            $newData['data'] = $this->getDemandByConsumer($data);
+            $newData['total'] = $data->total();
+            $newData['last_page'] = $data->lastPage();
+            $newData['current_page'] = $data->currentPage();
+            $newData['per_page'] = $data->perPage();
+            return $this->responseMsgs(true, "Commercial Consumer", $newData);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Get Demand By Consumer 2.1 && 3.1
+     */
+    public function getDemandByConsumer($consumerList)
+    {
+        foreach ($consumerList as $consumer) {
+            $demand = $this->mDemand->where('consumer_id', $consumer->id)
+                // ->where('ulb_id', $ulbId)
+                ->where('paid_status', 0)
+                ->where('is_deactivate', 0)
+                ->orderBy('id', 'asc')
+                ->get();
+            $total_tax = 0.00;
+            $demand_upto = '';
+            $paid_status = 'true';
+            foreach ($demand as $dmd) {
+                $total_tax += $dmd->total_tax;
+                $demand_upto = $dmd->demand_date;
+                $paid_status = 'false';
+            }
+
+            $con['id'] = $consumer->id;
+            $con['name'] = $consumer->name;
+            $con['ward_no'] = $consumer->ward_no;
+            $con['consumer_no'] = $consumer->consumer_no;
+            $con['address'] = $consumer->address;
+            $con['consumer_type'] = $consumer->consumer_type;
+            $con['mobile_no'] = $consumer->mobile_no;
+            // $con['activeDemandDetails'] = $demand;
+            $con['total_demand'] = $total_tax;
+            $con['demand_upto'] = $demand_upto;
+            $con['paid_status'] = $paid_status;
+            $conArr[] = $con;
+        }
+        return $conArr;
+    }
+
+    /**
+     * | Get Consumer Details
+     */
+    public function consumerDtl(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["id" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $consumer = $this->mConsumer
+                ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'consumer_no', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type', 'swm_consumer_categories.name as consumer_category')
+                ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
+                ->join('swm_consumer_categories',  'swm_consumer_categories.id', 'swm_consumers.consumer_category_id')
+                ->where('consumer_category_id', 1)
+                ->where('is_deactivate', 0)
+                ->where('swm_consumers.id', $request->id)
+                ->first();
+
+            $demand = $this->mDemand->where('consumer_id', $consumer->id)
+                ->where('paid_status', 0)
+                ->where('is_deactivate', 0)
+                // ->where('ulb_id', $ulbId)
+                ->orderBy('id', 'asc')
+                ->get();
+            $total_tax = 0.00;
+            $demand_upto = '';
+            $paid_status = 'Paid';
+            $monthlyDemand = 0;
+            $demand_from = '';
+            $i = 0;
+
+            foreach ($demand as $dmd) {
+                if ($i == 0)
+                    $demand_from = date('d-m-Y', strtotime($dmd->payment_from));
+                $i++;
+                $demand_upto = date('d-m-Y', strtotime($dmd->payment_to));
+                $monthlyDemand = $dmd->total_tax;
+                $total_tax += $dmd->total_tax;
+                $paid_status = 'Unpaid';
+            }
+            $con['id'] = $consumer->id;
+            $con['ward_no'] = $consumer->ward_no;
+            $con['name'] = $consumer->name;
+            $con['apartment_id'] = $consumer->apartment_id;
+            $con['consumer_no'] = $consumer->consumer_no;
+            $con['holding_no'] = $consumer->holding_no;
+            $con['address'] = $consumer->address;
+            $con['consumer_category'] = $consumer->consumer_category;
+            $con['consumer_type'] = $consumer->consumer_type;
+            $con['mobile_no'] = $consumer->mobile_no;
+            // $con['activeDemandDetails'] = $demand;
+            $con['monthly_demand'] = $monthlyDemand;
+            $con['total_demand'] = $total_tax;
+            $con['demand_from'] = $demand_from;
+            $con['demand_upto'] = $demand_upto;
+            $con['paid_status'] = $paid_status;
+            // $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
+            // $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
+            // $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
+            // $con['editApplicable'] = ($trans == 0) ? true : false;
+            return $this->responseMsgs(true, "Consumer Details", $con);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Apartment List
+     */
+    public function apartmentList(Request $request, iMasterRepository $iMasterRepo)
+    {
+        //  MasterRepository(iMasterRepository ,$iMasterRepo);
+        // MasterRepository::getApartmentList();
+        // MasterRepository::getApartmentList();
+        // iMasterRepository $master->getApartmentList($request);
     }
 }

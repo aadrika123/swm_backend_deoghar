@@ -2594,8 +2594,8 @@ class ConsumerRepository implements iConsumerRepository
                 $reminders = $reminders->where('consumer_category_id', $consumerCategory);
             if (isset($consumerType))
                 $reminders = $reminders->where('consumer_type_id', $consumerType);
-            if(isset($wardNo))
-            $reminders = $reminders
+            if (isset($wardNo))
+                $reminders = $reminders
                     ->where(function ($query) use ($wardNo) {
                         $query->where("c.ward_no", $wardNo)
                             ->orWhere(function ($query) use ($wardNo) {
