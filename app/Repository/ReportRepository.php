@@ -213,6 +213,7 @@ class ReportRepository implements iReportRepository
             $val['entryDate'] = Carbon::create($consumer->entry_date)->format('d-m-Y');
             $val['consumerNo'] = $consumer->consumer_no;
             $val['consumerName'] = $consumer->name;
+            $val['consumerMobile'] = $consumer->mobile_no;
             $val['entryBy'] = ($user) ? $user->name : "";;
             $response[] = $val;
         }
@@ -225,7 +226,7 @@ class ReportRepository implements iReportRepository
         $Upto = Carbon::create($Upto)->format('Y-m-d');
 
         $consumers = $this->ConsumerDeactivateDeatils->latest('id')
-            ->select('swm_consumer_deactivates.*', 'name', 'consumer_no')
+            ->select('swm_consumer_deactivates.*', 'name', 'consumer_no','mobile_no')
             ->join('swm_consumers', 'swm_consumer_deactivates.consumer_id', '=', 'swm_consumers.id')
             ->where('swm_consumer_deactivates.ulb_id', $ulbId)
             ->whereBetween('deactivation_date', [$From, $Upto])
@@ -237,6 +238,7 @@ class ReportRepository implements iReportRepository
             $val['deactivateDate'] = Carbon::create($consumer->deactivation_date)->format('d-m-Y');
             $val['consumerNo'] = $consumer->consumer_no;
             $val['consumerName'] = $consumer->name;
+            $val['consumerMobile'] = $consumer->mobile_no;
             $val['deactivateBy'] = ($user) ? $user->name : "";
             $val['remarks'] = $consumer->remarks;
             $response[] = $val;

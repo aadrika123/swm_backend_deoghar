@@ -99,6 +99,25 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        #_For SWM
+        // 'db_swm' => [
+        //     'driver' => 'pgsql',
+        //     'url' => env('DATABASE_URL'),
+        //     'host' => env('DB_HOST_RANCHI', '127.0.0.1'),
+        //     'port' => env('DB_PORT_RANCHI', '5432'),
+        //     'database' => env('DB_DATABASE_RANCHI', 'forge'),
+        //     'username' => env('DB_USERNAME_RANCHI', 'forge'),
+        //     'password' => env('DB_PASSWORD_RANCHI', ''),
+        //     'charset' => 'utf8',
+        //     'prefix' => '',
+        //     'prefix_indexes' => true,
+        //     'schema' => 'public',
+        //     'sslmode' => 'prefer',
+        //     'options'   => [
+        //         PDO::ATTR_PERSISTENT => true,
+        //     ],
+        // ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

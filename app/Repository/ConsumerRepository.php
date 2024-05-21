@@ -153,9 +153,9 @@ class ConsumerRepository implements iConsumerRepository
                     $monthlyDemand = 0;
                     $demand_form = '';
                     $i = 0;
-                    
+
                     $trans = $this->Transaction->where('consumer_id', $consumer->id)->count('*');
-                    
+
                     foreach ($demand as $dmd) {
                         if ($i == 0)
                             $demand_form = date('d-m-Y', strtotime($dmd->payment_from));
@@ -187,7 +187,7 @@ class ConsumerRepository implements iConsumerRepository
                     $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
                     $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
                     $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
-                    $con['editApplicable'] = ($trans == 0)?true:false;
+                    $con['editApplicable'] = ($trans == 0) ? true : false;
                     $conArr[] = $con;
                 }
                 return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
@@ -315,7 +315,7 @@ class ConsumerRepository implements iConsumerRepository
                     $con['paidStatus'] = $paid_status;
                     $con['applyBy'] = ($apartment->user_id) ? $this->GetUserDetails($apartment->user_id)->name : '';
                     $con['applyDate'] = ($apartment->entry_date) ? date("d-m-Y", strtotime($apartment->entry_date)) : '';
-                    $con['editApplicable'] = ($trans == 0)?true:false;
+                    $con['editApplicable'] = ($trans == 0) ? true : false;
 
                     $conArr[] = $con;
                 }
@@ -557,7 +557,7 @@ class ConsumerRepository implements iConsumerRepository
                     $demand = $demand->where('consumer_id', $request->consumerId);
                 if (isset($request->apartmentId))
                     $demand = $demand->join('swm_consumers as a', 'swm_demands.consumer_id', '=', 'a.id')
-                                        ->where('a.apartment_id', $request->apartmentId);
+                        ->where('a.apartment_id', $request->apartmentId);
                 $demand = $demand->where('paid_status', 0)
                     ->where('swm_demands.is_deactivate', 0)
                     ->where('swm_demands.ulb_id', $ulbId)
@@ -577,8 +577,7 @@ class ConsumerRepository implements iConsumerRepository
                 $response['demand'] = $demand;
 
                 return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
-            } 
-            else {
+            } else {
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
@@ -630,28 +629,28 @@ class ConsumerRepository implements iConsumerRepository
 
     public function DashboardData(Request $request)
     {
-        
+
         $userId = $request->user()->id;
         $ulbId = $this->GetUlbId($userId);
         try {
             $response = array();
-            
+
             if (isset($request->fromDate) && isset($request->toDate)) {
 
                 $From = Carbon::create($request->fromDate)->format('Y-m-d');
                 $Upto = Carbon::create($request->toDate)->format('Y-m-d');
 
                 $whereParam = "";
-                if(isset($request->wardNo))
-                    $whereParam = " and ward_no=".$request->wardNo;
+                if (isset($request->wardNo))
+                    $whereParam = " and ward_no=" . $request->wardNo;
 
                 $sql = "SELECT count(*) as total_consumer,
                 count(CASE WHEN consumer_category_id = 1 THEN id end) as residential,
                 count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
-                FROM swm_consumers where (entry_date between '".$From."' and '".$Upto."') and ulb_id=".$ulbId." ". $whereParam;
+                FROM swm_consumers where (entry_date between '" . $From . "' and '" . $Upto . "') and ulb_id=" . $ulbId . " " . $whereParam;
 
                 $Consumer = DB::connection($this->dbConn)->select($sql);
-                
+
                 $totalDmd = $this->Demand
                     ->where('paid_status', 0)
                     ->where('is_deactivate', 0)
@@ -667,28 +666,27 @@ class ConsumerRepository implements iConsumerRepository
 
                 $nUpto = Carbon::create($Upto)->addHour('24');
                 $totalAdjustment = $this->DemandAdjustment->where('is_deactivate', 0)
-                                                            ->where('ulb_id', $ulbId)
-                                                            ->whereBetween('stampdate', [$From, $nUpto])
-                                                            ->sum('adjust_amount');
+                    ->where('ulb_id', $ulbId)
+                    ->whereBetween('stampdate', [$From, $nUpto])
+                    ->sum('adjust_amount');
 
                 $TotalConsumer = 0;
                 $totalResidential = 0;
                 $totalCommercial = 0;
-                if($Consumer)
-                {
+                if ($Consumer) {
                     $Consumer = $Consumer[0];
                     $TotalConsumer = $Consumer->total_consumer;
                     $totalResidential = $Consumer->residential;
                     $totalCommercial = $Consumer->commercial;
                 }
-                    
+
                 $totalCollection = 0;
                 $pendingCollection = 0;
 
                 foreach ($Collection as $coll) {
                     if ($coll->paid_status == 1 && $coll->paid_status != 0) {
                         $totalCollection += $coll->total_payable_amt;
-                    } else if($coll->paid_status == 2) {
+                    } else if ($coll->paid_status == 2) {
                         $pendingCollection += $coll->total_payable_amt; // for cheque or dd
                     }
                 }
@@ -703,7 +701,7 @@ class ConsumerRepository implements iConsumerRepository
                 $response['totalCommercialConsumer'] = $totalCommercial;
             }
 
-           return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
@@ -726,7 +724,7 @@ class ConsumerRepository implements iConsumerRepository
                 LEFT JOIN swm_transaction_deactivates td on td.transaction_id=t.id
                 LEFT JOIN (select min(payment_from) as demandFrom, max(payment_to) as demandUpto,transaction_id FROM swm_collections group by transaction_id) cl on cl.transaction_id=t.id
                 JOIN db_master.view_user_mstr u on t.user_id=u.id
-                WHERE t.transaction_no ='" . $request->transactionNo . "' and t.ulb_id=" . $ulbId." and td.id is null";
+                WHERE t.transaction_no ='" . $request->transactionNo . "' and t.ulb_id=" . $ulbId . " and td.id is null";
 
 
                 $tran = DB::connection($this->dbConn)->select($sql);
@@ -793,7 +791,7 @@ class ConsumerRepository implements iConsumerRepository
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator->messages()]);
             }
-            
+
 
             if (isset($request->transactionNo)) {
 
@@ -831,10 +829,10 @@ class ConsumerRepository implements iConsumerRepository
                             $tran->save();
 
                             $collection = $this->Demand->join('swm_collections', 'swm_collections.demand_id', '=', 'swm_demands.id')
-                                                        ->where('swm_collections.transaction_id', $tran->id)
-                                                        ->update(['paid_status'=>0, 'swm_collections.is_deactivate'=>1]);
+                                ->where('swm_collections.transaction_id', $tran->id)
+                                ->update(['paid_status' => 0, 'swm_collections.is_deactivate' => 1]);
                         }
-                        
+
 
                         $status = True;
                         $msg = "Deactivated Successfully";
@@ -1101,15 +1099,14 @@ class ConsumerRepository implements iConsumerRepository
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator->messages()]);
             }
-            if(isset($request->consumerId) || isset($request->apartmentId))
-            {
+            if (isset($request->consumerId) || isset($request->apartmentId)) {
                 $filePath = '';
-                $refId = ($request->consumerId)? $request->consumerId : $request->apartmentId;
+                $refId = ($request->consumerId) ? $request->consumerId : $request->apartmentId;
                 $geoTagging = $this->GeoLocation;
                 $geoTagging->latitude = $request->latitude;
                 $geoTagging->longitude = $request->longitude;
-                $geoTagging->consumer_id = ($request->consumerId)? $request->consumerId : null;
-                $geoTagging->apartment_id = ($request->apartmentId)? $request->apartmentId : null;
+                $geoTagging->consumer_id = ($request->consumerId) ? $request->consumerId : null;
+                $geoTagging->apartment_id = ($request->apartmentId) ? $request->apartmentId : null;
                 $geoTagging->user_id = $userId;
                 if (!empty($request->photo)) {
                     $filePath = md5($refId) . '.' . $request->photo->extension();
@@ -1122,8 +1119,8 @@ class ConsumerRepository implements iConsumerRepository
 
                 if ($geoTagging->id)
                     return response()->json(['status' => True, 'data' => '', 'msg' => 'GeoTagging successfully'], 200);
-            }else{
-                return response()->json(['status'=> True, 'data'=>'', 'msg'=> 'Undefind parameter supply!'], 200);
+            } else {
+                return response()->json(['status' => True, 'data' => '', 'msg' => 'Undefind parameter supply!'], 200);
             }
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
@@ -1138,26 +1135,25 @@ class ConsumerRepository implements iConsumerRepository
             $response = array();
             if (isset($request->consumerId) || isset($request->apartmentId)) {
                 $geoLocation = $this->GeoLocation;
-                if($request->consumerId)
+                if ($request->consumerId)
                     $geoLocation = $geoLocation->join('swm_consumers', 'swm_geotagging.consumer_id', '=', 'swm_consumers.id')
-                                        ->where('consumer_id', $request->consumerId)
-                                        ->where('swm_consumers.ulb_id', $ulbId);
-                if($request->apartmentId)
+                        ->where('consumer_id', $request->consumerId)
+                        ->where('swm_consumers.ulb_id', $ulbId);
+                if ($request->apartmentId)
                     $geoLocation = $geoLocation->join('swm_apartments as a', 'swm_geotagging.apartment_id', 'a.id')
-                                        ->where('apartment_id', $request->apartmentId)
-                                        ->where('a.ulb_id', $ulbId);
+                        ->where('apartment_id', $request->apartmentId)
+                        ->where('a.ulb_id', $ulbId);
                 $geoLocation = $geoLocation->first();
 
-                if($geoLocation)
-                {
+                if ($geoLocation) {
                     $response['wardNo'] = $geoLocation->ward_no;
-                    $response['consumerName'] = ($geoLocation->name)?$geoLocation->name:"";
-                    $response['consumerNo'] = ($geoLocation->consumer_no)?$geoLocation->consumer_no:"";
-                    $response['apartmentName'] = ($geoLocation->apt_name)?$geoLocation->apt_name:"";
-                    $response['apartmentCode'] = ($geoLocation->apt_code)?$geoLocation->apt_code:"";
+                    $response['consumerName'] = ($geoLocation->name) ? $geoLocation->name : "";
+                    $response['consumerNo'] = ($geoLocation->consumer_no) ? $geoLocation->consumer_no : "";
+                    $response['apartmentName'] = ($geoLocation->apt_name) ? $geoLocation->apt_name : "";
+                    $response['apartmentCode'] = ($geoLocation->apt_code) ? $geoLocation->apt_code : "";
                     $response['latitude'] = ($geoLocation) ? $geoLocation->latitude : "";
                     $response['longitude'] = ($geoLocation) ? $geoLocation->longitude : "";
-                    $response['photo'] = request()->getHttpHost()."\\public\\".$geoLocation->file_name;
+                    $response['photo'] = request()->getHttpHost() . "\\public\\" . $geoLocation->file_name;
                 }
 
                 return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
@@ -1399,8 +1395,8 @@ class ConsumerRepository implements iConsumerRepository
 
             if (isset($request->consumerId) || isset($request->apartmentId)) {
                 $reminder = $this->CosumerReminder;
-                $reminder->reference_id = ($request->consumerId)? $request->consumerId: $request->apartmentId;
-                $reminder->reference_type = ($request->consumerId)? "Consumer": "Apartment";
+                $reminder->reference_id = ($request->consumerId) ? $request->consumerId : $request->apartmentId;
+                $reminder->reference_type = ($request->consumerId) ? "Consumer" : "Apartment";
                 $reminder->user_id = $request->userId;
                 $reminder->reminder_date = date('Y-m-d', strtotime($request->reminderDate));
                 $reminder->remarks = ($request->remarks) ? $request->remarks : "";
@@ -1426,7 +1422,7 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->consumerId) || isset($request->apartmentId)) {
                 $response = array();
                 $reminder = $this->CosumerReminder;
-                if(isset($request->consumerId))
+                if (isset($request->consumerId))
                     $reminder = $reminder->where('reference_id', $request->consumerId)->where('reference_type', 'Consumer');
                 else
                     $reminder = $reminder->where('reference_id', $request->apartmentId)->where('reference_type', 'Apartment');
@@ -1869,7 +1865,7 @@ class ConsumerRepository implements iConsumerRepository
                             $refreance_ids[] = $trans->consumer_id;
                         }
 
-                        $this->Demand->join('swm_collections', 'swm_collections.demand_id','=', 'swm_demands.id')
+                        $this->Demand->join('swm_collections', 'swm_collections.demand_id', '=', 'swm_demands.id')
                             ->whereIn('swm_demands.consumer_id', $refreance_ids)
                             ->where('swm_collections.transaction_id', $transactionId)
                             ->where('swm_demands.paid_status', 1)
@@ -1926,7 +1922,7 @@ class ConsumerRepository implements iConsumerRepository
 
             if (isset($request->ddNo))
                 $whereparam .= "and cheque_dd_no='" . $request->ddNo . "'";
-            
+
             if (isset($request->wardNo))
                 $whereparam .= " and (a.ward_no='" . $request->wardNo . "' or c.ward_no='" . $request->wardNo . "') ";
 
@@ -1983,7 +1979,7 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
-            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumerType) || isset($ulbId)) {
+            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype) || isset($ulbId)) {
 
                 $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
@@ -1995,16 +1991,16 @@ class ConsumerRepository implements iConsumerRepository
                 if (isset($request->consumerCategory))
                     $consumerList = $consumerList->where('swm_consumers.consumer_category_id', $request->consumerCategory);
 
-                if (isset($request->consumerType))
-                    $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumerType);
+                if (isset($request->consumertype))
+                    $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
 
 
 
-                $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate(
-                    $perPage = 10,
-                    $columns = ['*'],
-                    $pageName = 'consumers'
-                );
+                $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
+                //     $perPage = $request->perPage,
+                //     $columns = ['*'],
+                //     $pageName = 'consumers'
+                // );
 
                 //echo "<pre/>";print_r($consumerList);
                 foreach ($consumerList as $consumer) {
@@ -2035,10 +2031,12 @@ class ConsumerRepository implements iConsumerRepository
                     $con['cansumerCategory'] = $consumer->category;
                     $con['cansumerType'] = $consumer->type;
                     $con['mobileNo'] = $consumer->mobile_no;
-                    $con['activeDemandDetails'] = $demand;
+                    // $con['activeDemandDetails'] = $demand;
                     $con['totalDemand'] = $total_tax;
                     $con['demandUpto'] = $demand_upto;
                     $con['paidStatus'] = $paid_status;
+                    $con['consumer_category_id'] = $consumer->category_id;
+                    $con['consumer_type_id'] = $consumer->consumer_type_id;
                     $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
                     $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
                     $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
@@ -2224,10 +2222,10 @@ class ConsumerRepository implements iConsumerRepository
             if ((isset($request->consumerId) || isset($request->apartmentId))) {
 
                 if (isset($request->consumerId))
-                    $sql="SELECT d.consumer_id,c.name,c.consumer_no,c.ward_no,c.address,ct.rate,min(d.payment_from) as demand_from, max(d.payment_to) as demand_upto,sum(d.total_tax) as total_tax,c.mobile_no,ct.name as consumer_type,c.holding_no,c.license_no FROM swm_consumers c
+                    $sql = "SELECT d.consumer_id,c.name,c.consumer_no,c.ward_no,c.address,ct.rate,min(d.payment_from) as demand_from, max(d.payment_to) as demand_upto,sum(d.total_tax) as total_tax,c.mobile_no,ct.name as consumer_type,c.holding_no,c.license_no FROM swm_consumers c
                     LEFT JOIN (select * from swm_demands where paid_status=0 and is_deactivate=0) d on d.consumer_id=c.id
                     JOIN swm_consumer_types ct on c.consumer_type_id=ct.id
-                    WHERE c.id=" . $request->consumerId . " and c.ulb_id=".$ulbId." group by c.name,c.consumer_no,c.ward_no,c.address,ct.rate,d.consumer_id,c.consumer_category_id,c.mobile_no,ct.name,c.holding_no,c.license_no";
+                    WHERE c.id=" . $request->consumerId . " and c.ulb_id=" . $ulbId . " group by c.name,c.consumer_no,c.ward_no,c.address,ct.rate,d.consumer_id,c.consumer_category_id,c.mobile_no,ct.name,c.holding_no,c.license_no";
                 else
                     $sql = "WITH apartment as (
                         SELECT a.apt_code,a.apt_name,a.address,a.ward_no,min(d.payment_from) as demand_from,max(d.payment_to) as demand_upto,sum(d.total_tax) as total_tax,r.rate,r.no_of_flats FROM swm_demands d
@@ -2246,7 +2244,7 @@ class ConsumerRepository implements iConsumerRepository
                         GROUP BY a.apt_code,a.apt_name,a.address,a.ward_no,rate,no_of_flats
                         )
                         select apt_code,apt_name,address,ward_no,demand_from,demand_upto,sum(total_tax) as total_tax,no_of_flats,rate from apartment
-                        GROUP BY apt_code,apt_name,ward_no,demand_from,demand_upto,rate,address,no_of_flats";  
+                        GROUP BY apt_code,apt_name,ward_no,demand_from,demand_upto,rate,address,no_of_flats";
 
                 $demands = DB::connection($this->dbConn)->select($sql);
 
@@ -2255,7 +2253,7 @@ class ConsumerRepository implements iConsumerRepository
 
                     // For demand receipt log
                     $demandLog = $this->DemandLog;
-                    $demandLog->amount = $demand->total_tax??0;
+                    $demandLog->amount = $demand->total_tax ?? 0;
                     if (isset($request->consumerId))
                         $demandLog->consumer_id = $request->consumerId;
                     else
@@ -2266,13 +2264,12 @@ class ConsumerRepository implements iConsumerRepository
                     $demandLog->save();
 
 
-                    if($demandLog->id>0)
-                    {
-                        $receipt_no = $ulbData['shortName'].'/'.'SWM/'.str_pad($demandLog->id, 5, "0", STR_PAD_LEFT);
+                    if ($demandLog->id > 0) {
+                        $receipt_no = $ulbData['shortName'] . '/' . 'SWM/' . str_pad($demandLog->id, 5, "0", STR_PAD_LEFT);
                         $demandLog->receipt_no = $receipt_no;
                         $demandLog->save();
                     }
-                    
+
 
                     $getTc = $this->GetUserDetails($userId);
 
@@ -2290,7 +2287,7 @@ class ConsumerRepository implements iConsumerRepository
                     $response['demandNo'] = $receipt_no;
                     $response['demandFrom'] = $demand->demand_from;
                     $response['demandUpto'] = $demand->demand_upto;
-                    $response['demandUptoPrevious'] = isset($demand->dmd2_upto)?$demand->dmd2_upto: '';
+                    $response['demandUptoPrevious'] = isset($demand->dmd2_upto) ? $demand->dmd2_upto : '';
                     $response['noOfFlats'] = isset($demand->no_of_flats) ? $demand->no_of_flats : '';
                     $response['demandAmount'] = isset($demand->total_tax) ? $demand->total_tax : 0;
                     $response['monthlyRate'] = isset($demand->rate) ? $demand->rate : 0;
@@ -2313,29 +2310,40 @@ class ConsumerRepository implements iConsumerRepository
     {
         try {
             $userId = $request->user()->id;
+            $fromDate = $request->fromDate;
+            $toDate   = $request->toDate;
             $ulbId = $this->GetUlbId($userId);
             $whereParam = "";
             $whereParam1 = "";
-            if(isset($request->tcId))
-                $whereParam = " and user_id=".$request->tcId;
-            if(isset($request->wardNo))
-                $whereParam1 = " and ward_no=".$request->wardNo;
+            $whereParam2 = "";
+            $whereParam3 = "";
+            $whereParam4 = "";
+            if (isset($request->tcId))
+                $whereParam = " and user_id=" . $request->tcId;
+            if (isset($request->wardNo))
+                $whereParam1 = " and ward_no=" . $request->wardNo;
+            if (isset($fromDate) && isset($toDate))
+                $whereParam2 = " and d.deny_date BETWEEN '$fromDate' AND '$toDate' ";
+            if (isset($request->category))
+                $whereParam3 = " and consumer_category_id=" . $request->category;
+            if (isset($request->type))
+                $whereParam4 = " and consumer_type_id=" . $request->type;
             $response = array();
-            $sql = "(SELECT d.*,c.consumer_no as ref_no,c.name,c.ward_no,c.address from swm_payment_denies d 
+            $sql = "(SELECT d.*,c.consumer_no as ref_no,c.name,c.ward_no,c.address,consumer_type_id,consumer_category_id from swm_payment_denies d 
                     JOIN(
                         SELECT max(id) as refid FROM swm_payment_denies
-                        WHERE consumer_id>0 and ulb_id = " . $ulbId . " ". $whereParam ."
+                        WHERE consumer_id>0 and ulb_id = " . $ulbId . " " . $whereParam . " 
                         GROUP BY consumer_id
                     ) ref on ref.refid=d.id
-                    JOIN swm_consumers c on d.consumer_id=c.id ".$whereParam1." ORDER BY deny_date desc)
+                    JOIN swm_consumers c on d.consumer_id=c.id " . $whereParam1 .  " " . $whereParam2 . " " . $whereParam3 . "" . $whereParam4 .   " ORDER BY deny_date desc)
                     UNION
-                    (SELECT d.*,a.apt_code as ref_no,a.apt_name as name,a.ward_no,a.apt_address as address from swm_payment_denies d 
+                    (SELECT d.*,a.apt_code as ref_no,a.apt_name as name,a.ward_no,a.apt_address as address,null as consumer_type_id,null as consumer_category_id  from swm_payment_denies d 
                     JOIN(
                         SELECT max(id) as refid FROM swm_payment_denies
-                        WHERE apartment_id>0 ". $whereParam ."
+                        WHERE apartment_id>0 " . $whereParam . "
                         GROUP BY apartment_id
                     ) ref on ref.refid=d.id
-                    JOIN swm_apartments a on d.apartment_id=a.id ".$whereParam1."
+                    JOIN swm_apartments a on d.apartment_id=a.id " . $whereParam1 . " " . $whereParam2 . "
                     ORDER BY deny_date desc)";
 
             $deny = DB::connection($this->dbConn)->select($sql);
@@ -2351,6 +2359,8 @@ class ConsumerRepository implements iConsumerRepository
                 $val['denyDate'] = date('d-m-Y h:i A', strtotime($d->deny_date));
                 $val['outstandingAmount'] = $d->outstanding_amount;
                 $val['remarks'] = $d->denied_reason;
+                $val['consumer_type_id'] = $d->consumer_type_id;
+                $val['consumer_category_id'] = $d->consumer_category_id;
                 $response[] = $val;
             }
 
@@ -2386,21 +2396,20 @@ class ConsumerRepository implements iConsumerRepository
                 $dmdData = $this->Demand->select('swm_demands.*');
                 if ($request->consumerId)
                     $dmdData = $dmdData->join('swm_consumers', 'swm_demands.consumer_id', '=', 'swm_consumers.id')
-                                        ->where('consumer_id', $request->consumerId);
+                        ->where('consumer_id', $request->consumerId);
                 if ($request->apartmentId)
                     $dmdData = $dmdData->join('swm_consumers', 'swm_demands.consumer_id', '=', 'swm_consumers.id')
-                                        ->where('swm_consumers.apartment_id', $request->apartmentId);
+                        ->where('swm_consumers.apartment_id', $request->apartmentId);
 
                 $dmdData = $dmdData->where('paid_status', 0)
                     ->where('swm_demands.is_deactivate', 0)
-                    ->whereDate('payment_to', '<=',$dmdUpto)
+                    ->whereDate('payment_to', '<=', $dmdUpto)
                     ->where('swm_demands.ulb_id', $ulbId)
                     ->orderBy('payment_to', 'ASC')
                     ->get();
 
                 $totDmd = $dmdData->sum('total_tax');
-                if ($dmdData->count() > 0 && $totDmd == $request->adjustAmount) 
-                {
+                if ($dmdData->count() > 0 && $totDmd == $request->adjustAmount) {
                     $dmdFrom = Carbon::create($dmdData[0]->payment_from)->format('Y-m-d');
                     $dmdAdj = $this->DemandAdjustment;
                     $dmdAdj->consumer_id  =  isset($request->consumerId) ? $request->consumerId : null;
@@ -2430,9 +2439,9 @@ class ConsumerRepository implements iConsumerRepository
                             $dmd->save();
                         }
 
-                        return response()->json(['status' => True, 'data' => '', 'msg' => 'Demand adjustment successfully, Payment Upto '. $request->adjustUpto], 200);
+                        return response()->json(['status' => True, 'data' => '', 'msg' => 'Demand adjustment successfully, Payment Upto ' . $request->adjustUpto], 200);
                     }
-                }else{
+                } else {
                     return response()->json(['status' => True, 'data' => '', 'msg' => 'Demand not adjust, because of demand amount is not same as entered amount'], 200);
                 }
             }
@@ -2449,23 +2458,23 @@ class ConsumerRepository implements iConsumerRepository
             $response = array();
 
             $paymentAdjustment = $this->DemandAdjustment->select(DB::raw('swm_demand_adjustments.*, name,consumer_no,address,c.ward_no,apt_name,apt_code,apt_address,a.ward_no as apt_ward'))
-                                        ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
-                                        ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
-                                        ->where('swm_demand_adjustments.ulb_id', $ulbId)
-                                        ->where('swm_demand_adjustments.is_deactivate', 0)
-                                        ->get();
-            
+                ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
+                ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
+                ->where('swm_demand_adjustments.ulb_id', $ulbId)
+                ->where('swm_demand_adjustments.is_deactivate', 0)
+                ->get();
+
             foreach ($paymentAdjustment as $adj) {
                 $val['consumerName'] = $adj->name;
                 $val['consumerNo'] = $adj->consumer_no;
                 $val['apartmentName'] = $adj->apt_name;
                 $val['apartmentCode'] = $adj->apt_code;
-                $val['wardNo'] = ($adj->ward_no)?$adj->ward_no:$adj->apt_ward;
-                $val['address'] = ($adj->address)?$adj->address:$adj->apt_address;
+                $val['wardNo'] = ($adj->ward_no) ? $adj->ward_no : $adj->apt_ward;
+                $val['address'] = ($adj->address) ? $adj->address : $adj->apt_address;
                 $val['adjustFrom'] = Carbon::create($adj->adjust_from)->format('d-m-Y');
                 $val['adjustUpto'] = Carbon::create($adj->adjust_upto)->format('d-m-Y');
                 $val['adjustAmount'] = $adj->adjust_amount;
-                $val['billFile'] = public_path('uploads\\payment_adjustment')."\\".$adj->bill_file;
+                $val['billFile'] = public_path('uploads\\payment_adjustment') . "\\" . $adj->bill_file;
                 $val['remarks'] = $adj->remarks;
                 $val['adjustBy'] = $this->GetUserDetails($adj->user_id)->name;
                 $response[] = $val;
@@ -2483,37 +2492,36 @@ class ConsumerRepository implements iConsumerRepository
             $conArr = array();
             if (isset($request->wardNo) || isset($request->name)) {
                 $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no, is_deactivate"));
-                if(isset($request->name))
+                if (isset($request->name))
                     $apartmentList = $apartmentList->where('apt_name', 'like', '%' . $request->name . '%');
                 $apartmentList = $apartmentList->where('ward_no', $request->wardNo)
-                                    ->where('ulb_id', $ulbId)
-                                    ->orderBy('id', 'desc');
+                    ->where('ulb_id', $ulbId)
+                    ->orderBy('id', 'desc');
 
                 $consumerData = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
                     ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no, is_deactivate'))
                     ->where('swm_consumers.ulb_id', $ulbId)
                     ->where('ward_no', $request->wardNo);
-                if(isset($request->name))
-                    $consumerData = $consumerData->where('swm_consumers.name','like', '%' . $request->name . '%');
+                if (isset($request->name))
+                    $consumerData = $consumerData->where('swm_consumers.name', 'like', '%' . $request->name . '%');
                 if (isset($request->consumerType))
                     $consumerData = $consumerData->where('swm_consumers.consumer_type_id', $request->consumerType);
-                 
+
                 $consumerData = $consumerData->orderBy('id', 'desc');
-                
-                if (isset($request->buildingType) && $request->buildingType== 'apartment') {
+
+                if (isset($request->buildingType) && $request->buildingType == 'apartment') {
                     $consumerList = $apartmentList->paginate(100);
-                }elseif(isset($request->buildingType) && $request->buildingType== 'indivisual')
-                {
+                } elseif (isset($request->buildingType) && $request->buildingType == 'indivisual') {
                     $consumerList = $consumerData->paginate(100);
-                }else{
+                } else {
                     $consumerList = $consumerData->union($apartmentList)->paginate(100);
                 }
-                  
-                
+
+
                 //echo "<pre/>";print_r($consumerList);
                 foreach ($consumerList as $consumer) {
-                    if($consumer->category == 'Apartment')
+                    if ($consumer->category == 'Apartment')
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Apartment', $ulbId);
                     else
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Consumer', $ulbId);
@@ -2521,10 +2529,10 @@ class ConsumerRepository implements iConsumerRepository
 
                     $con['id'] = $consumer->id;
                     $con['wardNo'] = $consumer->ward_no;
-                    $con['consumerName'] = ($consumer->category != 'Apartment')?$consumer->name:"";
-                    $con['consumerNo'] = ($consumer->category != 'Apartment')?$consumer->ref_no:"";
-                    $con['apartmentName'] = ($consumer->category == 'Apartment')?$consumer->name:"";
-                    $con['apartmentCode'] = ($consumer->category == 'Apartment')?$consumer->ref_no:"";
+                    $con['consumerName'] = ($consumer->category != 'Apartment') ? $consumer->name : "";
+                    $con['consumerNo'] = ($consumer->category != 'Apartment') ? $consumer->ref_no : "";
+                    $con['apartmentName'] = ($consumer->category == 'Apartment') ? $consumer->name : "";
+                    $con['apartmentCode'] = ($consumer->category == 'Apartment') ? $consumer->ref_no : "";
                     $con['Address'] = $consumer->address;
                     $con['cansumerCategory'] = $consumer->category;
                     $con['cansumerType'] = $consumer->type;
@@ -2532,7 +2540,7 @@ class ConsumerRepository implements iConsumerRepository
                     $con['outstandingDemand'] = $demand['demandAmt'];
                     $con['demandFrom'] = $demand['demandFrom'];
                     $con['demandUpto'] = $demand['demandUpto'];
-                    $con['paidStatus'] = ($demand)? "Unpaid": "Paid";
+                    $con['paidStatus'] = ($demand) ? "Unpaid" : "Paid";
                     $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
 
                     $conArr[] = $con;
@@ -2548,49 +2556,77 @@ class ConsumerRepository implements iConsumerRepository
 
     public function GetReminderList(Request $request)
     {
+        $todayDate = Carbon::now();
         $userId = $request->user()->id;
         $ulbId = $this->GetUlbId($userId);
         $wardNo = $request->wardNo;
+        $fromDate = $request->fromDate;
+        $toDate   = $request->toDate;
+        $consumerCategory = $request->category;
+        $consumerType     = $request->type;
         try {
 
             $response = array();
-            $reminders = $this->CosumerReminder->select(DB::raw('max(c.id) as cid, max(a.id) as aid, max(reminder_date) as reminder_date, max(remarks) as remarks,max(swm_consumer_reminders.stampdate) as stampdate, max(swm_consumer_reminders.user_id) as user_id,name, apt_name, apt_code, consumer_no, c.ward_no, a.ward_no as apt_ward, address, apt_address,reference_type,swm_consumer_reminders.id'))
-                ->leftjoin('swm_consumers as c', function($join){
+            DB::enableQueryLog();
+            $reminders = $this->CosumerReminder->select(DB::raw('max(c.id) as cid, max(a.id) as aid, max(reminder_date) as reminder_date, max(remarks) as remarks,
+                                            max(swm_consumer_reminders.stampdate) as stampdate, max(swm_consumer_reminders.user_id) as user_id,name, 
+                                            apt_name, apt_code, consumer_no, c.ward_no, a.ward_no as apt_ward, address, apt_address,
+                                            consumer_category_id,consumer_type_id,
+                                            reference_type,swm_consumer_reminders.id'))
+                ->leftjoin('swm_consumers as c', function ($join) {
                     $join->on('swm_consumer_reminders.reference_id', '=', 'c.id')
                         ->where('reference_type', '=', 'Consumer')
                         ->where('c.is_deactivate', 0);
                 })
-                ->leftjoin('swm_apartments as a', function($join1){
+                ->leftjoin('swm_apartments as a', function ($join1) {
                     $join1->on('swm_consumer_reminders.reference_id', '=', 'a.id')
                         ->where('reference_type', '=', 'Apartment')
                         ->where('a.is_deactivate', 0);
                 });
             $reminders = $reminders->where('status', 1)
                 ->where('swm_consumer_reminders.ulb_id', $ulbId);
-            if(isset($request->tcId))
+
+            if (isset($fromDate) && isset($toDate))
+                $reminders = $reminders->whereBetween('reminder_date', [$fromDate, $toDate]);
+            if (isset($request->tcId))
                 $reminders = $reminders->where('swm_consumer_reminders.user_id', $request->tcId);
+            if (isset($consumerCategory))
+                $reminders = $reminders->where('consumer_category_id', $consumerCategory);
+            if (isset($consumerType))
+                $reminders = $reminders->where('consumer_type_id', $consumerType);
+            if(isset($wardNo))
+            $reminders = $reminders
+                    ->where(function ($query) use ($wardNo) {
+                        $query->where("c.ward_no", $wardNo)
+                            ->orWhere(function ($query) use ($wardNo) {
+                                $query->where("a.ward_no", $wardNo);
+                            });
+                    });
+
             // if(isset($wardNo))
-            //     $reminders = $reminders->orWhere('c.ward_no', $wardNo)
-            //                             ->orWhere('a.ward_no', $wardNo); //<-----------here
+            // $reminders = $reminders->where('c.ward_no', $wardNo)
+            //     ->orWhere('a.ward_no', $wardNo); //<-----------here
             $reminders = $reminders->orderBy('swm_consumer_reminders.id', 'desc')
-                ->groupBy(['name','apt_name','apt_code','consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address','reference_type','swm_consumer_reminders.id'])
+                ->groupBy(['name', 'apt_name', 'apt_code', 'consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address', 'reference_type', 'swm_consumer_reminders.id'])
                 ->get();
+
             //print_r($reminders);
-            foreach($reminders as $reminder) {
+            foreach ($reminders as $reminder) {
                 $user = $this->GetUserDetails($reminder->user_id);
                 $val['id'] = ($reminder->cid) ? $reminder->cid : $reminder->aid;
                 $val['tcName'] = ($user) ? $user->name : '';
-                $val['wardNo'] = ($reminder->ward_no)?$reminder->ward_no:$reminder->apt_ward;
-                $val['address'] = ($reminder->address)?$reminder->address:$reminder->apt_address;
-                $val['consumerName'] = ($reminder->reference_type == 'Consumer')?$reminder->name:"";
-                $val['consumerNo'] = ($reminder->reference_type == 'Consumer')?$reminder->consumer_no:'';
-                $val['apartmentName'] = ($reminder->reference_type == 'Apartment')?$reminder->apt_name:"";
-                $val['apartmentCode'] = ($reminder->reference_type == 'Apartment')?$reminder->apt_code:"";
+                $val['wardNo'] = ($reminder->ward_no) ? $reminder->ward_no : $reminder->apt_ward;
+                $val['address'] = ($reminder->address) ? $reminder->address : $reminder->apt_address;
+                $val['consumerName'] = ($reminder->reference_type == 'Consumer') ? $reminder->name : "";
+                $val['consumerNo'] = ($reminder->reference_type == 'Consumer') ? $reminder->consumer_no : '';
+                $val['apartmentName'] = ($reminder->reference_type == 'Apartment') ? $reminder->apt_name : "";
+                $val['apartmentCode'] = ($reminder->reference_type == 'Apartment') ? $reminder->apt_code : "";
                 $val['reminderDate'] = date('d-m-Y', strtotime($reminder->reminder_date));
                 $val['remarks'] = $reminder->remarks;
+                $val['consumer_category_id'] = $reminder->consumer_category_id;
+                $val['consumer_type_id'] = $reminder->consumer_type_id;
                 $val['date'] = date('d-m-Y', strtotime($reminder->stampdate));
                 $response[] = $val;
-                
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
@@ -2600,7 +2636,7 @@ class ConsumerRepository implements iConsumerRepository
 
     public function ConsumerPastTransactions(Request $request)
     {
-        try{
+        try {
             $userId = $request->user()->id;
             $ulbId = $this->GetUlbId($userId);
             $response = array();
@@ -2616,7 +2652,7 @@ class ConsumerRepository implements iConsumerRepository
                 if (isset($request->apartmentId))
                     $allTrans = $allTrans->where('swm_transactions.apartment_id', $request->apartmentId);
 
-            
+
 
                 $allTrans = $allTrans->orderBy('swm_transactions.id', 'desc')->paginate(10);
 
@@ -2627,9 +2663,9 @@ class ConsumerRepository implements iConsumerRepository
 
 
                     $getuserdata = $this->GetUserDetails($trans->user_id);
-                    $val['id'] = ($trans->consumer_id)? $trans->consumer_id : $trans->apartment_id;
-                    
-                    $val['wardNo'] = ($trans->ward_no)? $trans->ward_no : $trans->apt_ward;
+                    $val['id'] = ($trans->consumer_id) ? $trans->consumer_id : $trans->apartment_id;
+
+                    $val['wardNo'] = ($trans->ward_no) ? $trans->ward_no : $trans->apt_ward;
                     $val['consumerNo'] = $trans->consumer_no;
                     $val['consumerName'] = $trans->name;
                     $val['apartmentCode'] = $trans->apt_code;
@@ -2642,11 +2678,10 @@ class ConsumerRepository implements iConsumerRepository
                     $val['demandUpto'] = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
                     $val['tcName'] = $getuserdata->name;
                     $response[] = $val;
-
                 }
 
                 return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
-            }else{
+            } else {
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
@@ -2673,7 +2708,7 @@ class ConsumerRepository implements iConsumerRepository
             $complain->complain_date  =  Carbon::now();
             $complain->ulb_id  =  $ulbId;
             $complain->save();
-            
+
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Your complain save successfully'], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
@@ -2687,12 +2722,12 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $response = array();
             $records = $this->TcComplaint
-                            ->where('is_deactivate', 0)
-                            ->where('ulb_id', $ulbId);
-            if(isset($request->tcId))
+                ->where('is_deactivate', 0)
+                ->where('ulb_id', $ulbId);
+            if (isset($request->tcId))
                 $records = $records->where('user_id', $request->tcId);
             $records = $records->orderBy('id', 'DESC')
-                            ->paginate(1000);
+                ->paginate(1000);
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
@@ -2717,7 +2752,7 @@ class ConsumerRepository implements iConsumerRepository
             $validator = Validator::make($request->all(), [
                 'routeName' => 'required|MIN:5',
                 'selectedDate' => 'required',
-                
+
             ]);
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator->messages()]);
@@ -2727,28 +2762,26 @@ class ConsumerRepository implements iConsumerRepository
             $getConsumersArr = array();
             $getApartmentsArr = array();
             $selectedDate = Carbon::create($request->selectedDate)->format('Y-m-d');
-            if(isset($request->selectedDate))
-            {
+            if (isset($request->selectedDate)) {
                 $transConsumers = $this->Transaction->select('consumer_id')
-                                        ->where('consumer_id', '>', 0)
-                                        ->whereDate('transaction_date', '=', $selectedDate)
-                                        ->get();
+                    ->where('consumer_id', '>', 0)
+                    ->whereDate('transaction_date', '=', $selectedDate)
+                    ->get();
 
-                foreach($transConsumers as $transConsumer)
+                foreach ($transConsumers as $transConsumer)
                     $getConsumersArr[] = $transConsumer->consumer_id;
                 $getConsumers = implode(",", $getConsumersArr);
                 $transApartments = $this->Transaction->select('apartment_id')
                     ->where('apartment_id', '>', 0)
                     ->whereDate('transaction_date', '=', $selectedDate)
                     ->get();
-                
-                foreach($transApartments as $transApartment)
+
+                foreach ($transApartments as $transApartment)
                     $getApartmentsArr[] = $transApartment->apartment_id;
                 $getApartments = implode(",", $getApartmentsArr);
             }
             $getRoutes = $this->Routes->where('route_name', $request->routeName)->where('is_deactivate', 0)->count();
-            if(($getConsumers || $getApartments) && $getRoutes == 0)
-            {
+            if (($getConsumers || $getApartments) && $getRoutes == 0) {
                 $complain = $this->Routes;
                 $complain->route_name  =  $request->routeName;
                 $complain->route_date  =  $selectedDate;
@@ -2757,7 +2790,7 @@ class ConsumerRepository implements iConsumerRepository
                 $complain->user_id  =  $userId;
                 $complain->ulb_id  =  $ulbId;
                 $complain->save();
-            }else{
+            } else {
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Route already register, please change route name'], 200);
             }
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Route set successfully'], 200);
@@ -2773,19 +2806,19 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $response = array();
             $records = $this->Routes
-                            ->where('ulb_id', $ulbId)
-                            ->where('is_deactivate', 0);
-            if(isset($userId))
+                ->where('ulb_id', $ulbId)
+                ->where('is_deactivate', 0);
+            if (isset($userId))
                 $records = $records->where('user_id', $userId);
             $records = $records->orderBy('id', 'DESC')
-                            ->paginate(1000);
+                ->paginate(1000);
 
             foreach ($records as $record) {
-                $apt = explode(',',$record->apartment_ids);
-                $cons = explode(',',$record->consumer_ids);
+                $apt = explode(',', $record->apartment_ids);
+                $cons = explode(',', $record->consumer_ids);
                 $totalConsumerCount = count($apt) + count($cons);
                 $getuserdata = $this->GetUserDetails($record->user_id);
-                
+
                 $val['id'] = $record->id;
                 $val['tcName'] = $getuserdata->name;
                 $val['routeName'] = $record->route_name;
@@ -2805,19 +2838,18 @@ class ConsumerRepository implements iConsumerRepository
         $ulbId = $this->GetUlbId($userId);
         try {
             $response = array();
-            if(isset($request->routeId))
-            {
+            if (isset($request->routeId)) {
                 $record = $this->Routes
-                                ->where('id', $request->routeId)
-                                ->first();
+                    ->where('id', $request->routeId)
+                    ->first();
 
-                $apt = explode(',',$record->apartment_ids);
-                $cons = explode(',',$record->consumer_ids);
+                $apt = explode(',', $record->apartment_ids);
+                $cons = explode(',', $record->consumer_ids);
                 $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no"))
-                ->whereIn('id', $apt)
-                ->where('ulb_id', $ulbId)
-                ->where('is_deactivate', 0)
-                ->orderBy('id', 'desc');
+                    ->whereIn('id', $apt)
+                    ->where('ulb_id', $ulbId)
+                    ->where('is_deactivate', 0)
+                    ->orderBy('id', 'desc');
 
                 $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
@@ -2826,23 +2858,23 @@ class ConsumerRepository implements iConsumerRepository
                     ->whereIn('swm_consumers.id', $cons)
                     ->where('is_deactivate', 0)
                     ->orderBy('id', 'desc');
-                
+
                 $consumerList = $consumerList->union($apartmentList)->paginate(100);
-                    
+
 
                 foreach ($consumerList as $consumer) {
-                    if($consumer->category == 'Apartment')
+                    if ($consumer->category == 'Apartment')
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Apartment', $ulbId);
                     else
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Consumer', $ulbId);
                     //
-                    
+
                     $con['id'] = $consumer->id;
                     $con['wardNo'] = $consumer->ward_no;
-                    $con['consumerName'] = ($consumer->category != 'Apartment')?$consumer->name:"";
-                    $con['consumerNo'] = ($consumer->category != 'Apartment')?$consumer->ref_no:"";
-                    $con['apartmentName'] = ($consumer->category == 'Apartment')?$consumer->name:"";
-                    $con['apartmentCode'] = ($consumer->category == 'Apartment')?$consumer->ref_no:"";
+                    $con['consumerName'] = ($consumer->category != 'Apartment') ? $consumer->name : "";
+                    $con['consumerNo'] = ($consumer->category != 'Apartment') ? $consumer->ref_no : "";
+                    $con['apartmentName'] = ($consumer->category == 'Apartment') ? $consumer->name : "";
+                    $con['apartmentCode'] = ($consumer->category == 'Apartment') ? $consumer->ref_no : "";
                     $con['Address'] = $consumer->address;
                     $con['cansumerCategory'] = $consumer->category;
                     $con['cansumerType'] = $consumer->type;
@@ -2850,13 +2882,13 @@ class ConsumerRepository implements iConsumerRepository
                     $con['outstandingDemand'] = $demand['demandAmt'];
                     $con['demandFrom'] = $demand['demandFrom'];
                     $con['demandUpto'] = $demand['demandUpto'];
-                    $con['paidStatus'] = ($demand['demandAmt'] > 0)? "Unpaid": "Paid";
+                    $con['paidStatus'] = ($demand['demandAmt'] > 0) ? "Unpaid" : "Paid";
 
                     $response[] = $con;
                 }
-                
+
                 $msg = "";
-            }else{
+            } else {
                 $msg = "Undefind parameter supply";
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => $msg], 200);
@@ -2875,33 +2907,30 @@ class ConsumerRepository implements iConsumerRepository
             $validator = Validator::make($request->all(), [
                 'routeId' => 'required',
                 'routeName' => 'required|MIN:5',
-                
+
             ]);
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator->messages()]);
             }
-            
+
             $getRoute = $this->Routes->find($request->routeId);
             $getRoute->route_name = $request->routeName;
 
-            if(isset($request->action))
-            {
-                $apt = explode(',',$getRoute->apartment_ids);
-                $cons = explode(',',$getRoute->consumer_ids);
+            if (isset($request->action)) {
+                $apt = explode(',', $getRoute->apartment_ids);
+                $cons = explode(',', $getRoute->consumer_ids);
 
-                if($request->action == 'add' && $request->consumerId)
+                if ($request->action == 'add' && $request->consumerId)
                     $cons[] = $request->consumerId;
-                if($request->action == 'remove' && $request->consumerId)
-                {
+                if ($request->action == 'remove' && $request->consumerId) {
                     if (($key = array_search($request->consumerId, $cons)) !== false) {
                         unset($cons[$key]);
                     }
-                }   
+                }
 
-                if($request->action == 'add' && $request->apartmentId)
+                if ($request->action == 'add' && $request->apartmentId)
                     $apt[] = $request->apartmentId;
-                if($request->action == 'remove' && $request->apartmentId)
-                {
+                if ($request->action == 'remove' && $request->apartmentId) {
                     if (($key = array_search($request->apartmentId, $apt)) !== false) {
                         unset($apt[$key]);
                     }
@@ -2911,7 +2940,7 @@ class ConsumerRepository implements iConsumerRepository
                 $getRoute->apartment_ids = implode(",", $apt);
             }
             $getRoute->save();
-            
+
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Data Updated successfully'], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
@@ -2920,28 +2949,28 @@ class ConsumerRepository implements iConsumerRepository
 
     public function AnalyticDashboardData(Request $request)
     {
-        
+
         $user = Auth()->user();
         $ulbId = $user->current_ulb;
         $userId = $user->id;
 
         try {
             $response = array();
-            
+
             if (isset($request->fromDate) && isset($request->toDate)) {
 
                 $From = Carbon::create($request->fromDate)->format('Y-m-d');
                 $Upto = Carbon::create($request->toDate)->format('Y-m-d');
 
                 $whereParam = "";
-                if(isset($request->wardNo))
-                    $whereParam = " and ward_no=".$request->wardNo;
-                
-                if(isset($request->category))
-                    $whereParam .= " and consumer_category_id=".$request->category;
-                
-                if(isset($request->tcId))
-                    $whereParam .= " and user_id=".$request->tcId;
+                if (isset($request->wardNo))
+                    $whereParam = " and ward_no=" . $request->wardNo;
+
+                if (isset($request->category))
+                    $whereParam .= " and consumer_category_id=" . $request->category;
+
+                if (isset($request->tcId))
+                    $whereParam .= " and user_id=" . $request->tcId;
 
                 //Consumer Details
                 $sql = "WITH
@@ -2949,38 +2978,37 @@ class ConsumerRepository implements iConsumerRepository
                     SELECT count(*) as total_consumer,
                                 count(CASE WHEN consumer_category_id = 1 THEN id end) as residential,
                                 count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
-                    FROM swm_consumers where (entry_date between '".$From."' and '".$Upto."') and is_deactivate=0 and ulb_id=".$ulbId." ".$whereParam."
+                    FROM swm_consumers where (entry_date between '" . $From . "' and '" . $Upto . "') and is_deactivate=0 and ulb_id=" . $ulbId . " " . $whereParam . "
                 ),
                 TotalDmd AS (
                     select sum(total_tax) as outstanding_amount FROM swm_demands
-                    LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id ".$whereParam."
-                    WHERE (payment_to between '".$From."' and '".$Upto."')  and swm_demands.is_deactivate=0 and swm_demands.ulb_id=".$ulbId." and paid_status=0
+                    LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id " . $whereParam . "
+                    WHERE (payment_to between '" . $From . "' and '" . $Upto . "')  and swm_demands.is_deactivate=0 and swm_demands.ulb_id=" . $ulbId . " and paid_status=0
                 ),
                 AdjustAmt AS (
                     select sum(adjust_amount) as adjust_amount from swm_demand_adjustments 
-                    LEFT JOIN swm_consumers on swm_demand_adjustments.consumer_id=swm_consumers.id ".$whereParam."
-                    where swm_demand_adjustments.is_deactivate=0 and swm_demand_adjustments.ulb_id=".$ulbId." and (date(swm_demand_adjustments.stampdate) between '".$From."' and '".$Upto."')
+                    LEFT JOIN swm_consumers on swm_demand_adjustments.consumer_id=swm_consumers.id " . $whereParam . "
+                    where swm_demand_adjustments.is_deactivate=0 and swm_demand_adjustments.ulb_id=" . $ulbId . " and (date(swm_demand_adjustments.stampdate) between '" . $From . "' and '" . $Upto . "')
                 )
                 SELECT total_consumer,residential,commercial,outstanding_amount,adjust_amount
                 FROM  Consumer,TotalDmd,AdjustAmt";
-                
-                
+
+
                 $Report = DB::connection($this->dbConn)->select($sql);
-                if($Report)
+                if ($Report)
                     $Report = $Report[0];
 
                 // Demand Details
                 $sqldemand = "SELECT YEAR(payment_to) as year, MONTH(payment_to) as month,sum(total_tax) as value  FROM swm_demands 
-                LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id ".$whereParam."
-                WHERE (payment_to between '".$From."' and '".$Upto."') 
-                and swm_demands.is_deactivate=0 and swm_demands.ulb_id=".$ulbId."
+                LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id " . $whereParam . "
+                WHERE (payment_to between '" . $From . "' and '" . $Upto . "') 
+                and swm_demands.is_deactivate=0 and swm_demands.ulb_id=" . $ulbId . "
                 GROUP BY YEAR(payment_to), MONTH(payment_to)";
 
                 $totalDmds = DB::connection($this->dbConn)->select($sqldemand);
 
                 $total_demand = 0;
-                foreach($totalDmds as $dmd)
-                {
+                foreach ($totalDmds as $dmd) {
                     $total_demand += $dmd->value;
                 }
 
@@ -2988,8 +3016,8 @@ class ConsumerRepository implements iConsumerRepository
                 $sqlarrear = "SELECT YEAR(transaction_date) as year, MONTH(transaction_date) as month,sum(total_payable_amt) as value
                 FROM swm_transactions
                 LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
-                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id ".$whereParam."
-                WHERE swm_transactions.ulb_id=".$ulbId." and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and transaction_date < '".$From."'
+                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
+                WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and transaction_date < '" . $From . "'
                 GROUP BY YEAR(transaction_date), MONTH(transaction_date)";
 
                 $totalarrears = DB::connection($this->dbConn)->select($sqlarrear);
@@ -3000,20 +3028,19 @@ class ConsumerRepository implements iConsumerRepository
                 sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
                 FROM swm_transactions
                 LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
-                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id ".$whereParam."
-                WHERE swm_transactions.ulb_id=".$ulbId." and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and (transaction_date between '".$From."' and '".$Upto."')
+                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
+                WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and (transaction_date between '" . $From . "' and '" . $Upto . "')
                 GROUP BY YEAR(transaction_date), MONTH(transaction_date)";
 
                 $totalcolls = DB::connection($this->dbConn)->select($sqlcollection);
 
                 $total_collection = 0;
                 $total_reconcile = 0;
-                foreach($totalcolls as $coll)
-                {
+                foreach ($totalcolls as $coll) {
                     $total_collection += $coll->total_collection;
                     $total_reconcile += $coll->total_reconcile_pending_amount;
                 }
-                
+
 
 
                 $response['totalDemand'] = $total_demand;
@@ -3029,7 +3056,7 @@ class ConsumerRepository implements iConsumerRepository
                 $response['arrear'] = $totalarrears;
             }
 
-           return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
@@ -3039,15 +3066,14 @@ class ConsumerRepository implements iConsumerRepository
     {
         try {
             $response = array();
-            if(isset($request->routeId))
-            {
+            if (isset($request->routeId)) {
                 $record = $this->Routes
-                                ->where('id', $request->routeId)
-                                ->update(['is_deactivate'=> 1]);
+                    ->where('id', $request->routeId)
+                    ->update(['is_deactivate' => 1]);
 
-                
+
                 $msg = "Route deleted successfully";
-            }else{
+            } else {
                 $msg = "Undefind parameter supply";
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => $msg], 200);

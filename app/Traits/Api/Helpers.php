@@ -8,6 +8,7 @@ use App\Models\Ward;
 use App\Models\Ulb;
 use App\Models\TblUserMstr;
 use App\Models\UserWardPermission;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 
@@ -127,7 +128,7 @@ trait Helpers
             where c.apartment_id=" . $responseId . " and d.paid_status=0 and d.is_deactivate=0 and d.ulb_id=" . $ulbId . " group by d.consumer_id,d.total_tax,d.payment_to,d.payment_from";
 
             $dmds = DB::connection($dbConn)->select($sql);
-            
+
             $i = 0;
             foreach ($dmds as $d) {
 
@@ -258,9 +259,21 @@ trait Helpers
                 $ulbData['accountName'] = $ulb->account_name;
                 $ulbData['accountNo'] = $ulb->account_no;
                 $ulbData['ifscNo'] = $ulb->ifsc_no;
-                $ulbData['logo'] = "uploads/logo/".$ulb->logo;
+                $ulbData['logo'] = "uploads/logo/" . $ulb->logo;
             }
             return $ulbData;
         }
+    }
+
+    /**
+     * | Response Msg Version2 with apiMetaData
+     */
+   static function responseMsgs($status, $msg, $data, $apiId = null, $version = null, $queryRunTime = null, $action = null, $deviceId = null)
+    {
+        return response()->json([
+            'status' => $status,
+            'msg'   => $msg,
+            'data' => $data
+        ]);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\ConsumerController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\ReportController;
@@ -39,9 +40,9 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
     // });
     Route::controller(AuthController::class)->group(function () {
         Route::post('updateUser', 'UpdateUser');                    // Route for update user
-        
+
         // Menu Permission
-        Route::post('postMenuPermission', 'MenuPermission');            
+        Route::post('postMenuPermission', 'MenuPermission');
         Route::get('getMenuPermissionList', 'MenuPermissionList');
         Route::post('getMenuPermissionById', 'MenuPermissionList');
         Route::post('updateMenuPermission', 'UpdateMenuPermission');
@@ -76,11 +77,11 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::get('searchTransaction/{transactionNo}', 'searchTransaction');
         Route::post('transactionDeactivate', 'transactionDeactivate');
         Route::post('postRenterForn', 'RenterForm');
-        
+
         // Geo Tagging
         Route::post('postGeoTagging', 'AddGeoTagging');
         Route::post('getGeoLocation', 'GetGeoLocation');
-        
+
         Route::post('getAllTransaction', 'GetAllTransaction');
         Route::post('getCollectionSummary', 'AllCollectionSummary');
         Route::post('postEditConsumerDetail', 'UpdateConsumerDetails');
@@ -109,16 +110,16 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         // Payment adjustments
         Route::post('paymentAdjustment', 'PaymentAdjustment');
         Route::get('getPaymentAdjustmentList', 'PaymentAdjustmentList');
-        
+
 
         Route::post('consumerListByWardNo', 'ConsumerOrApartmentList');
         Route::post('getReminderList', 'GetReminderList');
         Route::post('getConsumerPastTransactions', 'ConsumerPastTransactions');
-       
+
         // For Complain
         Route::post('postTcComplain', 'TcComplain');
         Route::post('getComplainList', 'getComplainList');
-        
+
         // For Routes
         Route::post('postNewRoute', 'addRoute');
         Route::post('getRouteList', 'RouteList');
@@ -166,9 +167,11 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
     });
 });
 
-
-
-
+Route::controller(CitizenController::class)->group(function () {
+    Route::post('citizen-ward-list', 'wardList');
+    Route::post('search-residential-consumer', 'residentialConsumers');
+    Route::post('search-commercial-consumer', 'commercialConsumers');
+});
 
 
 // Route::controller(ApartmentController::class)->group(function () {
