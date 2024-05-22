@@ -228,9 +228,9 @@ class CitizenController extends Controller
                 $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt')
                     ->where('swm_transactions.consumer_id', $consumer->id);
 
-            // if (isset($request->apartmentId))
-            //     $tranDtls = $this->mTransaction->select('id','transaction_no','transaction_date','payment_mode','total_payable_amt')
-            // ->where('swm_transactions.apartment_id', $request->apartmentId);
+            if (isset($request->apartmentId))
+                $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt')
+                                               ->where('swm_transactions.apartment_id', $request->apartmentId);
 
             $tranDtls = $tranDtls->orderBy('swm_transactions.id', 'desc')->get();
 
