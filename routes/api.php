@@ -174,6 +174,8 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('get-consumer-dtl', 'consumerDtl');
     Route::post('payment-upto', 'paymentUpto');
     Route::post('apartment-list', 'apartmentList');
+    // Route::post('get-apartment', 'apartmentList');   ? Not Working Ri8 Now
+    Route::post('calculate-amount', 'calculateAmount');
 });
 
 

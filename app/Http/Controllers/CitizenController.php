@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Apartment;
+use App\Models\Collections;
 use App\Models\Consumer;
 use App\Models\Demand;
 use App\Models\Transaction;
@@ -9,6 +11,7 @@ use App\Models\Ward;
 use App\Repository\iMasterRepository;
 use App\Repository\MasterRepository;
 use App\Traits\Api\Helpers;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +27,8 @@ class CitizenController extends Controller
     protected $mWard;
     protected $mDemand;
     protected $mTransaction;
+    protected $mCollections;
+    protected $mApartment;
 
     public function __construct(Request $request)
     {
@@ -33,7 +38,8 @@ class CitizenController extends Controller
         $this->mConsumer = new Consumer($this->dbConn);
         $this->mDemand   = new Demand($this->dbConn);
         $this->mTransaction = new Transaction($this->dbConn);
-        // $this->Apartment = new Apartment($this->dbConn);
+        $this->mCollections = new Collections($this->dbConn);
+        $this->mApartment   = new Apartment($this->dbConn);
         // $this->ConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerCategory = new ConsumerCategory($this->dbConn);
         // $this->ConsumerDeactivateDeatils = new ConsumerDeactivateDeatils($this->dbConn);
@@ -41,7 +47,6 @@ class CitizenController extends Controller
         // $this->TransactionDeactivate = new TransactionDeactivate($this->dbConn);
         // $this->GeoLocation = new GeoLocation($this->dbConn);
         // $this->CosumerReminder = new CosumerReminder($this->dbConn);
-        // $this->Collections = new Collections($this->dbConn);
         // $this->TransactionVerification = new TransactionVerification($this->dbConn);
         // $this->BankCancel = new BankCancel($this->dbConn);
         // $this->BankCancelDetails = new BankCancelDetails($this->dbConn);
@@ -192,11 +197,12 @@ class CitizenController extends Controller
                 'errors' => "Validation Error"
             ], 200);
         try {
+            $transactions = array();
             $consumer = $this->mConsumer
                 ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'consumer_no', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type', 'swm_consumer_categories.name as consumer_category')
                 ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
                 ->join('swm_consumer_categories',  'swm_consumer_categories.id', 'swm_consumers.consumer_category_id')
-                ->where('consumer_category_id', 1)
+                // ->where('consumer_category_id', 1)
                 ->where('is_deactivate', 0)
                 ->where('swm_consumers.id', $request->id)
                 ->first();
@@ -224,15 +230,32 @@ class CitizenController extends Controller
                 $paid_status = 'Unpaid';
             }
 
+            $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt', 'user_id');
+
             if (isset($consumer->id))
-                $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt')
+                $tranDtls = $tranDtls
                     ->where('swm_transactions.consumer_id', $consumer->id);
 
             if (isset($request->apartmentId))
-                $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt')
-                                               ->where('swm_transactions.apartment_id', $request->apartmentId);
+                $tranDtls = $tranDtls
+                    ->where('swm_transactions.apartment_id', $request->apartmentId);
 
-            $tranDtls = $tranDtls->orderBy('swm_transactions.id', 'desc')->get();
+            $tranDtls = $tranDtls->orderBy('swm_transactions.id', 'desc')->take(10)->get();
+            foreach ($tranDtls as $trans) {
+                $collection = $this->mCollections->where('transaction_id', $trans->id);
+                $firstrecord = $collection->orderBy('id', 'asc')->first();
+                $lastrecord = $collection->latest('id')->first();
+                $getuserdata = $this->GetUserDetails($trans->user_id);
+
+                $val['transaction_no']    = $trans->transaction_no;
+                $val['payment_mode']      = $trans->payment_mode;
+                $val['transaction_date']  = Carbon::create($trans->transaction_date)->format('d-m-Y');
+                $val['total_payable_amt'] = $trans->total_payable_amt;
+                $val['demand_from']       = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
+                $val['demand_upto']       = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
+                $val['tc_name']           = $getuserdata->name;
+                $transactions[]           = $val;
+            }
 
             $con['id'] = $consumer->id;
             $con['ward_no'] = $consumer->ward_no;
@@ -250,7 +273,7 @@ class CitizenController extends Controller
             $con['demand_upto'] = $demand_upto;
             $con['paid_status'] = $paid_status;
             $con['demand_details'] = $demand;
-            $con['transaction_details'] = $tranDtls;
+            $con['transaction_details'] = $transactions;
             return $this->responseMsgs(true, "Consumer Details", $con);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
@@ -296,11 +319,77 @@ class CitizenController extends Controller
     /**
      * | Apartment List
      */
-    public function apartmentList(Request $request, iMasterRepository $iMasterRepo)
+    public function apartmentList(Request $request)
     {
-        //  MasterRepository(iMasterRepository ,$iMasterRepo);
-        // MasterRepository::getApartmentList();
-        // MasterRepository::getApartmentList();
-        // iMasterRepository $master->getApartmentList($request);
+        $validator = Validator::make(
+            $request->all(),
+            ["wardNo" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $apartmentList = $this->mApartment->where('ward_no', $request->wardNo)->get();
+
+            return $this->responseMsgs(true, "List of Apartments", $apartmentList);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Calculate Amount
+     */
+    public function calculateAmount(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                "payUpto"    => "required|date",
+                "consumerId" => "required",
+            ]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $response = array();
+            if ((isset($request->consumerId) || isset($request->apartmentId)) && isset($request->payUpto)) {
+
+                $demand = $this->mDemand;
+
+                if (isset($request->apartmentId)) {
+                    $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
+                        ->where('c.apartment_id', $request->apartmentId)
+                        ->where('c.is_deactivate', 0);
+                } else {
+                    $demand = $demand->where('consumer_id', $request->consumerId);
+                }
+                $demand = $demand->where('paid_status', 0)
+                    // ->where('swm_demands.ulb_id', $ulbId)
+                    ->where('swm_demands.is_deactivate', 0)
+                    ->whereDate('swm_demands.payment_to', '<=', $request->payUpto)
+                    ->orderBy('swm_demands.id', 'asc')
+                    ->sum('total_tax');
+
+                $totalDmd = $demand;
+                $paymentUptoDate = date('Y-m-t', strtotime($request->payUpto));
+
+                $response['totaldemand'] = $totalDmd;
+                $response['paymentUptoDate'] = $paymentUptoDate;
+            }
+
+            return $this->responseMsgs(true, "Total Demand", $response);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
     }
 }
