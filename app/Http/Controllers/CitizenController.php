@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Consumer;
 use App\Models\Demand;
+use App\Models\Transaction;
 use App\Models\Ward;
 use App\Repository\iMasterRepository;
 use App\Repository\MasterRepository;
@@ -22,6 +23,7 @@ class CitizenController extends Controller
     protected $mConsumer;
     protected $mWard;
     protected $mDemand;
+    protected $mTransaction;
 
     public function __construct(Request $request)
     {
@@ -30,11 +32,11 @@ class CitizenController extends Controller
         $this->mWard     = new Ward($this->dbConn);
         $this->mConsumer = new Consumer($this->dbConn);
         $this->mDemand   = new Demand($this->dbConn);
+        $this->mTransaction = new Transaction($this->dbConn);
         // $this->Apartment = new Apartment($this->dbConn);
         // $this->ConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerCategory = new ConsumerCategory($this->dbConn);
         // $this->ConsumerDeactivateDeatils = new ConsumerDeactivateDeatils($this->dbConn);
-        // $this->Transaction = new Transaction($this->dbConn);
         // $this->TransactionDetails = new TransactionDetails($this->dbConn);
         // $this->TransactionDeactivate = new TransactionDeactivate($this->dbConn);
         // $this->GeoLocation = new GeoLocation($this->dbConn);
@@ -221,6 +223,17 @@ class CitizenController extends Controller
                 $total_tax += $dmd->total_tax;
                 $paid_status = 'Unpaid';
             }
+
+            if (isset($consumer->id))
+                $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt')
+                    ->where('swm_transactions.consumer_id', $consumer->id);
+
+            // if (isset($request->apartmentId))
+            //     $tranDtls = $this->mTransaction->select('id','transaction_no','transaction_date','payment_mode','total_payable_amt')
+            // ->where('swm_transactions.apartment_id', $request->apartmentId);
+
+            $tranDtls = $tranDtls->orderBy('swm_transactions.id', 'desc')->get();
+
             $con['id'] = $consumer->id;
             $con['ward_no'] = $consumer->ward_no;
             $con['name'] = $consumer->name;
@@ -237,6 +250,7 @@ class CitizenController extends Controller
             $con['demand_upto'] = $demand_upto;
             $con['paid_status'] = $paid_status;
             $con['demand_details'] = $demand;
+            $con['transaction_details'] = $tranDtls;
             return $this->responseMsgs(true, "Consumer Details", $con);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
