@@ -164,10 +164,10 @@ class CitizenController extends Controller
             $con['address'] = $consumer->address;
             $con['consumer_type'] = $consumer->consumer_type;
             $con['mobile_no'] = $consumer->mobile_no;
-            // $con['activeDemandDetails'] = $demand;
             $con['total_demand'] = $total_tax;
             $con['demand_upto'] = $demand_upto;
             $con['paid_status'] = $paid_status;
+            // $con['demand_details'] = $demand;
             $conArr[] = $con;
         }
         return $conArr;
@@ -231,17 +231,49 @@ class CitizenController extends Controller
             $con['consumer_category'] = $consumer->consumer_category;
             $con['consumer_type'] = $consumer->consumer_type;
             $con['mobile_no'] = $consumer->mobile_no;
-            // $con['activeDemandDetails'] = $demand;
             $con['monthly_demand'] = $monthlyDemand;
             $con['total_demand'] = $total_tax;
             $con['demand_from'] = $demand_from;
             $con['demand_upto'] = $demand_upto;
             $con['paid_status'] = $paid_status;
-            // $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
-            // $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
-            // $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
-            // $con['editApplicable'] = ($trans == 0) ? true : false;
+            $con['demand_details'] = $demand;
             return $this->responseMsgs(true, "Consumer Details", $con);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Get Payment Upto
+     */
+    public function paymentUpto(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["consumerId" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $demand = $this->mDemand->select('payment_to');
+            if (isset($request->consumerId))
+                $demand = $demand->where('consumer_id', $request->consumerId);
+            if (isset($request->apartmentId))
+                $demand = $demand->join('swm_consumers as a', 'swm_demands.consumer_id', '=', 'a.id')
+                    ->where('a.apartment_id', $request->apartmentId);
+            $demand = $demand->where('paid_status', 0)
+                ->where('swm_demands.is_deactivate', 0)
+                // ->where('swm_demands.ulb_id', $ulbId)
+                ->groupBy('payment_to')
+                ->orderBy('payment_to', 'asc')
+                ->get();
+
+            return $this->responseMsgs(true, "Payment Upto Data", $demand);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }

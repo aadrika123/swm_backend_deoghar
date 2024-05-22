@@ -172,6 +172,7 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('search-residential-consumer', 'residentialConsumers');
     Route::post('search-commercial-consumer', 'commercialConsumers');
     Route::post('get-consumer-dtl', 'consumerDtl');
+    Route::post('payment-upto', 'paymentUpto');
     Route::post('apartment-list', 'apartmentList');
 });
 
