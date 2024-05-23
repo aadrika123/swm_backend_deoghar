@@ -391,7 +391,7 @@ class CitizenController extends Controller
             $ulbId = 21;
 
             $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
-                ->where('swm_apartments.is_deactivate', 0)
+                // ->where('swm_apartments.is_deactivate', 0)
                 ->first();
 
             $consumerDtls = $this->mConsumer->where('apartment_id', $request->id)->get();
@@ -412,22 +412,23 @@ class CitizenController extends Controller
                 $monthlyDemand = 0;
                 $demand_from = '';
                 $i = 0;
-
-                foreach ($demand as $dmd) {
-                    if ($i == 0)
-                        $demand_from = date('d-m-Y', strtotime($dmd->payment_from));
-                    $i++;
-                    $total_tax += $dmd->total_tax;
-                    $demand_upto = date('d-m-Y', strtotime($dmd->payment_to));
-                    $paid_status = 'Unpaid';
-                    $monthlyDemand = $dmd->total_tax;
+                if (collect($demand)->isNotEmpty()) {
+                    foreach ($demand as $dmd) {
+                        if ($i == 0)
+                            $demand_from = date('d-m-Y', strtotime($dmd->payment_from));
+                        $i++;
+                        $total_tax += $dmd->total_tax;
+                        $demand_upto = date('d-m-Y', strtotime($dmd->payment_to));
+                        $paid_status = 'Unpaid';
+                        $monthlyDemand = $dmd->total_tax;
+                    }
                 }
 
                 $apt_tot_tax += $total_tax;
                 $aptmonthlyDemand += $monthlyDemand;
 
                 $con['consumer_id'] = $consumer->id;
-                $con['consumer_name'] = $consumer->consumer_name;
+                $con['consumer_name'] = $consumer->name;
                 $con['consumer_no'] = $consumer->consumer_no;
                 $con['holding_no'] = $consumer->holding_no;
                 $con['mobile_no'] = $consumer->mobile_no;
