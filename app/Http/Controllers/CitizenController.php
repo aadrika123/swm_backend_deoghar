@@ -14,6 +14,7 @@ use App\Traits\Api\Helpers;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 use function App\Traits\Api\responseMsgs;
@@ -336,6 +337,122 @@ class CitizenController extends Controller
             $apartmentList = $this->mApartment->where('ward_no', $request->wardNo)->get();
 
             return $this->responseMsgs(true, "List of Apartments", $apartmentList);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Apartment Detail
+     */
+    public function apartmentDtl(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["id" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $ulbId = 21;
+            $perPage = $request->perPage ?? 10;
+            $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
+                ->where('swm_apartments.is_deactivate', 0)
+                ->paginate($perPage);
+
+            return $this->responseMsgs(true, "Apartment Details", $apartmentDtls);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Apartment Detail by id
+     */
+    public function apartmentDtlById(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["id" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $ulbId = 21;
+
+            $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
+                ->where('swm_apartments.is_deactivate', 0)
+                ->first();
+
+            $consumerDtls = $this->mConsumer->where('apartment_id', $request->id)->get();
+
+            $apt_tot_tax = 0;
+            $aptmonthlyDemand = 0;
+            foreach ($consumerDtls as $consumer) {
+
+                $demand = $this->mDemand->where('consumer_id', $consumer->id)
+                    ->where('paid_status', 0)
+                    ->where('is_deactivate', 0)
+                    ->where('ulb_id', $ulbId)
+                    ->get();
+
+                $total_tax = 0.00;
+                $demand_upto = '';
+                $paid_status = 'Paid';
+                $monthlyDemand = 0;
+                $demand_from = '';
+                $i = 0;
+
+                foreach ($demand as $dmd) {
+                    if ($i == 0)
+                        $demand_from = date('d-m-Y', strtotime($dmd->payment_from));
+                    $i++;
+                    $total_tax += $dmd->total_tax;
+                    $demand_upto = date('d-m-Y', strtotime($dmd->payment_to));
+                    $paid_status = 'Unpaid';
+                    $monthlyDemand = $dmd->total_tax;
+                }
+
+                $apt_tot_tax += $total_tax;
+                $aptmonthlyDemand += $monthlyDemand;
+
+                $con['consumer_id'] = $consumer->id;
+                $con['consumer_name'] = $consumer->consumer_name;
+                $con['consumer_no'] = $consumer->consumer_no;
+                $con['holding_no'] = $consumer->holding_no;
+                $con['mobile_no'] = $consumer->mobile_no;
+                $con['pincode'] = $consumer->pincode;
+                $con['demand_details'] = $demand;
+                $con['monthly_demand'] = $monthlyDemand;
+                $con['total_demand'] = $total_tax;
+                $con['demand_from'] = $demand_from;
+                $con['demand_upto'] = $demand_upto;
+                $con['paid_status'] = $paid_status;
+                // $con['applyBy'] = ($apartment->user_id) ? $this->GetUserDetails($apartment->user_id)->name : '';
+                // $con['applyDate'] = ($apartment->entry_date) ? date("d-m-Y", strtotime($apartment->entry_date)) : '';
+                // $con['editApplicable'] = ($trans == 0) ? true : false;
+
+                $consumerArr[] = $con;
+            }
+
+            $data['id'] = $apartmentDtls->id;
+            $data['ward_no'] = $apartmentDtls->ward_no;
+            $data['apartment_name'] = $apartmentDtls->apt_name;
+            $data['apartment_code'] = $apartmentDtls->apt_code;
+            $data['address'] = $apartmentDtls->apt_address;
+            $data['consumerDtls'] = $consumerArr;
+
+            return $this->responseMsgs(true, "Apartment Details By Id", $data);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }

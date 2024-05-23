@@ -174,11 +174,7 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('get-consumer-dtl', 'consumerDtl');
     Route::post('payment-upto', 'paymentUpto');
     Route::post('apartment-list', 'apartmentList');
-    // Route::post('get-apartment', 'apartmentList');   ? Not Working Ri8 Now
+    Route::post('get-apartment', 'apartmentDtl');
+    Route::post('get-apartment-by-id', 'apartmentDtlById');
     Route::post('calculate-amount', 'calculateAmount');
 });
-
-
-// Route::controller(ApartmentController::class)->group(function () {
-//     Route::get('getApartmentList', 'GetApartmentList');
-// });
