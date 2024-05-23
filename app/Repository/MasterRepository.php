@@ -64,11 +64,12 @@ class MasterRepository implements iMasterRepository
         $ulbId = $this->GetUlbId($userId);
         try {
             $responseData = array();
-            $wardPermission = UserWardPermission::select(DB::raw("GROUP_CONCAT(ward_id) as wards"))
+            $wardPermission = UserWardPermission::select("ward_id")
                                                 ->where('user_id', $userId)
                                                 ->where('ulb_id', $ulbId)
-                                                ->groupBy('user_id')
-                                                ->first();
+                                                ->get();
+
+            $wards = collect($wardPermission)->pluck('ward_id');
 
             if (isset($request->wardNo)) {
                 $aptlist = $this->Apartment
@@ -80,7 +81,7 @@ class MasterRepository implements iMasterRepository
                 $aptlist = $this->Apartment->select('swm_apartments.*')
                             ->join('swm_wards', 'swm_apartments.ward_no', '=', 'swm_wards.name')
                             ->where('swm_apartments.ulb_id', $ulbId)
-                            ->whereIn('ward_no', explode(',', $wardPermission->wards))
+                            ->whereIn('ward_no', $wards)
                             ->orderBy('swm_apartments.id', 'DESC')->get();
 
             $responseData['apartmentList'] = $aptlist;

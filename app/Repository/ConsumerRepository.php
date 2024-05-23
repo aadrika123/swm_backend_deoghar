@@ -2607,7 +2607,10 @@ class ConsumerRepository implements iConsumerRepository
             // $reminders = $reminders->where('c.ward_no', $wardNo)
             //     ->orWhere('a.ward_no', $wardNo); //<-----------here
             $reminders = $reminders->orderBy('swm_consumer_reminders.id', 'desc')
-                ->groupBy(['name', 'apt_name', 'apt_code', 'consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address', 'reference_type', 'swm_consumer_reminders.id'])
+                ->groupBy([
+                    'name','c.consumer_type_id','c.consumer_category_id',
+                    'apt_name', 'apt_code', 'consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address', 'reference_type', 'swm_consumer_reminders.id'
+                ])
                 ->get();
 
             //print_r($reminders);

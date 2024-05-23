@@ -63,25 +63,25 @@ return [
             ]) : [],
         ],
 
-        'db_swm' => [
-            'driver' => env('DB_CONNECTION_RANCHI'),
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_RANCHI', '127.0.0.1'),
-            'port' => env('DB_PORT_RANCHI', '3306'),
-            'database' => env('DB_DATABASE_RANCHI', 'forge'),
-            'username' => env('DB_USERNAME_RANCHI', 'forge'),
-            'password' => env('DB_PASSWORD_RANCHI', 'forge'),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
+        // 'db_swm' => [
+        //     'driver' => env('DB_CONNECTION_RANCHI'),
+        //     'url' => env('DATABASE_URL'),
+        //     'host' => env('DB_HOST_RANCHI', '127.0.0.1'),
+        //     'port' => env('DB_PORT_RANCHI', '3306'),
+        //     'database' => env('DB_DATABASE_RANCHI', 'forge'),
+        //     'username' => env('DB_USERNAME_RANCHI', 'forge'),
+        //     'password' => env('DB_PASSWORD_RANCHI', 'forge'),
+        //     'unix_socket' => env('DB_SOCKET', ''),
+        //     'charset' => 'utf8mb4',
+        //     'collation' => 'utf8mb4_unicode_ci',
+        //     'prefix' => '',
+        //     'prefix_indexes' => true,
+        //     'strict' => true,
+        //     'engine' => null,
+        //     'options' => extension_loaded('pdo_mysql') ? array_filter([
+        //         PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+        //     ]) : [],
+        // ],
 
 
         'pgsql' => [
@@ -100,23 +100,23 @@ return [
         ],
 
         #_For SWM
-        // 'db_swm' => [
-        //     'driver' => 'pgsql',
-        //     'url' => env('DATABASE_URL'),
-        //     'host' => env('DB_HOST_RANCHI', '127.0.0.1'),
-        //     'port' => env('DB_PORT_RANCHI', '5432'),
-        //     'database' => env('DB_DATABASE_RANCHI', 'forge'),
-        //     'username' => env('DB_USERNAME_RANCHI', 'forge'),
-        //     'password' => env('DB_PASSWORD_RANCHI', ''),
-        //     'charset' => 'utf8',
-        //     'prefix' => '',
-        //     'prefix_indexes' => true,
-        //     'schema' => 'public',
-        //     'sslmode' => 'prefer',
-        //     'options'   => [
-        //         PDO::ATTR_PERSISTENT => true,
-        //     ],
-        // ],
+        'db_swm' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_RANCHI', '127.0.0.1'),
+            'port' => env('DB_PORT_RANCHI', '5432'),
+            'database' => env('DB_DATABASE_RANCHI', 'forge'),
+            'username' => env('DB_USERNAME_RANCHI', 'forge'),
+            'password' => env('DB_PASSWORD_RANCHI', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
