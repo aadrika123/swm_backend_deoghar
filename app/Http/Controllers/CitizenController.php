@@ -451,6 +451,9 @@ class CitizenController extends Controller
             $data['apartment_name'] = $apartmentDtls->apt_name;
             $data['apartment_code'] = $apartmentDtls->apt_code;
             $data['address'] = $apartmentDtls->apt_address;
+            $data['building_type'] = "Apartment";
+            $data['apartment_monthly_demand'] = collect($consumerArr)->sum('monthly_demand');
+            $data['apartment_total_demand'] = collect($consumerArr)->sum('total_demand');
             $data['consumerDtls'] = $consumerArr;
 
             return $this->responseMsgs(true, "Apartment Details By Id", $data);
