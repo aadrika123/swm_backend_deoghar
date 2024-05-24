@@ -2007,7 +2007,7 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->wardNo))
                 $whereparam .= " and (a.ward_no='" . $request->wardNo . "' or c.ward_no='" . $request->wardNo . "') ";
 
-            $sql = "SELECT t.consumer_id,t.id as transId, t.apartment_id,reconcile_id,reconcilition_date,transaction_no,transaction_date,payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id 
+            $sql = "SELECT t.consumer_id,t.id as trans_id, t.apartment_id,reconcile_id,reconcilition_date,transaction_no,transaction_date,payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id 
             FROM  swm_transactions t
             LEFT JOIN swm_bank_reconcile bc on bc.transaction_id=t.id
             LEFT JOIN swm_bank_reconcile_details bd on bd.reconcile_id=bc.id
@@ -2019,7 +2019,7 @@ class ConsumerRepository implements iConsumerRepository
             $transactions = DB::connection($this->dbConn)->select($sql);
 
             foreach ($transactions as $transaction) {
-                $collection = $this->Collections->where('transaction_id', $transaction->transId)->where('ulb_id', $ulbId);
+                $collection = $this->Collections->where('transaction_id', $transaction->trans_id)->where('ulb_id', $ulbId);
                 $firstrecord = $collection->orderBy('id', 'asc')->first();
                 $lastrecord = $collection->latest('id')->first();
 
@@ -2030,7 +2030,7 @@ class ConsumerRepository implements iConsumerRepository
                     $refdata = $this->Consumer->where('apartment_id', $transaction->apartment_id)->first();
 
                 $val['wardNo'] = $refdata->ward_no;
-                $val['tranId'] = $transaction->transId;
+                $val['tranId'] = $transaction->trans_id;
                 $val['tranNo'] = $transaction->transaction_no;
                 $val['tranDate'] = Carbon::create($transaction->transaction_date)->format('d-m-Y');
                 $val['paymentMode'] = $transaction->payment_mode;
