@@ -262,7 +262,7 @@ class ConsumerRepository implements iConsumerRepository
             $conArr = array();
             if (isset($request->id)) {
 
-                $sql = "SELECT a.*, c.id as consumer_id,  c.pincode as pinCode, c.name as consumer_name, c.mobile_no as contactno, c.holding_no, c.consumer_no,c.user_id,c.entry_date FROM swm_apartments a 
+                $sql = "SELECT a.*, c.id as consumer_id,  c.pincode as pincode, c.name as consumer_name, c.mobile_no as contactno, c.holding_no, c.consumer_no,c.user_id,c.entry_date FROM swm_apartments a 
                 LEFT JOIN (SELECT * FROM swm_consumers WHERE is_deactivate=0) c on c.apartment_id=a.id
                 WHERE a.id=" . $request->id . " and a.ulb_id=" . $ulbId;
                 $apartments = DB::connection($this->dbConn)->select($sql);
@@ -307,7 +307,7 @@ class ConsumerRepository implements iConsumerRepository
                     $con['holdingNo'] = $apartment->holding_no;
                     $con['address'] = $apartment->apt_address;
                     $con['mobileNo'] = $apartment->contactno;
-                    $con['pinCode'] = $apartment->pinCode;
+                    $con['pinCode'] = $apartment->pincode;
                     $con['activeDemandDetails'] = $demand;
                     $con['monthlyDemand'] = $monthlyDemand;
                     $con['totaldemand'] = $total_tax;
@@ -717,22 +717,41 @@ class ConsumerRepository implements iConsumerRepository
 
             $response = array();
             if (isset($request->transactionNo)) {
-                $sql = "SELECT t.*,c.name as consumer_name,consumer_no,a.apt_code,a.apt_name,u.name as transaction_by,
-                c.ward_no, a.ward_no as apt_ward, c.holding_no, c.address, a.apt_address,c.apartment_id,u.contactno,a.id as apt_id,demandFrom,demandUpto
-                FROM swm_transactions t
-                LEFT JOIN swm_consumers c on t.consumer_id=c.id
-                LEFT JOIN swm_apartments a on t.apartment_id=a.id
-                LEFT JOIN swm_transaction_deactivates td on td.transaction_id=t.id
-                LEFT JOIN (select min(payment_from) as demandFrom, max(payment_to) as demandUpto,transaction_id FROM swm_collections group by transaction_id) cl on cl.transaction_id=t.id
-                JOIN db_master.view_user_mstr u on t.user_id=u.id
-                WHERE t.transaction_no ='" . $request->transactionNo . "' and t.ulb_id=" . $ulbId . " and td.id is null";
+                // $sql = "SELECT t.*,c.name as consumer_name,consumer_no,a.apt_code,a.apt_name,u.name as transaction_by,u.contactno,
+                //                 c.ward_no, a.ward_no as apt_ward, c.holding_no, c.address, a.apt_address,c.apartment_id,a.id as apt_id,demand_from,demand_upto
+                //         FROM swm_transactions t
+                //             LEFT JOIN swm_consumers c on t.consumer_id=c.id
+                //             LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                //             LEFT JOIN swm_transaction_deactivates td on td.transaction_id=t.id
+                //             LEFT JOIN (select min(payment_from) as demand_from, max(payment_to) as demand_upto,transaction_id FROM swm_collections group by transaction_id) cl on cl.transaction_id=t.id
+                //             JOIN db_master.view_user_mstr u on t.user_id=u.id
+                //                 WHERE t.transaction_no ='" . $request->transactionNo . "' and t.ulb_id=" . $ulbId . " and td.id is null";
+
+                # New Query
+                $sql = "SELECT t.*,c.name as consumer_name,consumer_no,a.apt_code,a.apt_name,
+                                c.ward_no, a.ward_no as apt_ward, c.holding_no, c.address, a.apt_address,c.apartment_id,a.id as apt_id,demand_from,demand_upto
+                        FROM swm_transactions t
+                            LEFT JOIN swm_consumers c on t.consumer_id=c.id
+                            LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                            LEFT JOIN swm_transaction_deactivates td on td.transaction_id=t.id
+                            LEFT JOIN (select min(payment_from) as demand_from, max(payment_to) as demand_upto,transaction_id FROM swm_collections group by transaction_id) cl on cl.transaction_id=t.id
+                            
+                                WHERE t.transaction_no ='" . $request->transactionNo . "' and t.ulb_id=" . $ulbId . " and td.id is null";
 
 
                 $tran = DB::connection($this->dbConn)->select($sql);
 
                 if ($tran) {
-
                     $tran = $tran[0];
+
+                    # New Query
+                    $userDtl = TblUserMstr::select('name','contactno')
+                        ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
+                        ->where('tbl_user_mstr.id', $tran->user_id)
+                        ->first();
+                    $tran->transaction_by = $userDtl->name;
+                    $tran->contactno = $userDtl->name;
+
                     if ($tran->apt_id) {
                         $dmddtl = $this->GetMonthlyFee($this->dbConn, $tran->apt_id, 'Apartment', $ulbId);
                     } else {
@@ -758,8 +777,8 @@ class ConsumerRepository implements iConsumerRepository
                     $response['monthlyFee'] = $dmddtl['monthlyFee'];
                     $response['paymentTill'] = $dmddtl['paymentTill'];
                     $response['demandAmt'] = $tran->total_demand_amt;
-                    $response['demandFrom'] = $tran->demandFrom;
-                    $response['demandUpto'] = $tran->demandUpto;
+                    $response['demandFrom'] = $tran->demand_from;
+                    $response['demandUpto'] = $tran->demand_upto;
                 }
 
                 return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
