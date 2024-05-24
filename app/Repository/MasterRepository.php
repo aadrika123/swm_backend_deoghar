@@ -79,10 +79,12 @@ class MasterRepository implements iMasterRepository
                             ->get();
             } else
                 $aptlist = $this->Apartment->select('swm_apartments.*')
-                            ->join('swm_wards', 'swm_apartments.ward_no', '=', 'swm_wards.name')
+                            ->join('swm_wards', 'swm_apartments.ward_no', 'swm_wards.name')
                             ->where('swm_apartments.ulb_id', $ulbId)
+                            ->where('swm_wards.ulb_id', $ulbId)
                             ->whereIn('ward_no', $wards)
-                            ->orderBy('swm_apartments.id', 'DESC')->get();
+                            ->orderByDesc('swm_apartments.id')
+                            ->get();
 
             $responseData['apartmentList'] = $aptlist;
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
