@@ -427,6 +427,7 @@ class CitizenController extends Controller
                 $apt_tot_tax += $total_tax;
                 $aptmonthlyDemand += $monthlyDemand;
 
+                $con['id'] = $consumer->id;
                 $con['consumer_id'] = $consumer->id;
                 $con['consumer_name'] = $consumer->name;
                 $con['consumer_no'] = $consumer->consumer_no;

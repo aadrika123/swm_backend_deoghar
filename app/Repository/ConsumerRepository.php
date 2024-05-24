@@ -24,6 +24,7 @@ use App\Models\DemandLog;
 use App\Models\DemandAdjustment;
 use App\Models\TcComplaint;
 use App\Models\Routes;
+use App\Models\TblUserMstr;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1646,22 +1647,46 @@ class ConsumerRepository implements iConsumerRepository
                 if (isset($request->tcId))
                     $checkTc = " and t.user_id=" . $request->tcId;
 
-                $sql = "SELECT t.user_id, name, user_type, contactno,transaction_date,
-                sum(CASE when payment_mode = 'Cash' then total_payable_amt else 0 end) as cash_amount,
-                sum(CASE when payment_mode = 'Cheque' then total_payable_amt else 0 end) as cheque_amount,
-                sum(CASE when payment_mode = 'Dd' then total_payable_amt else 0 end) as dd_amount
-                FROM swm_transactions as t
-                left JOIN swm_transaction_verifications tv on tv.transaction_id=t.id 
-                JOIN db_master.view_user_mstr as u on t.user_id=u.id 
-                WHERE (transaction_date between '$fromDate' and '$toDate') and t.ulb_id=" . $ulbId . " and paid_status!=0 " . $checkTc . " group by t.user_id, name, user_type, contactno,transaction_date";
+                // $sql = "SELECT t.user_id, name, user_type, contactno,transaction_date,
+                // sum(CASE when payment_mode = 'Cash' then total_payable_amt else 0 end) as cash_amount,
+                // sum(CASE when payment_mode = 'Cheque' then total_payable_amt else 0 end) as cheque_amount,
+                // sum(CASE when payment_mode = 'Dd' then total_payable_amt else 0 end) as dd_amount
+                // FROM swm_transactions as t
+                // left JOIN swm_transaction_verifications tv on tv.transaction_id=t.id 
+                // JOIN db_master.view_user_mstr as u on t.user_id=u.id 
+                // WHERE (transaction_date between '$fromDate' and '$toDate') and t.ulb_id=" . $ulbId . " and paid_status!=0 " . $checkTc . " group by t.user_id, name, user_type, contactno,transaction_date";
+
+                # New Query
+                $sql = "SELECT t.user_id, 
+                t.transaction_date,
+                                    SUM(CASE WHEN payment_mode = 'Cash' THEN total_payable_amt ELSE 0 END) AS cash_amount,
+                                    SUM(CASE WHEN payment_mode = 'Cheque' THEN total_payable_amt ELSE 0 END) AS cheque_amount,
+                                    SUM(CASE WHEN payment_mode = 'Dd' THEN total_payable_amt ELSE 0 END) AS dd_amount
+                            FROM swm_transactions AS t
+                            LEFT JOIN swm_transaction_verifications tv ON tv.transaction_id = t.id 
+                            WHERE (t.transaction_date BETWEEN '$fromDate' AND '$toDate') 
+                            AND t.ulb_id = $ulbId
+                            AND t.paid_status != 0  
+                            " . $checkTc . "
+                            GROUP BY 
+                            t.user_id, 
+                            t.transaction_date";
 
                 $collections = DB::connection($this->dbConn)->select($sql);
                 foreach ($collections as $collection) {
+
+                    # New Query
+                    $userDtls = DB::table('tbl_user_mstr')
+                        ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
+                        ->join('tbl_user_type', 'tbl_user_type.id', 'tbl_user_mstr.user_type_id')
+                        ->where('tbl_user_mstr.id', $collection->user_id)
+                        ->first();
+
                     $total_amt = $collection->cash_amount + $collection->cheque_amount + $collection->dd_amount;
                     $val['tcId'] = $collection->user_id;
-                    $val['tcName'] = $collection->name;
-                    $val['designation'] = $collection->user_type;
-                    $val['mobileNo'] = $collection->contactno;
+                    $val['tcName'] = $userDtls->name;
+                    $val['designation'] = $userDtls->user_type;
+                    $val['mobileNo'] = $userDtls->contactno;
                     $val['totalAmount'] = $total_amt;
                     $val['cashAmount'] = $collection->cash_amount;
                     $val['chequeAmount'] = $collection->cheque_amount;
@@ -1688,13 +1713,23 @@ class ConsumerRepository implements iConsumerRepository
                 $tcId = $request->tcId;
                 $date = date('Y-m-d', strtotime($request->date));
 
-                $sql = "SELECT c.*,a.apt_name,a.apt_code,a.ward_no as award,t.id as transId,t.transaction_no,t.payment_mode,total_payable_amt,tv.verify_status,tv.verify_by,verify_date,u.name as verify_by
-                FROM swm_transactions as t
-                LEFT JOIN swm_consumers c on t.consumer_id=c.id 
-                LEFT JOIN swm_apartments a on t.apartment_id=a.id
-                LEFT JOIN swm_transaction_verifications tv on tv.transaction_id=t.id 
-                LEFT JOIN db_master.view_user_mstr as u on tv.verify_by=u.id
-                WHERE t.user_id=" . $tcId . " and transaction_date='$date' and t.ulb_id=" . $ulbId . " order by t.id desc";
+                // $sql = "SELECT c.*,a.apt_name,a.apt_code,a.ward_no as award,t.id as trans_id,t.transaction_no,t.payment_mode,total_payable_amt,tv.verify_status,tv.verify_by,verify_date,u.name as verify_by
+                // FROM swm_transactions as t
+                // LEFT JOIN swm_consumers c on t.consumer_id=c.id 
+                // LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                // LEFT JOIN swm_transaction_verifications tv on tv.transaction_id=t.id 
+                // LEFT JOIN db_master.view_user_mstr as u on tv.verify_by=u.id
+                // WHERE t.user_id=" . $tcId . " and transaction_date='$date' and t.ulb_id=" . $ulbId . " order by t.id desc";
+
+                # New Query
+                $sql = "SELECT c.*,a.apt_name,a.apt_code,a.ward_no as award,t.id as trans_id,t.transaction_no,t.payment_mode,total_payable_amt,tv.verify_status,
+                               tv.verify_by,verify_date
+                            FROM swm_transactions as t
+                        LEFT JOIN swm_consumers c on t.consumer_id=c.id 
+                        LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                        LEFT JOIN swm_transaction_verifications tv on tv.transaction_id=t.id 
+                        
+                            WHERE t.user_id=" . $tcId . " and transaction_date='$date' and t.ulb_id=" . $ulbId . " order by t.id desc";
 
                 $collections = DB::connection($this->dbConn)->select($sql);
 
@@ -1703,7 +1738,14 @@ class ConsumerRepository implements iConsumerRepository
                 $totaldd = 0;
                 $transaction = array();
                 foreach ($collections as $collection) {
-                    $coll = $this->Collections->where('transaction_id', $collection->transId);
+
+                    $userDtl = TblUserMstr::select('name')
+                        ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
+                        ->where('tbl_user_mstr.id', $collection->verify_by)
+                        ->first();
+                    $collection->verify_by = $userDtl->name ?? "";
+
+                    $coll = $this->Collections->where('transaction_id', $collection->trans_id);
                     $firstrecord = $coll->orderBy('id', 'asc')->first();
                     $lastrecord = $coll->latest('id')->first();
 
@@ -1716,7 +1758,7 @@ class ConsumerRepository implements iConsumerRepository
                     if ($collection->payment_mode == 'DD')
                         $totalCheque += $collection->totaldd;
 
-                    $val['transactionId'] = $collection->transId;
+                    $val['transactionId'] = $collection->trans_id;
                     $val['transactionNo'] = $collection->transaction_no;
                     $val['paymentMode'] = $collection->payment_mode;
                     $val['wardNo'] = ($collection->ward_no) ? $collection->ward_no : $collection->award;
@@ -1746,7 +1788,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
