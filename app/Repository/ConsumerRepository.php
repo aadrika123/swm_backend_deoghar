@@ -2608,7 +2608,7 @@ class ConsumerRepository implements iConsumerRepository
             //     ->orWhere('a.ward_no', $wardNo); //<-----------here
             $reminders = $reminders->orderBy('swm_consumer_reminders.id', 'desc')
                 ->groupBy([
-                    'name','c.consumer_type_id','c.consumer_category_id',
+                    'name', 'c.consumer_type_id', 'c.consumer_category_id',
                     'apt_name', 'apt_code', 'consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address', 'reference_type', 'swm_consumer_reminders.id'
                 ])
                 ->get();
@@ -3002,11 +3002,14 @@ class ConsumerRepository implements iConsumerRepository
                     $Report = $Report[0];
 
                 // Demand Details
-                $sqldemand = "SELECT YEAR(payment_to) as year, MONTH(payment_to) as month,sum(total_tax) as value  FROM swm_demands 
-                LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id " . $whereParam . "
-                WHERE (payment_to between '" . $From . "' and '" . $Upto . "') 
-                and swm_demands.is_deactivate=0 and swm_demands.ulb_id=" . $ulbId . "
-                GROUP BY YEAR(payment_to), MONTH(payment_to)";
+                $sqldemand = "SELECT EXTRACT(YEAR FROM payment_to) AS year, 
+                                     EXTRACT(MONTH FROM payment_to) AS month,
+                                     sum(total_tax) as value  
+                              FROM swm_demands 
+                              LEFT JOIN swm_consumers on swm_demands.consumer_id=swm_consumers.id " . $whereParam . "
+                                WHERE (payment_to between '" . $From . "' and '" . $Upto . "') 
+                                and swm_demands.is_deactivate=0 and swm_demands.ulb_id=" . $ulbId . "
+                                GROUP BY EXTRACT(YEAR FROM payment_to), EXTRACT(MONTH FROM payment_to)";
 
                 $totalDmds = DB::connection($this->dbConn)->select($sqldemand);
 
@@ -3016,24 +3019,24 @@ class ConsumerRepository implements iConsumerRepository
                 }
 
                 // Arrear Details
-                $sqlarrear = "SELECT YEAR(transaction_date) as year, MONTH(transaction_date) as month,sum(total_payable_amt) as value
+                $sqlarrear = "SELECT EXTRACT(YEAR FROM transaction_date) as year, EXTRACT(MONTH FROM transaction_date) as month,sum(total_payable_amt) as value
                 FROM swm_transactions
                 LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
                 LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
                 WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and transaction_date < '" . $From . "'
-                GROUP BY YEAR(transaction_date), MONTH(transaction_date)";
+                GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)";
 
                 $totalarrears = DB::connection($this->dbConn)->select($sqlarrear);
 
                 // Collection Details
-                $sqlcollection = "SELECT YEAR(transaction_date) as year, MONTH(transaction_date) as month,sum(total_payable_amt) as value,
+                $sqlcollection = "SELECT EXTRACT(YEAR FROM transaction_date) as year, EXTRACT(MONTH FROM transaction_date) as month,sum(total_payable_amt) as value,
                 sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
                 sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
                 FROM swm_transactions
                 LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
                 LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
                 WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and (transaction_date between '" . $From . "' and '" . $Upto . "')
-                GROUP BY YEAR(transaction_date), MONTH(transaction_date)";
+                GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)";
 
                 $totalcolls = DB::connection($this->dbConn)->select($sqlcollection);
 
