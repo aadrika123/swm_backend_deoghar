@@ -745,7 +745,7 @@ class ConsumerRepository implements iConsumerRepository
                     $tran = $tran[0];
 
                     # New Query
-                    $userDtl = TblUserMstr::select('name','contactno')
+                    $userDtl = TblUserMstr::select('name', 'contactno')
                         ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
                         ->where('tbl_user_mstr.id', $tran->user_id)
                         ->first();
@@ -1285,18 +1285,38 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $response = array();
             if (isset($request->userId)) {
-                $sql = "SELECT t.user_id, name, user_type, contactno, sum(total_payable_amt) as total_amt,
-                sum(CASE when payment_mode = 'Cash' then total_payable_amt else 0 end) as cash_amount,
-                sum(CASE when payment_mode = 'Cheque' then total_payable_amt else 0 end) as cheque_amount,
-                sum(CASE when payment_mode = 'Paytm' then total_payable_amt else 0 end) as paytm_amount
-                FROM swm_transactions as t
-                JOIN db_master.view_user_mstr as u on t.user_id=u.id
-                WHERE t.user_id=" . $request->userId . " and paid_status in(1,2) and t.ulb_id=" . $ulbId . " group by t.user_id";
+                // $sql = "SELECT t.user_id, name, user_type, contactno, sum(total_payable_amt) as total_amt,
+                // sum(CASE when payment_mode = 'Cash' then total_payable_amt else 0 end) as cash_amount,
+                // sum(CASE when payment_mode = 'Cheque' then total_payable_amt else 0 end) as cheque_amount,
+                // sum(CASE when payment_mode = 'Paytm' then total_payable_amt else 0 end) as paytm_amount
+                // FROM swm_transactions as t
+                // JOIN db_master.view_user_mstr as u on t.user_id=u.id
+                // WHERE t.user_id=" . $request->userId . " and paid_status in(1,2) and t.ulb_id=" . $ulbId . " group by t.user_id";
+
+                # New Query
+                $sql = "SELECT t.user_id,
+                            sum(total_payable_amt) as total_amt,
+                            sum(CASE when payment_mode = 'Cash' then total_payable_amt else 0 end) as cash_amount,
+                            sum(CASE when payment_mode = 'Cheque' then total_payable_amt else 0 end) as cheque_amount,
+                            sum(CASE when payment_mode = 'Paytm' then total_payable_amt else 0 end) as paytm_amount
+                        FROM swm_transactions as t
+                            
+                            WHERE t.user_id=" . $request->userId . " and paid_status in(1,2) and t.ulb_id=" . $ulbId . " group by t.user_id";
 
                 $collection = DB::connection($this->dbConn)->select($sql);
 
                 if ($collection) {
                     $collection = $collection[0];
+
+                    # New Query
+                    $userDtl = TblUserMstr::select('name', 'contactno', 'user_type')
+                        ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
+                        ->join('tbl_user_type', 'tbl_user_type.id', 'tbl_user_mstr.user_type_id')
+                        ->where('tbl_user_mstr.id', $collection->user_id)
+                        ->first();
+                    $collection->name = $userDtl->name;
+                    $collection->contactno = $userDtl->contactno;
+                    $collection->user_type = $userDtl->user_type;
 
                     $response['tcName'] = $collection->name;
                     $response['designation'] = $collection->user_type;
