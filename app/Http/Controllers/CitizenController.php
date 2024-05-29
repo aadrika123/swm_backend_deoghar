@@ -299,11 +299,11 @@ class CitizenController extends Controller
             ], 200);
         try {
             $demand = $this->mDemand->select('payment_to');
-            if (isset($request->consumerId))
+            if (isset($request->consumerId) && $request->consumerType != 'apartment')
                 $demand = $demand->where('consumer_id', $request->consumerId);
-            if (isset($request->apartmentId))
+            if (isset($request->consumerId) && $request->consumerType == 'apartment')
                 $demand = $demand->join('swm_consumers as a', 'swm_demands.consumer_id', '=', 'a.id')
-                    ->where('a.apartment_id', $request->apartmentId);
+                    ->where('a.apartment_id', $request->consumerId);
             $demand = $demand->where('paid_status', 0)
                 ->where('swm_demands.is_deactivate', 0)
                 // ->where('swm_demands.ulb_id', $ulbId)
@@ -471,8 +471,9 @@ class CitizenController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                "payUpto"    => "required|date",
-                "consumerId" => "required",
+                "payUpto"      => "required|date",
+                "consumerId"   => "required",
+                "consumerType" => "required",
             ]
         );
 
@@ -484,7 +485,11 @@ class CitizenController extends Controller
             ], 200);
         try {
             $response = array();
-            if ((isset($request->consumerId) || isset($request->apartmentId)) && isset($request->payUpto)) {
+            $consumerId   = $request->consumerId;
+            $consumerType = $request->consumerType;
+            $payUpto      = $request->payUpto;
+
+            if (isset($consumerId) && isset($payUpto) && $consumerType != 'apartment') {
 
                 $demand = $this->mDemand;
 
@@ -493,17 +498,38 @@ class CitizenController extends Controller
                         ->where('c.apartment_id', $request->apartmentId)
                         ->where('c.is_deactivate', 0);
                 } else {
-                    $demand = $demand->where('consumer_id', $request->consumerId);
+                    $demand = $demand->where('consumer_id', $consumerId);
                 }
                 $demand = $demand->where('paid_status', 0)
                     // ->where('swm_demands.ulb_id', $ulbId)
                     ->where('swm_demands.is_deactivate', 0)
-                    ->whereDate('swm_demands.payment_to', '<=', $request->payUpto)
+                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
                     ->orderBy('swm_demands.id', 'asc')
                     ->sum('total_tax');
 
                 $totalDmd = $demand;
-                $paymentUptoDate = date('Y-m-t', strtotime($request->payUpto));
+                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
+
+                $response['totaldemand'] = $totalDmd;
+                $response['paymentUptoDate'] = $paymentUptoDate;
+            }
+
+            if (isset($consumerId) && isset($payUpto) && $consumerType == 'apartment') {
+
+                $demand = $this->mDemand;
+                $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
+                    ->where('c.apartment_id', $consumerId)
+                    ->where('c.is_deactivate', 0);
+
+                $demand = $demand->where('paid_status', 0)
+                    // ->where('swm_demands.ulb_id', $ulbId)
+                    ->where('swm_demands.is_deactivate', 0)
+                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
+                    ->orderBy('swm_demands.id', 'asc')
+                    ->sum('total_tax');
+
+                $totalDmd = $demand;
+                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
 
                 $response['totaldemand'] = $totalDmd;
                 $response['paymentUptoDate'] = $paymentUptoDate;
