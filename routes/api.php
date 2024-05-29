@@ -177,4 +177,6 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('get-apartment', 'apartmentDtl');
     Route::post('get-apartment-by-id', 'apartmentDtlById');
     Route::post('calculate-amount', 'calculateAmount');
+    Route::post('razorpay/initiate-payment', 'initiatePayment');
+    Route::post('razorpay/save-response', 'saveRazorpayResponse');
 });

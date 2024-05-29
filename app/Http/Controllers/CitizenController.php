@@ -6,16 +6,22 @@ use App\Models\Apartment;
 use App\Models\Collections;
 use App\Models\Consumer;
 use App\Models\Demand;
+use App\Models\RazorpayReq;
+use App\Models\RazorpayResponse;
 use App\Models\Transaction;
 use App\Models\Ward;
+use App\Repository\ConsumerRepository;
 use App\Repository\iMasterRepository;
 use App\Repository\MasterRepository;
 use App\Traits\Api\Helpers;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Razorpay\Api\Api;
 
 use function App\Traits\Api\responseMsgs;
 
@@ -538,6 +544,155 @@ class CitizenController extends Controller
             return $this->responseMsgs(true, "Total Demand", $response);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Initiate Online Payment
+     */
+    public function initiatePayment(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "amount"        => "required|numeric",
+            "consumerId"    => "required|int",
+            "consumerType"  => "nullable|in:Consumer,Apartment",
+        ]);
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+
+        try {
+
+            $apiId = "0701";
+            $version = "01";
+            $keyId        = Config::get('constants.RAZORPAY_KEY');
+            $secret       = Config::get('constants.RAZORPAY_SECRET');
+            $mRazorpayReq = new RazorpayReq();
+            $api          = new Api($keyId, $secret);
+
+            $consumerDetails = $this->mConsumer->where('id', $req->consumerId)->first();
+            if (!$consumerDetails)
+                throw new Exception("Consumer Not Found");
+            // if ($penaltyDetails->payment_status == 1)
+            //     throw new Exception("Payment Already Done");
+
+            $orderData = $api->order->create(array('amount' => $req->amount * 100, 'currency' => 'INR',));
+
+            $mReqs = [
+                "order_id"       => $orderData['id'],
+                "payment_type"   => $req->consumerType,
+                "consumer_id"    => $req->consumerId,
+                "apartment_id"   => $req->apartmentId,
+                "user_id"        => 0,
+                "amount"         => $req->amount,
+                "ulb_id"         => $consumerDetails->ulb_id,
+                "ip_address"     => $this->getClientIpAddress()
+            ];
+            $data = $mRazorpayReq->store($mReqs);
+            $response = [
+                'order_id'      => $orderData['id'],
+                'consumer_id'   => $req->consumerId,
+                'consumer_type' => $req->consumerType,
+            ];
+
+            return $this->responseMsgs(true, "Order Id Details", $response);
+        } catch (Exception $e) {
+            return $this->responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "");
+        }
+    }
+
+    /**
+     * | Save Razor Pay Response
+     */
+    public function saveRazorpayResponse(Request $req)
+    {
+        try {
+            $apiId = "0702";
+            $version = "01";
+            Storage::disk('public')->put($req->orderId . '.json', json_encode($req->all()));
+            $mRazorpayReq        = new RazorpayReq();
+            $mRazorpayResponse   = new RazorpayResponse();
+            $todayDate           = Carbon::now();
+            $consumerType        = $req->consumerType;
+            $consumerRepo        = app(ConsumerRepository::class);
+            // $penaltyDetails    = PenaltyFinalRecord::find($req->applicationId);
+            // $challanDetails    = PenaltyChallan::where('penalty_record_id', $req->applicationId)->where('status', 1)->first();
+
+            $receiptIdParam    = Config::get('constants.ID_GENERATION_PARAMS.RECEIPT');
+            // $ulbDtls       = UlbMaster::find($penaltyDetails->ulb_id);
+            // $idGeneration  = new IdGeneration($receiptIdParam, $penaltyDetails->ulb_id, $section, 0);
+            // $transactionNo = $idGeneration->generate();
+            $transactionNo = "12231231231";
+
+            if ($consumerType == 'Apartment')
+                $paymentData = $mRazorpayReq->getPaymentRecord($req)
+                    ->where('apartment_id', $req->consumerId)
+                    ->first();
+            else
+                $paymentData = $mRazorpayReq->getPaymentRecord($req)
+                    ->where('consumer_id', $req->consumerId)
+                    ->first();
+
+            if (collect($paymentData)->isEmpty())
+                throw new Exception("Payment Data not available");
+            if ($paymentData) {
+                $mReqs = [
+                    "request_id"      => $paymentData->id,
+                    "order_id"        => $req->orderId,
+                    "merchant_id"     => $req->mid,
+                    "payment_id"      => $req->paymentId,
+                    "consumer_id"     => $req->consumerId,
+                    "apartment_id"    => $req->apartmentId,
+                    "amount"          => $req->amount,
+                    "ulb_id"          => $paymentData->ulb_id,
+                    "ip_address"      => $this->getClientIpAddress(),
+                    // "res_ref_no"      => $transactionNo,                         // flag
+                    // "response_msg"    => $pinelabData['Response']['ResponseMsg'],
+                    // "response_code"   => $pinelabData['Response']['ResponseCode'],
+                    // "description"     => $req->description,
+                ];
+
+                $data = $mRazorpayResponse->store($mReqs);
+                // $paymentData->payment_status = 1;
+                $paymentData->save();
+
+                // if ($consumerType != 'Apartment') {
+                //     $newReqs = new Request([
+                //         'consumerId'  => $req->consumerId,
+                //         'paidUpto'    => $req->paidUpto,
+                //         'paidAmount'  => $req->amount,
+                //         'paymentMode' => 'ONLINE',
+                //     ]);
+                //     $responseData = $consumerRepo->makePayment($newReqs);
+                // }
+            }
+
+
+            // #_Whatsaap Message
+            // if (strlen($penaltyDetails->mobile) == 10) {
+            //     $whatsapp2 = (Whatsapp_Send(
+            //         $penaltyDetails->mobile,
+            //         "juidco_fines_payment",
+            //         [
+            //             "content_type" => "text",
+            //             [
+            //                 $penaltyDetails->full_name ?? "Violator",
+            //                 $tranDtl->total_amount,
+            //                 $challanDetails->challan_no,
+            //                 $tranDtl->tran_no,
+            //                 $ulbDtls->toll_free_no ?? 0000000000
+            //             ]
+            //         ]
+            //     ));
+            // }
+
+            return $this->responseMsgs(true, "Data Saved", $data);
+        } catch (Exception $e) {
+            return $this->responseMsgs(false, $e->getMessage(), "");
         }
     }
 }

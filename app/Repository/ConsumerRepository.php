@@ -990,7 +990,8 @@ class ConsumerRepository implements iConsumerRepository
         try {
             if (isset($request->consumerId)) {
 
-                $userId = $request->user()->id;
+                $user   = $request->user();
+                $userId = $user->id ?? '';
                 $ulbId = $this->GetUlbId($userId);
                 $consumerId = $request->consumerId;
                 $totalPayableAmt = $request->paidAmount;
@@ -1088,8 +1089,8 @@ class ConsumerRepository implements iConsumerRepository
                         $response['remainingAmount'] = $remainingAmt;
                         $response['paidUpto'] = $request->paidUpto;
                         $response['previousPaidAmount'] = ($lastpayment) ? $lastpayment->total_payable_amt : "0.00";
-                        $response['tcName'] = $getTc->name;
-                        $response['tcMobile'] = $getTc->contactno;
+                        $response['tcName'] = $getTc->name ?? null;
+                        $response['tcMobile'] = $getTc->contactno ?? null;
                         $response = array_merge($response, $this->GetUlbData($ulbId));
                         return response()->json(['status' => True, 'data' => $response, 'msg' => 'Payment Done Successfully'], 200);
                     }
