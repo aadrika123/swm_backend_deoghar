@@ -2130,7 +2130,12 @@ class ConsumerRepository implements iConsumerRepository
 
                     $conArr[] = $con;
                 }
-                return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
+                $data['data']        = $conArr;
+                $data['total']       =$consumerList->total();
+                $data['lastPage']    =$consumerList->lastPage();
+                $data['currentPage'] =$consumerList->currentPage();
+                $data['perPage']     = $request->perPage;
+                return response()->json(['status' => True, 'data' => $data, 'msg' => ''], 200);
             } else {
                 return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
             }
