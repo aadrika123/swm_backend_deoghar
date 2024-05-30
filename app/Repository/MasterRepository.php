@@ -575,7 +575,7 @@ class MasterRepository implements iMasterRepository
         try {
             $responseData = array();
 
-            $wards = $this->Ward->where('ulb_id', $ulbId)->orderBy('id', 'DESC')->get();
+            $wards = $this->Ward->where('ulb_id', $ulbId)->orderBy('sqorder')->get();
 
             foreach ($wards as $ward) {
                 $val['id'] = $ward->id;

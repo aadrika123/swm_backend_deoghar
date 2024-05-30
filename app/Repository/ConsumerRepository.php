@@ -973,7 +973,7 @@ class ConsumerRepository implements iConsumerRepository
                 $response['demandDetails'] = $demand;
                 $response['appliedBy'] = ($userId) ? $this->GetUserDetails($userId)->name : "";
                 $response['appliedDate'] = date('Y-m-d');
-                $msg = "Reanter created and demand generated successfully";
+                $msg = "Renter created and demand generated successfully";
             } else {
                 $msg = "Renter already exist";
             }
@@ -3136,14 +3136,14 @@ class ConsumerRepository implements iConsumerRepository
 
 
 
-                $response['totalDemand'] = $total_demand;
-                $response['outstandingDemand'] = $Report->outstanding_amount;
-                $response['totalConsumer'] = $Report->total_consumer;
-                $response['totalCollection'] = $total_collection;
-                $response['reconcilePending'] = $total_reconcile;
-                $response['adjustmentAmount'] = $Report->adjust_amount;
-                $response['totalResidenstialConsumer'] = $Report->residential;
-                $response['totalCommercialConsumer'] = $Report->commercial;
+                $response['totalDemand'] = $total_demand??0;
+                $response['outstandingDemand'] = $Report->outstanding_amount??0;
+                $response['totalConsumer'] = $Report->total_consumer??0;
+                $response['totalCollection'] = $total_collection??0;
+                $response['reconcilePending'] = $total_reconcile??0;
+                $response['adjustmentAmount'] = $Report->adjust_amount??0;
+                $response['totalResidenstialConsumer'] = $Report->residential??0;
+                $response['totalCommercialConsumer'] = $Report->commercial??0;
                 $response['demand'] = $totalDmds;
                 $response['collection'] = $totalcolls;
                 $response['arrear'] = $totalarrears;
