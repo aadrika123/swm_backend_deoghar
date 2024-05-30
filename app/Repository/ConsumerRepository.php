@@ -2289,8 +2289,8 @@ class ConsumerRepository implements iConsumerRepository
                     $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
                     $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
                     $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
-                    $response['tcName'] = $getTc->name;
-                    $response['tcMobile'] = $getTc->contactno;
+                    $response['tcName'] = $getTc->name??"";
+                    $response['tcMobile'] = $getTc->contactno??"";
                 }
             }
             $response = array_merge($response, $this->GetUlbData($ulbId));
