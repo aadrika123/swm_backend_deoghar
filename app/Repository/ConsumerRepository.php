@@ -1031,6 +1031,8 @@ class ConsumerRepository implements iConsumerRepository
 
                 //if($transcation->count() == 0 && $totalPayableAmt > 0 )    
                 if ($totalPayableAmt > 0) {
+                    if (!$userId)
+                        $userId = 0;
                     $trans = $this->Transaction;
                     $trans->transaction_date = $transcationDate;
                     $trans->total_demand_amt = $totalDemandAmt;
@@ -1510,7 +1512,8 @@ class ConsumerRepository implements iConsumerRepository
 
 
             if (isset($request->apartmentId) && isset($request->paymentMode)) {
-                $userId = $request->user()->id;
+                $user = $request->user();
+                $userId = $user->id ?? '';
                 $ulbId = $this->GetUlbId($userId);
                 $apartmentId = $request->apartmentId;
                 $totalPayableAmt = $request->paidAmount;
@@ -1539,13 +1542,15 @@ class ConsumerRepository implements iConsumerRepository
                     ->where('total_payable_amt', $totalPayableAmt)
                     ->get();
                 $paidStatus = 1;
-                $paymentFrom = date('Y') . '01-01';
+                $paymentFrom = date('Y') . '-01-01';
                 if ($paymentMode == 'Cheque' || $paymentMode == 'Dd')
                     $paidStatus = 2;
 
                 $response = array();
                 //if($transcation->count() == 0 && $totalPayableAmt > 0 )
                 if ($totalPayableAmt > 0) {
+                    if (!$userId)
+                        $userId = 0;
                     $trans = $this->Transaction;
                     $trans->transaction_date = $transcationDate;
                     $trans->total_demand_amt = $totalDemandAmt;
@@ -1613,8 +1618,8 @@ class ConsumerRepository implements iConsumerRepository
                             $response['remainingAmount'] = $remainingAmt;
                             $response['paidUpto'] = $request->paidUpto;
                             $response['previousPaidAmount'] = ($lastpayment) ? $lastpayment->total_payable_amt : "0.00";
-                            $response['tcName'] = $getTc->name;
-                            $response['tcMobile'] = $getTc->contactno;
+                            $response['tcName'] = $getTc->name??"";
+                            $response['tcMobile'] = $getTc->contactno??"";
                         }
                         $response = array_merge($response, $this->GetUlbData($ulbId));
                         return response()->json(['status' => True, 'data' => $response, 'msg' => 'Payment Done Successfully'], 200);

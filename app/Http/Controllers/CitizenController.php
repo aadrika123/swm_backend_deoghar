@@ -258,9 +258,9 @@ class CitizenController extends Controller
                 $val['payment_mode']      = $trans->payment_mode;
                 $val['transaction_date']  = Carbon::create($trans->transaction_date)->format('d-m-Y');
                 $val['total_payable_amt'] = $trans->total_payable_amt;
-                $val['demand_from']       = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
-                $val['demand_upto']       = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
-                $val['tc_name']           = $getuserdata->name;
+                $val['demand_from']       = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('Y-m-d') : '';
+                $val['demand_upto']       = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('Y-m-d') : '';
+                $val['tc_name']           = $getuserdata->name ?? "";
                 $transactions[]           = $val;
             }
 
@@ -555,7 +555,8 @@ class CitizenController extends Controller
         $validator = Validator::make($req->all(), [
             "amount"        => "required|numeric",
             "consumerId"    => "required|int",
-            "consumerType"  => "nullable|in:Consumer,Apartment",
+            "consumerType"  => "nullable|in:commercial,independent,apartment",
+            // "consumerType"  => "nullable|in:consumer,apartment",
         ]);
 
         if ($validator->fails())
@@ -573,8 +574,18 @@ class CitizenController extends Controller
             $secret       = Config::get('constants.RAZORPAY_SECRET');
             $mRazorpayReq = new RazorpayReq();
             $api          = new Api($keyId, $secret);
+            $consumerType = $req->consumerType;
+            $apartmentId     = null;
+            $consumerId      = null;
 
-            $consumerDetails = $this->mConsumer->where('id', $req->consumerId)->first();
+            if ($consumerType == 'apartment') {
+                $consumerDetails = $this->mApartment->where('id', $req->consumerId)->first();
+                $apartmentId     = $consumerDetails->id;
+            } else{
+                $consumerDetails = $this->mConsumer->where('id', $req->consumerId)->first();
+                $consumerId      = $consumerDetails->id;
+            }
+
             if (!$consumerDetails)
                 throw new Exception("Consumer Not Found");
             // if ($penaltyDetails->payment_status == 1)
@@ -584,9 +595,9 @@ class CitizenController extends Controller
 
             $mReqs = [
                 "order_id"       => $orderData['id'],
-                "payment_type"   => $req->consumerType,
-                "consumer_id"    => $req->consumerId,
-                "apartment_id"   => $req->apartmentId,
+                "payment_type"   => $consumerType,
+                "consumer_id"    => $consumerId,
+                "apartment_id"   => $apartmentId,
                 "user_id"        => 0,
                 "amount"         => $req->amount,
                 "ulb_id"         => $consumerDetails->ulb_id,
@@ -628,7 +639,7 @@ class CitizenController extends Controller
             // $transactionNo = $idGeneration->generate();
             $transactionNo = "12231231231";
 
-            if ($consumerType == 'Apartment')
+            if ($consumerType == 'apartment')
                 $paymentData = $mRazorpayReq->getPaymentRecord($req)
                     ->where('apartment_id', $req->consumerId)
                     ->first();
@@ -657,18 +668,26 @@ class CitizenController extends Controller
                 ];
 
                 $data = $mRazorpayResponse->store($mReqs);
-                // $paymentData->payment_status = 1;
+                $paymentData->payment_status = 1;
                 $paymentData->save();
 
-                // if ($consumerType != 'Apartment') {
-                //     $newReqs = new Request([
-                //         'consumerId'  => $req->consumerId,
-                //         'paidUpto'    => $req->paidUpto,
-                //         'paidAmount'  => $req->amount,
-                //         'paymentMode' => 'ONLINE',
-                //     ]);
-                //     $responseData = $consumerRepo->makePayment($newReqs);
-                // }
+                if ($consumerType == 'apartment') {
+                    $newReqs = new Request([
+                        'apartmentId'  => $req->consumerId,
+                        'paymentMode' => 'ONLINE',
+                        'paidAmount'  => $req->amount,
+                        'paidUpto'    => $req->payUpto,
+                    ]);
+                    $responseData = $consumerRepo->makeApartmentPayment($newReqs);
+                } else {
+                    $newReqs = new Request([
+                        'consumerId'  => $req->consumerId,
+                        'paidUpto'    => $req->payUpto,
+                        'paidAmount'  => $req->amount,
+                        'paymentMode' => 'ONLINE',
+                    ]);
+                    $responseData = $consumerRepo->makePayment($newReqs);
+                }
             }
 
 
@@ -690,7 +709,8 @@ class CitizenController extends Controller
             //     ));
             // }
 
-            return $this->responseMsgs(true, "Data Saved", $data);
+            return $responseData;
+            return $this->responseMsgs(true, "Data Saved", $responseData);
         } catch (Exception $e) {
             return $this->responseMsgs(false, $e->getMessage(), "");
         }
