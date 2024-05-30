@@ -327,7 +327,7 @@ class MasterRepository implements iMasterRepository
 
             $contypes = $this->ConsumerType->select('swm_consumer_types.*', 'c.name as cat_name')
                 ->join('swm_consumer_categories as c', 'swm_consumer_types.category_id', '=', 'c.id')
-                ->orderBy('swm_consumer_types.id', 'DESC')
+                ->orderBy('swm_consumer_types.id')
                 ->get();
 
             foreach ($contypes as $contype) {
