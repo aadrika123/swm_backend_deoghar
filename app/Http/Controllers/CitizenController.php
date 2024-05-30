@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apartment;
 use App\Models\Collections;
 use App\Models\Consumer;
+use App\Models\ConsumerType;
 use App\Models\Demand;
 use App\Models\RazorpayReq;
 use App\Models\RazorpayResponse;
@@ -36,6 +37,7 @@ class CitizenController extends Controller
     protected $mTransaction;
     protected $mCollections;
     protected $mApartment;
+    protected $mConsumerType;
 
     public function __construct(Request $request)
     {
@@ -44,9 +46,10 @@ class CitizenController extends Controller
         $this->mWard     = new Ward($this->dbConn);
         $this->mConsumer = new Consumer($this->dbConn);
         $this->mDemand   = new Demand($this->dbConn);
-        $this->mTransaction = new Transaction($this->dbConn);
-        $this->mCollections = new Collections($this->dbConn);
-        $this->mApartment   = new Apartment($this->dbConn);
+        $this->mTransaction  = new Transaction($this->dbConn);
+        $this->mCollections  = new Collections($this->dbConn);
+        $this->mApartment    = new Apartment($this->dbConn);
+        $this->mConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerCategory = new ConsumerCategory($this->dbConn);
         // $this->ConsumerDeactivateDeatils = new ConsumerDeactivateDeatils($this->dbConn);
@@ -581,7 +584,7 @@ class CitizenController extends Controller
             if ($consumerType == 'apartment') {
                 $consumerDetails = $this->mApartment->where('id', $req->consumerId)->first();
                 $apartmentId     = $consumerDetails->id;
-            } else{
+            } else {
                 $consumerDetails = $this->mConsumer->where('id', $req->consumerId)->first();
                 $consumerId      = $consumerDetails->id;
             }
@@ -713,6 +716,91 @@ class CitizenController extends Controller
             return $this->responseMsgs(true, "Data Saved", $responseData);
         } catch (Exception $e) {
             return $this->responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | listConsumerType
+     */
+    public function listConsumerType(Request $req)
+    {
+        try {
+            $categoryList = $this->mConsumerType->select(
+                'swm_consumer_types.id',
+                'swm_consumer_types.name as consumer_type',
+                'swm_consumer_categories.name as consumer_category',
+                'swm_consumer_types.rate'
+            )
+                ->join('swm_consumer_categories', 'swm_consumer_categories.id', 'swm_consumer_types.category_id')
+                ->orderBy('swm_consumer_types.id')
+                ->paginate();
+
+                return $this->responseMsgs(true, "Consumer Type Rate Chart", $categoryList);
+            } catch (Exception $e) {
+                return $this->responseMsgs(true,  $e->getMessage(), "");
+            }
+    }
+
+    /**
+     * | listTaxCollector
+     */
+    public function listTaxCollector(Request $req)
+    {
+        try {
+            $response = array();
+            $consumerId   = $request->consumerId;
+            $consumerType = $request->consumerType;
+            $payUpto      = $request->payUpto;
+
+            if (isset($consumerId) && isset($payUpto) && $consumerType != 'apartment') {
+
+                $demand = $this->mDemand;
+
+                if (isset($request->apartmentId)) {
+                    $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
+                        ->where('c.apartment_id', $request->apartmentId)
+                        ->where('c.is_deactivate', 0);
+                } else {
+                    $demand = $demand->where('consumer_id', $consumerId);
+                }
+                $demand = $demand->where('paid_status', 0)
+                    // ->where('swm_demands.ulb_id', $ulbId)
+                    ->where('swm_demands.is_deactivate', 0)
+                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
+                    ->orderBy('swm_demands.id', 'asc')
+                    ->sum('total_tax');
+
+                $totalDmd = $demand;
+                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
+
+                $response['totaldemand'] = $totalDmd;
+                $response['paymentUptoDate'] = $paymentUptoDate;
+            }
+
+            if (isset($consumerId) && isset($payUpto) && $consumerType == 'apartment') {
+
+                $demand = $this->mDemand;
+                $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
+                    ->where('c.apartment_id', $consumerId)
+                    ->where('c.is_deactivate', 0);
+
+                $demand = $demand->where('paid_status', 0)
+                    // ->where('swm_demands.ulb_id', $ulbId)
+                    ->where('swm_demands.is_deactivate', 0)
+                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
+                    ->orderBy('swm_demands.id', 'asc')
+                    ->sum('total_tax');
+
+                $totalDmd = $demand;
+                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
+
+                $response['totaldemand'] = $totalDmd;
+                $response['paymentUptoDate'] = $paymentUptoDate;
+            }
+
+            return $this->responseMsgs(true, "Total Demand", $response);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
         }
     }
 }

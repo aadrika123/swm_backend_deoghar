@@ -179,4 +179,6 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('calculate-amount', 'calculateAmount');
     Route::post('razorpay/initiate-payment', 'initiatePayment');
     Route::post('razorpay/save-response', 'saveRazorpayResponse');
+    Route::post('consumer-type-list', 'listConsumerType');
+    Route::post('tax-collector-list', 'listTaxCollector');
 });
