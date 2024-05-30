@@ -2099,11 +2099,11 @@ class ConsumerRepository implements iConsumerRepository
                         ->get();
                     $total_tax = 0.00;
                     $demand_upto = '';
-                    $paid_status = 'True';
+                    $paid_status = 'Paid';
                     foreach ($demand as $dmd) {
                         $total_tax += $dmd->total_tax;
                         $demand_upto = $dmd->demand_date;
-                        $paid_status = 'False';
+                        $paid_status = 'Unpaid';
                     }
                     //
 
