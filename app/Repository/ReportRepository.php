@@ -149,9 +149,9 @@ class ReportRepository implements iReportRepository
             $firstrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'asc')->first();
             $lastrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'desc')->first();
             $getuserdata = $this->GetUserDetails($trans->user_id);
-            $val['tcName'] = $getuserdata->name;
-            $val['mobileNo'] = $getuserdata->contactno;
-            $val['designation'] = $getuserdata->user_type;
+            $val['tcName'] = $getuserdata->name??"";
+            $val['mobileNo'] = $getuserdata->contactno??"";
+            $val['designation'] = $getuserdata->user_type??"";
             $val['wardNo'] = $trans->ward_no;
             $val['consumerNo'] = $trans->consumer_no;
             $val['consumerName'] = $trans->name;
