@@ -755,7 +755,7 @@ class CitizenController extends Controller
                 ->join('tbl_user_ward', 'tbl_user_ward.user_id', 'tbl_user_mstr.id')
                 ->where('tbl_user_mstr.user_type_id', 5)
                 ->where('tbl_user_ward.ulb_id', $ulbId)
-                ->where('tbl_user_mstr.status',1)
+                ->where('tbl_user_mstr.status', 1)
                 ->groupBy('tbl_user_ward.user_id', 'tbl_user_details.name', 'tbl_user_details.contactno', 'tbl_user_mstr.id', 'tbl_user_ward.ward_id')
                 ->orderBy('tbl_user_ward.user_id')
                 ->get();
@@ -787,6 +787,101 @@ class CitizenController extends Controller
             );
 
             return $this->responseMsgs(true, "List of tax collector", $paginatedItems);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | paymentReceipt
+     */
+    public function paymentReceipt(Request $req)
+    {
+        $validator = Validator::make(
+            $req->all(),
+            [
+                "transactionNo"   => "required",
+            ]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $tranDtl      = $this->mTransaction->where('transaction_no', $req->transactionNo)->first();
+            $ulbId        = $tranDtl->ulb_id;
+            if (isset($req->transactionNo)) {
+                $transactionNo = $req->transactionNo;
+
+                $sql = "SELECT t.transaction_no,t.transaction_date,c.ward_no,c.name,c.address,a.apt_name, a.apt_code, c.consumer_no, a.apt_address, a.ward_no as apt_ward, 
+                t.total_payable_amt, cl.payment_from, cl.payment_to, t.payment_mode,td.bank_name, td.branch_name, td.cheque_dd_no, td.cheque_dd_date, 
+                t.total_demand_amt, t.total_remaining_amt, t.stampdate, t.apartment_id, ct.rate,cc.name as consumer_category,t.user_id, c.holding_no,c.mobile_no,ct.name as consumer_type,c.license_no
+                FROM swm_transactions t
+                LEFT JOIN swm_consumers c on t.consumer_id=c.id
+                LEFT JOIN swm_consumer_types ct on c.consumer_type_id=ct.id
+                LEFT JOIN swm_consumer_categories cc on c.consumer_category_id=cc.id
+                LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                JOIN (
+                    SELECT min(payment_from) as payment_from, max(payment_to) as payment_to,
+                    transaction_id 
+                    FROM swm_collections 
+                    GROUP BY transaction_id
+                ) cl on cl.transaction_id=t.id 
+                LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
+                WHERE t.transaction_no='" . $transactionNo . "'";
+
+                $transaction = DB::connection($this->dbConn)->select($sql);
+
+                if ($transaction) {
+                    $transaction = $transaction[0];
+                    $consumerCount = 0;
+                    $monthlyRate = $transaction->rate;
+                    if ($transaction->apartment_id) {
+                        $consumer = $this->mConsumer->join('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
+                            ->where('apartment_id', $transaction->apartment_id)
+                            ->where('ulb_id', $ulbId)
+                            ->where('is_deactivate', 0);
+                        $consumerCount = $consumer->count();
+                        $monthlyRate = $consumer->sum('rate');
+                    }
+                    $getTc = $this->GetUserDetails($transaction->user_id);
+
+                    $response['transactionDate'] = Carbon::create($transaction->transaction_date)->format('Y-m-d');
+                    $response['transactionTime'] = Carbon::create($transaction->stampdate)->format('h:i A');
+                    $response['transactionNo'] = $transaction->transaction_no;
+                    $response['consumerName'] = $transaction->name;
+                    $response['consumerNo'] = $transaction->consumer_no;
+                    $response['mobileNo'] = $transaction->mobile_no;
+                    $response['consumerCategory'] = ($transaction->consumer_category) ? $transaction->consumer_category : 'RESIDENTIAL';
+                    $response['consumerType'] = $transaction->consumer_type;
+                    $response['licenseNo'] = isset($transaction->license_no) ? $transaction->license_no : '';
+                    $response['apartmentName'] = $transaction->apt_name;
+                    $response['apartmentCode'] = $transaction->apt_code;
+                    $response['ReceiptWard'] = ($transaction->apt_ward) ? $transaction->apt_ward : $transaction->ward_no;
+                    $response['holdingNo'] = $transaction->holding_no;
+                    $response['address'] = ($transaction->apt_address) ? $transaction->apt_address : $transaction->address;
+                    $response['paidFrom'] = $transaction->payment_from;
+                    $response['paidUpto'] = $transaction->payment_to;
+                    $response['paymentMode'] = $transaction->payment_mode;
+                    $response['bankName'] = $transaction->bank_name;
+                    $response['branchName'] = $transaction->branch_name;
+                    $response['chequeNo'] = $transaction->cheque_dd_no;
+                    $response['chequeDate'] = $transaction->cheque_dd_date;
+                    $response['noOfFlats'] = $consumerCount;
+                    $response['monthlyRate'] = $monthlyRate;
+                    $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
+                    $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
+                    $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
+                    $response['tcName'] = $getTc->name??"";
+                    $response['tcMobile'] = $getTc->contactno??"";
+                }
+            }
+            $printData = array_merge($response, $this->GetUlbData($ulbId));
+
+            return $this->responseMsgs(true, "Payment Receipt", $printData);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }

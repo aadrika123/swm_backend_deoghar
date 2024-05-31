@@ -181,4 +181,5 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('razorpay/save-response', 'saveRazorpayResponse');
     Route::post('consumer-type-list', 'listConsumerType');
     Route::post('tax-collector-list', 'listTaxCollector');
+    Route::post('citizen-payment-receipt', 'paymentReceipt');
 });
