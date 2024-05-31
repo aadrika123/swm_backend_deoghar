@@ -812,7 +812,7 @@ class CitizenController extends Controller
             ], 200);
         try {
             $tranDtl      = $this->mTransaction->where('id', $req->transactionId)->first();
-            $ulbId        = $tranDtl->ulb_id;
+            $ulbId        = $tranDtl->ulb_id ?? 21;
             if (isset($req->transactionId)) {
                 $transactionId = $req->transactionId;
 
@@ -875,8 +875,8 @@ class CitizenController extends Controller
                     $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
                     $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
                     $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
-                    $response['tcName'] = $getTc->name??"";
-                    $response['tcMobile'] = $getTc->contactno??"";
+                    $response['tcName'] = $getTc->name ?? "";
+                    $response['tcMobile'] = $getTc->contactno ?? "";
                 }
             }
             $printData = array_merge($response, $this->GetUlbData($ulbId));
