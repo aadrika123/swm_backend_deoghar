@@ -246,6 +246,7 @@ trait Helpers
 
     public function GetUlbData($ulbId)
     {
+        $docUrl  = "https://deoghar.smartulb.co.in/swm";
         if (isset($ulbId)) {
             $ulb = Ulb::where('id', $ulbId)->first();
             $ulbData = array();
@@ -260,7 +261,7 @@ trait Helpers
                 $ulbData['accountName'] = $ulb->account_name;
                 $ulbData['accountNo'] = $ulb->account_no;
                 $ulbData['ifscNo'] = $ulb->ifsc_no;
-                $ulbData['logo'] = "uploads/logo/" . $ulb->logo;
+                $ulbData['logo'] =  $docUrl."/sauploads/logo/" . $ulb->logo;
             }
             return $ulbData;
         }
