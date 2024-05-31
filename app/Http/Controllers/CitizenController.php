@@ -800,7 +800,7 @@ class CitizenController extends Controller
         $validator = Validator::make(
             $req->all(),
             [
-                "transactionNo"   => "required",
+                "transactionId"   => "required",
             ]
         );
 
@@ -811,10 +811,10 @@ class CitizenController extends Controller
                 'errors' => "Validation Error"
             ], 200);
         try {
-            $tranDtl      = $this->mTransaction->where('transaction_no', $req->transactionNo)->first();
+            $tranDtl      = $this->mTransaction->where('id', $req->transactionId)->first();
             $ulbId        = $tranDtl->ulb_id;
-            if (isset($req->transactionNo)) {
-                $transactionNo = $req->transactionNo;
+            if (isset($req->transactionId)) {
+                $transactionId = $req->transactionId;
 
                 $sql = "SELECT t.transaction_no,t.transaction_date,c.ward_no,c.name,c.address,a.apt_name, a.apt_code, c.consumer_no, a.apt_address, a.ward_no as apt_ward, 
                 t.total_payable_amt, cl.payment_from, cl.payment_to, t.payment_mode,td.bank_name, td.branch_name, td.cheque_dd_no, td.cheque_dd_date, 
@@ -831,7 +831,7 @@ class CitizenController extends Controller
                     GROUP BY transaction_id
                 ) cl on cl.transaction_id=t.id 
                 LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
-                WHERE t.transaction_no='" . $transactionNo . "'";
+                WHERE t.id='" . $transactionId . "'";
 
                 $transaction = DB::connection($this->dbConn)->select($sql);
 
