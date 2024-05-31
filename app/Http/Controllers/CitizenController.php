@@ -849,7 +849,7 @@ class CitizenController extends Controller
                     }
                     $getTc = $this->GetUserDetails($transaction->user_id);
 
-                    $response['transactionDate'] = Carbon::create($transaction->transaction_date)->format('Y-m-d');
+                    $response['transactionDate'] = Carbon::create($transaction->transaction_date)->format('d-m-Y');
                     $response['transactionTime'] = Carbon::create($transaction->stampdate)->format('h:i A');
                     $response['transactionNo'] = $transaction->transaction_no;
                     $response['consumerName'] = $transaction->name;
