@@ -246,7 +246,7 @@ trait Helpers
 
     public function GetUlbData($ulbId)
     {
-        $docUrl  = "https://deoghar.smartulb.co.in/swm";
+        $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
         if (isset($ulbId)) {
             $ulb = Ulb::where('id', $ulbId)->first();
             $ulbData = array();
