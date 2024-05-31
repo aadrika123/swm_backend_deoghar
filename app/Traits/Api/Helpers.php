@@ -261,7 +261,7 @@ trait Helpers
                 $ulbData['accountName'] = $ulb->account_name;
                 $ulbData['accountNo'] = $ulb->account_no;
                 $ulbData['ifscNo'] = $ulb->ifsc_no;
-                $ulbData['logo'] =  $docUrl."/sauploads/logo/" . $ulb->logo;
+                $ulbData['logo'] =  $docUrl."/uploads/logo/" . $ulb->logo;
             }
             return $ulbData;
         }
