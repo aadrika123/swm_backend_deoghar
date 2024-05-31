@@ -9,6 +9,7 @@ use App\Models\ConsumerType;
 use App\Models\Demand;
 use App\Models\RazorpayReq;
 use App\Models\RazorpayResponse;
+use App\Models\TblUserMstr;
 use App\Models\Transaction;
 use App\Models\Ward;
 use App\Repository\ConsumerRepository;
@@ -18,6 +19,7 @@ use App\Traits\Api\Helpers;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -735,10 +737,10 @@ class CitizenController extends Controller
                 ->orderBy('swm_consumer_types.id')
                 ->paginate();
 
-                return $this->responseMsgs(true, "Consumer Type Rate Chart", $categoryList);
-            } catch (Exception $e) {
-                return $this->responseMsgs(true,  $e->getMessage(), "");
-            }
+            return $this->responseMsgs(true, "Consumer Type Rate Chart", $categoryList);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
     }
 
     /**
@@ -746,59 +748,45 @@ class CitizenController extends Controller
      */
     public function listTaxCollector(Request $req)
     {
+        $ulbId = 21;
         try {
-            $response = array();
-            $consumerId   = $request->consumerId;
-            $consumerType = $request->consumerType;
-            $payUpto      = $request->payUpto;
+            $tcDetails = TblUserMstr::select('tbl_user_mstr.id', 'tbl_user_details.name', 'tbl_user_details.contactno', 'tbl_user_ward.user_id', 'ward_id')
+                ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
+                ->join('tbl_user_ward', 'tbl_user_ward.user_id', 'tbl_user_mstr.id')
+                ->where('tbl_user_mstr.user_type_id', 5)
+                ->where('tbl_user_ward.ulb_id', $ulbId)
+                ->where('tbl_user_mstr.status',1)
+                ->groupBy('tbl_user_ward.user_id', 'tbl_user_details.name', 'tbl_user_details.contactno', 'tbl_user_mstr.id', 'tbl_user_ward.ward_id')
+                ->orderBy('tbl_user_ward.user_id')
+                ->get();
 
-            if (isset($consumerId) && isset($payUpto) && $consumerType != 'apartment') {
+            $response = $tcDetails->groupBy('user_id')->map(function ($group) {
+                return [
+                    'id' => $group->first()['id'],
+                    'name' => $group->first()['name'],
+                    'contactno' => $group->first()['contactno'],
+                    'user_id' => $group->first()['user_id'],
+                    'ward_ids' => implode(',', $group->pluck('ward_id')->all())
+                ];
+            })->values()->all();
 
-                $demand = $this->mDemand;
+            // Convert the array to a Laravel collection
+            $collection = collect($response);
 
-                if (isset($request->apartmentId)) {
-                    $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
-                        ->where('c.apartment_id', $request->apartmentId)
-                        ->where('c.is_deactivate', 0);
-                } else {
-                    $demand = $demand->where('consumer_id', $consumerId);
-                }
-                $demand = $demand->where('paid_status', 0)
-                    // ->where('swm_demands.ulb_id', $ulbId)
-                    ->where('swm_demands.is_deactivate', 0)
-                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
-                    ->orderBy('swm_demands.id', 'asc')
-                    ->sum('total_tax');
+            // Get current page form url e.g. &page=1
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $perPage     = $req->perPage ?? 10;
+            $currentPageItems = $collection->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
-                $totalDmd = $demand;
-                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
+            // Create the paginator and pass it to the view
+            $paginatedItems = new LengthAwarePaginator(
+                $currentPageItems,
+                $collection->count(),
+                $perPage,
+                $currentPage
+            );
 
-                $response['totaldemand'] = $totalDmd;
-                $response['paymentUptoDate'] = $paymentUptoDate;
-            }
-
-            if (isset($consumerId) && isset($payUpto) && $consumerType == 'apartment') {
-
-                $demand = $this->mDemand;
-                $demand = $demand->join('swm_consumers as c', 'swm_demands.consumer_id', '=', 'c.id')
-                    ->where('c.apartment_id', $consumerId)
-                    ->where('c.is_deactivate', 0);
-
-                $demand = $demand->where('paid_status', 0)
-                    // ->where('swm_demands.ulb_id', $ulbId)
-                    ->where('swm_demands.is_deactivate', 0)
-                    ->whereDate('swm_demands.payment_to', '<=', $payUpto)
-                    ->orderBy('swm_demands.id', 'asc')
-                    ->sum('total_tax');
-
-                $totalDmd = $demand;
-                $paymentUptoDate = date('Y-m-t', strtotime($payUpto));
-
-                $response['totaldemand'] = $totalDmd;
-                $response['paymentUptoDate'] = $paymentUptoDate;
-            }
-
-            return $this->responseMsgs(true, "Total Demand", $response);
+            return $this->responseMsgs(true, "List of tax collector", $paginatedItems);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
