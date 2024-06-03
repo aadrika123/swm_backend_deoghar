@@ -747,7 +747,6 @@ class AuthRepository implements iAuth
                 $response['userTypeId'] = $lastLogin->user_type_id;
                 $response["routes"]        = $routList;
                 $response["permittedWard"] = $permittedWards;
-                // $response['userDetails'] = $user;
             }
             return $this->responseMsgs(true, "User Data", $response);
         } catch (Exception $e) {
