@@ -96,8 +96,9 @@ class AuthController extends Controller
         return $this->Repository->MenuPermissionByUserType($req);
     }
 
-    
-    
-    
-    
+    public function getUser(Request $req)
+    {
+        return $this->Repository->getUser($req);
+    }
+
 }

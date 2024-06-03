@@ -6,6 +6,7 @@ use App\Models\Consumer;
 use App\Models\ConsumerDeactivateDeatils;
 use App\Models\Transaction;
 use App\Models\Collections;
+use App\Models\ConsumerEditLog;
 use App\Models\TransactionDeactivate;
 use App\Models\TransactionModeChange;
 use App\Models\TransactionVerification;
@@ -39,6 +40,7 @@ class ReportRepository implements iReportRepository
     protected $TransactionVerification;
     protected $PaymentDeny;
     protected $TransactionModeChange;
+    protected $mConsumerEditLog;
 
     public function __construct(Request $request)
     {
@@ -51,8 +53,9 @@ class ReportRepository implements iReportRepository
         $this->Collections = new Collections($this->dbConn);
         $this->PaymentDeny = new PaymentDeny($this->dbConn);
         $this->TransactionModeChange = new TransactionModeChange($this->dbConn);
+        $this->mConsumerEditLog = new ConsumerEditLog($this->dbConn);
     }
- #Arshad  
+    #Arshad  
     public function ReportData(Request $request)
     {
         $userId = $request->user()->id;
@@ -89,6 +92,9 @@ class ReportRepository implements iReportRepository
 
                 if ($request->reportType == 'tranModeChange')
                     $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId);
+
+                if ($request->reportType == 'consumereditlog')
+                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId);
 
                 return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
             } else {
@@ -149,9 +155,9 @@ class ReportRepository implements iReportRepository
             $firstrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'asc')->first();
             $lastrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'desc')->first();
             $getuserdata = $this->GetUserDetails($trans->user_id);
-            $val['tcName'] = $getuserdata->name??"";
-            $val['mobileNo'] = $getuserdata->contactno??"";
-            $val['designation'] = $getuserdata->user_type??"";
+            $val['tcName'] = $getuserdata->name ?? "";
+            $val['mobileNo'] = $getuserdata->contactno ?? "";
+            $val['designation'] = $getuserdata->user_type ?? "";
             $val['wardNo'] = $trans->ward_no;
             $val['consumerNo'] = $trans->consumer_no;
             $val['consumerName'] = $trans->name;
@@ -194,7 +200,6 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-
     public function ConsumerAdd($From, $Upto, $ulbId)
     {
         $response = array();
@@ -219,6 +224,7 @@ class ReportRepository implements iReportRepository
         }
         return $response;
     }
+
     public function ConsumerDect($From, $Upto, $ulbId)
     {
         $response = array();
@@ -226,7 +232,7 @@ class ReportRepository implements iReportRepository
         $Upto = Carbon::create($Upto)->format('Y-m-d');
 
         $consumers = $this->ConsumerDeactivateDeatils->latest('id')
-            ->select('swm_consumer_deactivates.*', 'name', 'consumer_no','mobile_no')
+            ->select('swm_consumer_deactivates.*', 'name', 'consumer_no', 'mobile_no')
             ->join('swm_consumers', 'swm_consumer_deactivates.consumer_id', '=', 'swm_consumers.id')
             ->where('swm_consumer_deactivates.ulb_id', $ulbId)
             ->whereBetween('deactivation_date', [$From, $Upto])
@@ -245,7 +251,6 @@ class ReportRepository implements iReportRepository
         }
         return $response;
     }
-
 
     public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId)
     {
@@ -281,7 +286,6 @@ class ReportRepository implements iReportRepository
         }
         return $response;
     }
-
 
     public function CashVerification($From, $Upto, $tcId = null, $ulbId)
     {
@@ -357,7 +361,6 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-
     public function TcDailyActivity($From, $Upto, $tcId, $ulbId)
     {
         $response = array();
@@ -429,8 +432,6 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-
-
     public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId)
     {
         $response = array();
@@ -464,5 +465,61 @@ class ReportRepository implements iReportRepository
         }
 
         return $response;
+    }
+
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId)
+    {
+        $response = array();
+        $mchange = $this->mConsumerEditLog
+            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode','swm_log_consumers.stampdate', 'swm_log_consumers.user_id')
+            ->join('swm_consumers', 'swm_consumers.id', 'swm_log_consumers.consumer_id')
+            ->whereBetween('swm_log_consumers.stampdate', [$From . " 00:00:01", $Upto . " 23:59:59"]);
+
+
+        if (isset($tcId))
+            $mchange = $mchange->where('swm_log_consumers.user_id', $tcId);
+
+        $mchange = $mchange->get();
+
+        foreach ($mchange as $detail) {
+            $val['id']          = $detail->id;
+            $val['consumer_no'] = $detail->consumer_no;
+            $val['ward_no']     = $detail->ward_no;
+            $val['mobile_no']   = $detail->mobile_no;
+            $val['address']     = $detail->address;
+            $val['pincode']     = $detail->pincode;
+            $val['changeBy']    = $this->GetUserDetails($detail->user_id)->name;
+            $val['changedDate'] = Carbon::create($detail->stampdate)->format('d-m-Y h:i A');
+            $response[] = $val;
+        }
+
+        return $response;
+    }
+
+    /**
+     * | Edit Log Detail
+     */
+    public function consumerEditLogDetails(Request $req)
+    {
+        $validator = Validator::make(
+            $req->all(),
+            ["id"   => "required"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+
+            $data = $this->mConsumerEditLog->where('id', $req->id)
+                ->first();
+
+            return $this->responseMsgs(true, "Edit Log Details", $data);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
     }
 }

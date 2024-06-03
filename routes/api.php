@@ -30,7 +30,6 @@ Route::controller(AuthController::class)->group(function () {
     // Route::post('getUserFormDate', 'getUserFormDate');          // Route for user form data
     Route::post('getTcList', 'getTcList');                      // Route for get tc list ulb wise
     Route::post('ulbSwitch', 'ulbSwitch');                      // Route for ulb switching
-
 });
 
 Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function () {
@@ -53,6 +52,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('getAlluser', 'getAllUser');                    // Route for get all user
         Route::post('createUser', 'CreateUser');                    // Route for create user
         Route::post('getUserFormDate', 'getUserFormDate');          // Route for user form data
+        Route::get('get-user', 'getUser');                          // Route for get user
         # ended here                  
     });
 
@@ -162,8 +162,9 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
 
 
     Route::controller(ReportController::class)->group(function () {
-        Route::get('test', 'text');                              // Route for user Login
-        Route::post('getReportData', 'GetReportData');              // Route for get all type of report
+        Route::get('test', 'text');
+        Route::post('getReportData', 'GetReportData');                               // Route for get all type of report
+        Route::post('consumer-edit-details', 'consumerEditLogDetails');
     });
 });
 
@@ -172,6 +173,7 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('search-residential-consumer', 'residentialConsumers');
     Route::post('search-commercial-consumer', 'commercialConsumers');
     Route::post('get-consumer-dtl', 'consumerDtl');
+    Route::post('v2/get-consumer-dtl', 'consumerDtlV2');
     Route::post('payment-upto', 'paymentUpto');
     Route::post('apartment-list', 'apartmentList');
     Route::post('get-apartment', 'apartmentDtl');

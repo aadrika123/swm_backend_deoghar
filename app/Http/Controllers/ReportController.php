@@ -18,4 +18,9 @@ class ReportController extends Controller
     {
         return $this->rep->ReportData($request);
     }
+
+    public function consumerEditLogDetails(Request $request)
+    {
+        return $this->rep->consumerEditLogDetails($request);
+    }
 }

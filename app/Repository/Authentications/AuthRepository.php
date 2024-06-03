@@ -65,10 +65,10 @@ class AuthRepository implements iAuth
                     if ($refUserName->id > 0) {
                         # the code is edited by sam
                         # date : 05/11/2022
-                        $getdefault = UserWardPermission::select('ulb_id','tbl_ulb_list.ulb_name')
-                            ->join('tbl_ulb_list','tbl_ulb_list.id','=','tbl_user_ward.ulb_id')
+                        $getdefault = UserWardPermission::select('ulb_id', 'tbl_ulb_list.ulb_name')
+                            ->join('tbl_ulb_list', 'tbl_ulb_list.id', '=', 'tbl_user_ward.ulb_id')
                             ->where('user_id', $refUserName->id)
-                            ->groupby('ulb_id','ulb_name')
+                            ->groupby('ulb_id', 'ulb_name')
                             ->first();
                         # the end of the edited code by sam
                         if ($getdefault->ulb_id > 0)
@@ -86,7 +86,7 @@ class AuthRepository implements iAuth
                     // $response = ['status' => True, 'loginstatus' => 1, 'msg' => 'You Have Logged In', 'data' => $token, 'userId' => $refUserName->id];
                     //changed by talib
                     # edited code by sam
-                    $response = ['status' => True, 'loginstatus' => 1, 'msg' => 'You Have Logged In', 'data' => $token, 'userId' => $refUserName->id, 'userTypeId' => $refUserName->user_type_id,'ulbId'=>$getdefault->ulb_id,'ulbName'=>$getdefault->ulb_name];
+                    $response = ['status' => True, 'loginstatus' => 1, 'msg' => 'You Have Logged In', 'data' => $token, 'userId' => $refUserName->id, 'userTypeId' => $refUserName->user_type_id, 'ulbId' => $getdefault->ulb_id, 'ulbName' => $getdefault->ulb_name];
                     # end of edited code
                     //changed by talib
                     return response($response, 200);
@@ -504,7 +504,7 @@ class AuthRepository implements iAuth
 
             $sql = "SELECT distinct name,uw.user_id,contactno,address FROM view_user_mstr um
             left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
-            where user_type='Tax Collector' " . $whereparam. " order by name asc";
+            where user_type='Tax Collector' " . $whereparam . " order by name asc";
             $allUser = DB::select($sql);
 
 
@@ -570,8 +570,7 @@ class AuthRepository implements iAuth
             $menu->save();
 
             if ($menu->id) {
-                foreach($req->permissionTo as $userType)
-                {
+                foreach ($req->permissionTo as $userType) {
                     $permission = new MenuPermission();
 
                     $permission->menu_id = $menu->id;
@@ -596,18 +595,18 @@ class AuthRepository implements iAuth
         try {
             $responseData = array();
             $whereParam = "";
-            if(isset($request->menuId))
-                $whereParam = "WHERE m.id=".$request->menuId;
-            
+            if (isset($request->menuId))
+                $whereParam = "WHERE m.id=" . $request->menuId;
+
 
             $sql = "SELECT m.id,m.menu_name,m.file_path,m1.menu_name as parent_menu,m.menu_order,GROUP_CONCAT(user_type SEPARATOR ', ') as user_type, GROUP_CONCAT(short_name SEPARATOR ', ') as short_name FROM tbl_menu_mtr m
                 LEFT JOIN tbl_menu_mtr m1 on m.under_menu_id=m1.id
                 JOIN (SELECT user_type,short_name,menu_id FROM tbl_menu_permission p
                     JOIN tbl_user_type ut on p.user_type_id = ut.id
-                    WHERE status=1) p on p.menu_id=m.id ". $whereParam ."
+                    WHERE status=1) p on p.menu_id=m.id " . $whereParam . "
                 GROUP BY m.id,m.menu_name,m.file_path,m1.menu_name,m.menu_order
                 ORDER BY m.menu_order ASC";
-            
+
             $menuList = DB::select($sql);
 
             foreach ($menuList as $menu) {
@@ -653,10 +652,9 @@ class AuthRepository implements iAuth
 
             if ($req->menuId && $req->permissionTo) {
                 MenuPermission::where('menu_id', $req->menuId)
-                                ->where('status', 1)
-                                ->update(['status' => 0]);
-                foreach($req->permissionTo as $userType)
-                {
+                    ->where('status', 1)
+                    ->update(['status' => 0]);
+                foreach ($req->permissionTo as $userType) {
                     $permission = new MenuPermission();
 
                     $permission->menu_id = $menu->id;
@@ -681,23 +679,21 @@ class AuthRepository implements iAuth
         try {
             $responseData = array();
 
-            if(isset($request->userType))
-            {
+            if (isset($request->userType)) {
                 $sql = "SELECT m.id,m.menu_name,m.file_path,m.menu_order FROM tbl_menu_mtr m
                     JOIN tbl_menu_permission p on p.menu_id=m.id 
-                    WHERE p.status=1 and (m.under_menu_id is null or m.under_menu_id = 0) AND p.user_type_id=". $request->userType ."
+                    WHERE p.status=1 and (m.under_menu_id is null or m.under_menu_id = 0) AND p.user_type_id=" . $request->userType . "
                     ORDER BY m.menu_order ASC";
-                
+
                 $menuList = DB::select($sql);
 
                 foreach ($menuList as $menu) {
 
                     $childMenus = MenuMaster::where('under_menu_id', $menu->id)
-                                            ->orderBy('menu_order', 'ASC')
-                                            ->get();
+                        ->orderBy('menu_order', 'ASC')
+                        ->get();
                     $responseChild = array();
-                    foreach($childMenus as $childMenu)
-                    {
+                    foreach ($childMenus as $childMenu) {
                         $val['id'] = $childMenu->id;
                         $val['MenuName'] = $childMenu->menu_name;
                         $val['menuPath'] = $childMenu->file_path;
@@ -717,6 +713,45 @@ class AuthRepository implements iAuth
             }
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+        }
+    }
+
+
+    /**
+     * | Get User
+     */
+    public function getUser(Request $req)
+    {
+        try {
+            $user = auth()->user();
+            $permittedWards = [];
+            $response       = [];
+
+            $routList = collect();
+            if ($user->id) {
+                $lastLogin = DB::table('view_user_mstr')
+                    ->where('id', $user->id)
+                    ->where('status', 1)
+                    ->first();
+                $response['id'] = $lastLogin->id;
+                $response['userId'] = $lastLogin->user_name;
+                $response['userName'] = $lastLogin->name;
+                $response['designation'] = $lastLogin->user_type;
+                $response['mobileNo'] = $lastLogin->contactno;
+                $response['address'] = $lastLogin->address;
+                $response['image'] = $lastLogin->photo_path;
+                $response['lastVisitedTime'] = $lastLogin->login_time;
+                $response['lastVisitedDate'] = date('d-m-Y', $lastLogin->login_date);
+                $response['lastIpAddress'] = $lastLogin->ip_address;
+                $response['role'] = $lastLogin->user_type;
+                $response['userTypeId'] = $lastLogin->user_type_id;
+                $response["routes"]        = $routList;
+                $response["permittedWard"] = $permittedWards;
+                // $response['userDetails'] = $user;
+            }
+            return $this->responseMsgs(true, "User Data", $response);
+        } catch (Exception $e) {
+            return $this->responseMsgs(false, $e->getMessage(), "");
         }
     }
 }

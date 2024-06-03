@@ -293,6 +293,137 @@ class CitizenController extends Controller
     }
 
     /**
+     * | Get Consumer Details Version 2
+     */
+    public function consumerDtlV2(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["id" => "required|integer"]
+        );
+
+        if ($validator->fails())
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => "Validation Error"
+            ], 200);
+        try {
+            $transactions = array();
+            $consumer = $this->mConsumer
+                ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'consumer_no', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type', 'swm_consumer_categories.name as consumer_category', 'owner_id')
+                ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
+                ->join('swm_consumer_categories',  'swm_consumer_categories.id', 'swm_consumers.consumer_category_id')
+                ->where('is_deactivate', 0)
+                ->where('swm_consumers.id', $request->id)
+                ->first();
+
+            $renter = $this->mConsumer
+                ->select('swm_consumers.id', 'ward_no', 'swm_consumers.name', 'consumer_no', 'mobile_no', 'address', 'swm_consumer_types.name as consumer_type', 'swm_consumer_categories.name as consumer_category', 'owner_id')
+                ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
+                ->join('swm_consumer_categories',  'swm_consumer_categories.id', 'swm_consumers.consumer_category_id')
+                ->where('is_deactivate', 0)
+                ->where('owner_id', $consumer->id)
+                ->get();
+
+            $renterIds = collect($renter)->pluck('id');
+            $consumerId = [$consumer->id];
+            $consumerIds = array_merge($consumerId, $renterIds->all());
+
+            foreach ($consumerIds as $consumerId) {
+
+                $demand = $this->mDemand->where('consumer_id', $consumerId)
+                    ->where('paid_status', 0)
+                    ->where('is_deactivate', 0)
+                    // ->where('ulb_id', $ulbId)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                $total_tax = 0.00;
+                $demand_upto = '';
+                $paid_status = 'Paid';
+                $monthlyDemand = 0;
+                $demand_from = '';
+                $i = 0;
+
+                foreach ($demand as $dmd) {
+                    if ($i == 0)
+                        $demand_from = date('d-m-Y', strtotime($dmd->payment_from));
+                    $i++;
+                    $demand_upto = date('d-m-Y', strtotime($dmd->payment_to));
+                    $monthlyDemand = $dmd->total_tax;
+                    $total_tax += $dmd->total_tax;
+                    $paid_status = 'Unpaid';
+                }
+
+                $con['id'] = $consumer->id;
+                $con['consumer_id'] = $consumer->id;
+                $con['consumer_name'] = $consumer->name;
+                $con['consumer_no'] = $consumer->consumer_no;
+                $con['holding_no'] = $consumer->holding_no;
+                $con['mobile_no'] = $consumer->mobile_no;
+                $con['pincode'] = $consumer->pincode;
+                $con['demand_details'] = $demand;
+                $con['monthly_demand'] = $monthlyDemand;
+                $con['total_demand'] = $total_tax;
+                $con['demand_from'] = $demand_from;
+                $con['demand_upto'] = $demand_upto;
+                $con['paid_status'] = $paid_status;
+                // $con['applyBy'] = ($apartment->user_id) ? $this->GetUserDetails($apartment->user_id)->name : '';
+                // $con['applyDate'] = ($apartment->entry_date) ? date("d-m-Y", strtotime($apartment->entry_date)) : '';
+                // $con['editApplicable'] = ($trans == 0) ? true : false;
+
+                $consumerArr[] = $con;
+            }
+            return $consumerArr;
+
+            $tranDtls = $this->mTransaction->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt', 'user_id');
+
+            if (isset($consumer->id))
+                $tranDtls = $tranDtls
+                    ->where('swm_transactions.consumer_id', $consumer->id);
+
+            $tranDtls = $tranDtls->orderBy('swm_transactions.id', 'desc')->take(10)->get();
+            foreach ($tranDtls as $trans) {
+                $collection = $this->mCollections->where('transaction_id', $trans->id);
+                $firstrecord = $collection->orderBy('id', 'asc')->first();
+                $lastrecord = $collection->latest('id')->first();
+                $getuserdata = $this->GetUserDetails($trans->user_id);
+
+                $val['transaction_no']    = $trans->transaction_no;
+                $val['payment_mode']      = $trans->payment_mode;
+                $val['transaction_date']  = Carbon::create($trans->transaction_date)->format('d-m-Y');
+                $val['total_payable_amt'] = $trans->total_payable_amt;
+                $val['demand_from']       = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('Y-m-d') : '';
+                $val['demand_upto']       = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('Y-m-d') : '';
+                $val['tc_name']           = $getuserdata->name ?? "";
+                $transactions[]           = $val;
+            }
+
+            $con['id'] = $consumer->id;
+            $con['ward_no'] = $consumer->ward_no;
+            $con['name'] = $consumer->name;
+            $con['apartment_id'] = $consumer->apartment_id;
+            $con['consumer_no'] = $consumer->consumer_no;
+            $con['holding_no'] = $consumer->holding_no;
+            $con['address'] = $consumer->address;
+            $con['consumer_category'] = $consumer->consumer_category;
+            $con['consumer_type'] = $consumer->consumer_type;
+            $con['mobile_no'] = $consumer->mobile_no;
+            $con['monthly_demand'] = $monthlyDemand;
+            $con['total_demand'] = $total_tax;
+            $con['demand_from'] = $demand_from;
+            $con['demand_upto'] = $demand_upto;
+            $con['paid_status'] = $paid_status;
+            $con['demand_details'] = $demand;
+            $con['transaction_details'] = $transactions;
+            return $this->responseMsgs(true, "Consumer Details", $con);
+        } catch (Exception $e) {
+            return $this->responseMsgs(true,  $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Get Payment Upto
      */
     public function paymentUpto(Request $request)
