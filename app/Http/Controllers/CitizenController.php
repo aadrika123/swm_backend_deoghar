@@ -259,6 +259,7 @@ class CitizenController extends Controller
                 $lastrecord = $collection->latest('id')->first();
                 $getuserdata = $this->GetUserDetails($trans->user_id);
 
+                $val['transaction_id']    = $trans->id;
                 $val['transaction_no']    = $trans->transaction_no;
                 $val['payment_mode']      = $trans->payment_mode;
                 $val['transaction_date']  = Carbon::create($trans->transaction_date)->format('d-m-Y');
