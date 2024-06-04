@@ -83,7 +83,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Ward List", $wardList);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -117,7 +117,7 @@ class CitizenController extends Controller
             $newData['per_page'] = $data->perPage();
             return $this->responseMsgs(true, "Residential Consumer", $newData);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -151,7 +151,7 @@ class CitizenController extends Controller
             $newData['per_page'] = $data->perPage();
             return $this->responseMsgs(true, "Commercial Consumer", $newData);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -289,7 +289,7 @@ class CitizenController extends Controller
             $con['transaction_details'] = $transactions;
             return $this->responseMsgs(true, "Consumer Details", $con);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -420,7 +420,7 @@ class CitizenController extends Controller
             $con['transaction_details'] = $transactions;
             return $this->responseMsgs(true, "Consumer Details", $con);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -456,7 +456,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Payment Upto Data", $demand);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -481,7 +481,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "List of Apartments", $apartmentList);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -506,11 +506,25 @@ class CitizenController extends Controller
             $perPage = $request->perPage ?? 10;
             $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
                 ->where('swm_apartments.is_deactivate', 0)
-                ->paginate($perPage);
+                ->first();
+            // ->paginate($perPage);
 
-            return $this->responseMsgs(true, "Apartment Details", $apartmentDtls);
+
+            $demand = $this->GetDemand($this->dbConn, $apartmentDtls->id, 'Apartment', $ulbId);
+
+            $data = $apartmentDtls;
+            $data->demandAmt = $demand['demandAmt'];
+            $data->demandUpto = $demand['demandUpto'];
+            
+            $response['data'] = array ($data);
+            $response['current_page'] = 1;
+            $response['last_page'] = 1;
+            $response['total'] = 1;
+            $response['per_page'] = $perPage;
+
+            return $this->responseMsgs(true, "Apartment Details", $response);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -602,7 +616,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Apartment Details By Id", $data);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -680,7 +694,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Total Demand", $response);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -871,7 +885,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Consumer Type Rate Chart", $categoryList);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -920,7 +934,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "List of tax collector", $paginatedItems);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
@@ -1015,7 +1029,7 @@ class CitizenController extends Controller
 
             return $this->responseMsgs(true, "Payment Receipt", $printData);
         } catch (Exception $e) {
-            return $this->responseMsgs(true,  $e->getMessage(), "");
+            return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 }
