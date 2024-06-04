@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Traits\Api\Helpers;
 use PhpOption\None;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * | Created On-09-24-2022 
@@ -471,7 +472,7 @@ class ReportRepository implements iReportRepository
     {
         $response = array();
         $mchange = $this->mConsumerEditLog
-            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode','swm_log_consumers.stampdate', 'swm_log_consumers.user_id')
+            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode', 'swm_log_consumers.stampdate', 'swm_log_consumers.user_id')
             ->join('swm_consumers', 'swm_consumers.id', 'swm_log_consumers.consumer_id')
             ->whereBetween('swm_log_consumers.stampdate', [$From . " 00:00:01", $Upto . " 23:59:59"]);
 
@@ -514,12 +515,52 @@ class ReportRepository implements iReportRepository
             ], 200);
         try {
 
-            $data = $this->mConsumerEditLog->where('id', $req->id)
+             $logDetail = $this->mConsumerEditLog
+                ->select(
+                    "ward_no",
+                    "name as consumer_name",
+                    "holding_no",
+                    "mobile_no",
+                    "address",
+                    "consumer_no",
+                    "pincode",
+                    "license_no",
+                    "previous_ward_no",
+                    "previous_consumer_name",
+                    "previous_holding_no",
+                    "previous_mobile_no",
+                    "previous_address",
+                    "previous_consumer_no",
+                    "previous_pincode",
+                    "previous_license_no",
+                )
+                ->where('swm_log_consumers.id', $req->id)
                 ->first();
+
+            $data = $this->comparison($logDetail);
 
             return $this->responseMsgs(true, "Edit Log Details", $data);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
+    }
+
+    /**
+     * | Comparison
+     */
+    public function comparison($logDetail)
+    {
+        return new Collection([
+            ['displayString' => 'Ward No',              'final' => $logDetail->ward_no,           'applied' => $logDetail->previous_ward_no,],
+            ['displayString' => 'Consmer Name',         'final' => $logDetail->consumer_name,     'applied' => $logDetail->previous_consumer_name,],
+            ['displayString' => 'Holding No',           'final' => $logDetail->holding_no,        'applied' => $logDetail->previous_holding_no,],
+            ['displayString' => 'Mobile No',            'final' => $logDetail->mobile_no,         'applied' => $logDetail->previous_mobile_no,],
+            ['displayString' => 'Address',              'final' => $logDetail->address,           'applied' => $logDetail->previous_address,],
+            ['displayString' => 'Consumer No',          'final' => $logDetail->consumer_no,       'applied' => $logDetail->previous_consumer_no,],
+            ['displayString' => 'Pincode',              'final' => $logDetail->pincode,           'applied' => $logDetail->previous_pincode,],
+            ['displayString' => 'License No',           'final' => $logDetail->license_no,        'applied' => $logDetail->previous_license_no,],
+            // ['displayString' => 'Applier/Approver',     'final' => $logDetail->user_name,            'applied' => $logDetail->user_name,],
+            // ['displayString' => 'Ward No',              'final' => ($logDetail->created_at)->format('d-m-Y'), 'applied' => ($logDetail->created_at)->format('d-m-Y'),],
+        ]);
     }
 }
