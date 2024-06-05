@@ -1560,6 +1560,9 @@ class ConsumerRepository implements iConsumerRepository
                     $paidStatus = 2;
 
                 $response = array();
+
+                DB::beginTransaction();
+                DB::connection('db_swm')->beginTransaction();
                 //if($transcation->count() == 0 && $totalPayableAmt > 0 )
                 if ($totalPayableAmt > 0) {
                     if (!$userId)
@@ -1601,17 +1604,33 @@ class ConsumerRepository implements iConsumerRepository
 
                         DB::connection($this->dbConn)->select($collectionsql);
 
-                        $this->Consumer->join('swm_demands as d', 'd.consumer_id', '=', 'swm_consumers.id')
-                            ->where('swm_consumers.apartment_id', $apartmentId)
-                            ->where('swm_consumers.ulb_id', $ulbId)
-                            ->where('d.payment_to', '<=', $paidUpto)
-                            ->where('d.paid_status', '=', 0)
-                            ->where('d.is_deactivate', '=', 0)
-                            ->update(['d.paid_status' => 1]);
+                        $consumerDtls = $this->Consumer->where('apartment_id', $apartmentId)
+                            ->where('ulb_id', $ulbId)
+                            ->where('is_deactivate', '=', 0)
+                            ->get();
+                        $consumerIds = collect($consumerDtls)->pluck('id');
 
-                        $sql = "SELECT a.apt_name, a.apt_code, sum(ct.rate) as monthly_rate FROM `swm_apartments` a
-                        join swm_consumers c on c.apartment_id=a.id
-                        join swm_consumer_types ct on c.consumer_type_id=ct.id where a.id=" . $apartmentId . " and a.ulb_id=" . $ulbId . " group by a.apt_name, a.apt_code";
+                        $this->Demand
+                            ->whereIn('consumer_id', $consumerIds)
+                            ->where('payment_to', '<=', $paidUpto)
+                            ->where('paid_status', '=', 0)
+                            ->where('is_deactivate', '=', 0)
+                            ->update(['paid_status' => 1]);
+
+                        // $this->Consumer
+                        //     ->join('swm_demands as d', 'd.consumer_id', '=', 'swm_consumers.id')
+                        //     ->where('swm_consumers.apartment_id', $apartmentId)
+                        //     ->where('swm_consumers.ulb_id', $ulbId)
+                        //     ->where('d.payment_to', '<=', $paidUpto)
+                        //     ->where('d.paid_status', '=', 0)
+                        //     ->where('d.is_deactivate', '=', 0)
+                        //     ->update(['d.paid_status' => 1]);
+
+                        $sql = "SELECT a.apt_name, a.apt_code, sum(ct.rate) as monthly_rate 
+                                FROM swm_apartments a
+                                    join swm_consumers c on c.apartment_id=a.id
+                                    join swm_consumer_types ct on c.consumer_type_id=ct.id 
+                                where a.id=" . $apartmentId . " and a.ulb_id=" . $ulbId . " group by a.apt_name, a.apt_code";
 
                         $aprtment = DB::connection($this->dbConn)->select($sql);
 
@@ -1631,10 +1650,13 @@ class ConsumerRepository implements iConsumerRepository
                             $response['remainingAmount'] = $remainingAmt;
                             $response['paidUpto'] = $request->paidUpto;
                             $response['previousPaidAmount'] = ($lastpayment) ? $lastpayment->total_payable_amt : "0.00";
-                            $response['tcName'] = $getTc->name ?? "";
+                            $response['tcName']   = $getTc->name ?? "";
                             $response['tcMobile'] = $getTc->contactno ?? "";
                         }
                         $response = array_merge($response, $this->GetUlbData($ulbId));
+
+                        DB::commit();
+                        DB::connection('db_swm')->commit();
                         return response()->json(['status' => True, 'data' => $response, 'msg' => 'Payment Done Successfully'], 200);
                     }
                 }
@@ -1645,6 +1667,8 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => '', 'msg' => 'Undefined parameter suppied or lack of information missing'], 200);
             }
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('db_swm')->rollBack();
             return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
         }
     }

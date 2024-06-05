@@ -515,8 +515,8 @@ class CitizenController extends Controller
             $data = $apartmentDtls;
             $data->demandAmt = $demand['demandAmt'];
             $data->demandUpto = $demand['demandUpto'];
-            
-            $response['data'] = array ($data);
+
+            $response['data'] = array($data);
             $response['current_page'] = 1;
             $response['last_page'] = 1;
             $response['total'] = 1;
@@ -781,8 +781,6 @@ class CitizenController extends Controller
             $todayDate           = Carbon::now();
             $consumerType        = $req->consumerType;
             $consumerRepo        = app(ConsumerRepository::class);
-            // $penaltyDetails    = PenaltyFinalRecord::find($req->applicationId);
-            // $challanDetails    = PenaltyChallan::where('penalty_record_id', $req->applicationId)->where('status', 1)->first();
 
             $receiptIdParam    = Config::get('constants.ID_GENERATION_PARAMS.RECEIPT');
             // $ulbDtls       = UlbMaster::find($penaltyDetails->ulb_id);
@@ -995,34 +993,35 @@ class CitizenController extends Controller
                     }
                     $getTc = $this->GetUserDetails($transaction->user_id);
 
-                    $response['transactionDate'] = Carbon::create($transaction->transaction_date)->format('d-m-Y');
-                    $response['transactionTime'] = Carbon::create($transaction->stampdate)->format('h:i A');
-                    $response['transactionNo'] = $transaction->transaction_no;
-                    $response['consumerName'] = $transaction->name;
-                    $response['consumerNo'] = $transaction->consumer_no;
-                    $response['mobileNo'] = $transaction->mobile_no;
+                    $response['transactionDate']  = Carbon::create($transaction->transaction_date)->format('d-m-Y');
+                    $response['transactionTime']  = Carbon::create($transaction->stampdate)->format('h:i A');
+                    $response['transactionNo']    = $transaction->transaction_no;
+                    $response['consumerName']     = $transaction->name;
+                    $response['consumerNo']       = $transaction->consumer_no;
+                    $response['mobileNo']         = $transaction->mobile_no;
                     $response['consumerCategory'] = ($transaction->consumer_category) ? $transaction->consumer_category : 'RESIDENTIAL';
-                    $response['consumerType'] = $transaction->consumer_type;
-                    $response['licenseNo'] = isset($transaction->license_no) ? $transaction->license_no : '';
-                    $response['apartmentName'] = $transaction->apt_name;
-                    $response['apartmentCode'] = $transaction->apt_code;
-                    $response['ReceiptWard'] = ($transaction->apt_ward) ? $transaction->apt_ward : $transaction->ward_no;
-                    $response['holdingNo'] = $transaction->holding_no;
-                    $response['address'] = ($transaction->apt_address) ? $transaction->apt_address : $transaction->address;
-                    $response['paidFrom'] = $transaction->payment_from;
-                    $response['paidUpto'] = $transaction->payment_to;
-                    $response['paymentMode'] = $transaction->payment_mode;
-                    $response['bankName'] = $transaction->bank_name;
-                    $response['branchName'] = $transaction->branch_name;
-                    $response['chequeNo'] = $transaction->cheque_dd_no;
-                    $response['chequeDate'] = $transaction->cheque_dd_date;
-                    $response['noOfFlats'] = $consumerCount;
-                    $response['monthlyRate'] = $monthlyRate;
-                    $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
-                    $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
-                    $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
-                    $response['tcName'] = $getTc->name ?? "";
-                    $response['tcMobile'] = $getTc->contactno ?? "";
+                    $response['consumerType']     = $transaction->consumer_type;
+                    $response['licenseNo']        = isset($transaction->license_no) ? $transaction->license_no : '';
+                    $response['apartmentName']    = $transaction->apt_name;
+                    $response['apartmentCode']    = $transaction->apt_code;
+                    $response['ReceiptWard']      = ($transaction->apt_ward) ? $transaction->apt_ward : $transaction->ward_no;
+                    $response['holdingNo']        = $transaction->holding_no;
+                    $response['address']          = ($transaction->apt_address) ? $transaction->apt_address : $transaction->address;
+                    $response['paidFrom']         = $transaction->payment_from;
+                    $response['paidUpto']         = $transaction->payment_to;
+                    $response['paymentMode']      = $transaction->payment_mode;
+                    $response['bankName']         = $transaction->bank_name;
+                    $response['branchName']       = $transaction->branch_name;
+                    $response['chequeNo']         = $transaction->cheque_dd_no;
+                    $response['chequeDate']       = $transaction->cheque_dd_date;
+                    $response['noOfFlats']        = $consumerCount;
+                    $response['monthlyRate']      = $monthlyRate;
+                    $response['demandAmount']     = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
+                    $response['paidAmount']       = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
+                    $response['remainingAmount']  = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
+                    $response['tcName']           = $getTc->name ?? "";
+                    $response['tcMobile']         = $getTc->contactno ?? "";
+                    $response['isapartment']      = ($transaction->apartment_id) ? true : false;
                 }
             }
             $printData = array_merge($response, $this->GetUlbData($ulbId));
