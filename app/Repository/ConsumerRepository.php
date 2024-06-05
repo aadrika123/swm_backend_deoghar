@@ -166,6 +166,11 @@ class ConsumerRepository implements iConsumerRepository
                         $total_tax += $dmd->total_tax;
                         $paid_status = 'Unpaid';
                     }
+
+                    $geoLocation = $this->GeoLocation
+                        ->where('consumer_id', $consumer->id)
+                        ->first();
+
                     //
 
                     $con['id'] = $consumer->id;
@@ -189,6 +194,7 @@ class ConsumerRepository implements iConsumerRepository
                     $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
                     $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
                     $con['editApplicable'] = ($trans == 0) ? true : false;
+                    $con['isgeotagged'] = ($geoLocation) ? true : false;
                     $conArr[] = $con;
                 }
                 return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
@@ -269,6 +275,7 @@ class ConsumerRepository implements iConsumerRepository
 
                 $apt_tot_tax = 0;
                 $aptmonthlyDemand = 0;
+
                 foreach ($apartments as $apartment) {
 
                     $demand = $this->Demand->where('consumer_id', $apartment->consumer_id)
@@ -294,6 +301,8 @@ class ConsumerRepository implements iConsumerRepository
                         $monthlyDemand = $dmd->total_tax;
                     }
 
+
+
                     $apt_tot_tax += $total_tax;
                     $aptmonthlyDemand += $monthlyDemand;
                     $con['id'] = $apartment->id;
@@ -318,10 +327,16 @@ class ConsumerRepository implements iConsumerRepository
                     $con['applyDate'] = ($apartment->entry_date) ? date("d-m-Y", strtotime($apartment->entry_date)) : '';
                     $con['editApplicable'] = ($trans == 0) ? true : false;
 
+
                     $conArr[] = $con;
                 }
 
-                return response()->json(['status' => True, 'data' => $conArr, 'totalAptDemand' => $apt_tot_tax, 'totalAptMonthlyDemand' => $aptmonthlyDemand, 'msg' => ''], 200);
+                $geoLocation = $this->GeoLocation
+                    ->where('apartment_id', $apartment->id)
+                    ->first();
+                $isgeotagged = ($geoLocation) ? true : false;
+
+                return response()->json(['status' => True, 'data' => $conArr, 'totalAptDemand' => $apt_tot_tax, 'totalAptMonthlyDemand' => $aptmonthlyDemand, 'isgeotagged' => $isgeotagged, 'msg' => ''], 200);
             } else {
                 return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
             }
@@ -1177,11 +1192,9 @@ class ConsumerRepository implements iConsumerRepository
                     $response['latitude'] = ($geoLocation) ? $geoLocation->latitude : "";
                     $response['longitude'] = ($geoLocation) ? $geoLocation->longitude : "";
                     $response['photo'] = request()->getHttpHost() . "\\public\\" . $geoLocation->file_name;
-                }
-
-                return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
-            } else {
-                return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
+                    return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+                } else
+                    return response()->json(['status' => False, 'data' => $response, 'msg' => 'Data not found.'], 200);
             }
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
@@ -1618,8 +1631,8 @@ class ConsumerRepository implements iConsumerRepository
                             $response['remainingAmount'] = $remainingAmt;
                             $response['paidUpto'] = $request->paidUpto;
                             $response['previousPaidAmount'] = ($lastpayment) ? $lastpayment->total_payable_amt : "0.00";
-                            $response['tcName'] = $getTc->name??"";
-                            $response['tcMobile'] = $getTc->contactno??"";
+                            $response['tcName'] = $getTc->name ?? "";
+                            $response['tcMobile'] = $getTc->contactno ?? "";
                         }
                         $response = array_merge($response, $this->GetUlbData($ulbId));
                         return response()->json(['status' => True, 'data' => $response, 'msg' => 'Payment Done Successfully'], 200);
@@ -2177,6 +2190,8 @@ class ConsumerRepository implements iConsumerRepository
                 $deny->denied_reason = $request->remarks;
                 $deny->apartment_id = ($apartmentId) ? $apartmentId : null;
                 $deny->ulb_id = $ulbId;
+                $deny->latitude  = $request->latitude;
+                $deny->longitude = $request->longitude;
                 $deny->save();
 
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Payment Denied successfully'], 200);
@@ -2289,8 +2304,8 @@ class ConsumerRepository implements iConsumerRepository
                     $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
                     $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
                     $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
-                    $response['tcName'] = $getTc->name??"";
-                    $response['tcMobile'] = $getTc->contactno??"";
+                    $response['tcName'] = $getTc->name ?? "";
+                    $response['tcMobile'] = $getTc->contactno ?? "";
                 }
             }
             $response = array_merge($response, $this->GetUlbData($ulbId));
@@ -3141,14 +3156,14 @@ class ConsumerRepository implements iConsumerRepository
 
 
 
-                $response['totalDemand'] = $total_demand??0;
-                $response['outstandingDemand'] = $Report->outstanding_amount??0;
-                $response['totalConsumer'] = $Report->total_consumer??0;
-                $response['totalCollection'] = $total_collection??0;
-                $response['reconcilePending'] = $total_reconcile??0;
-                $response['adjustmentAmount'] = $Report->adjust_amount??0;
-                $response['totalResidenstialConsumer'] = $Report->residential??0;
-                $response['totalCommercialConsumer'] = $Report->commercial??0;
+                $response['totalDemand'] = $total_demand ?? 0;
+                $response['outstandingDemand'] = $Report->outstanding_amount ?? 0;
+                $response['totalConsumer'] = $Report->total_consumer ?? 0;
+                $response['totalCollection'] = $total_collection ?? 0;
+                $response['reconcilePending'] = $total_reconcile ?? 0;
+                $response['adjustmentAmount'] = $Report->adjust_amount ?? 0;
+                $response['totalResidenstialConsumer'] = $Report->residential ?? 0;
+                $response['totalCommercialConsumer'] = $Report->commercial ?? 0;
                 $response['demand'] = $totalDmds;
                 $response['collection'] = $totalcolls;
                 $response['arrear'] = $totalarrears;
