@@ -580,7 +580,7 @@ class ConsumerController extends Controller
      * update route
      *
      * @param  $request
-     * @return ConsumerRepository->RouteDataById
+     * @return ConsumerRepository->updateRoute
      */
     public function updateRoute(Request $req)
     {
@@ -591,7 +591,7 @@ class ConsumerController extends Controller
      * Delete route
      *
      * @param  $request
-     * @return ConsumerRepository->RouteDataById
+     * @return ConsumerRepository->DeleteRoute
      */
     public function DeleteRoute(Request $req)
     {

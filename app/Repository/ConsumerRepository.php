@@ -2969,7 +2969,11 @@ class ConsumerRepository implements iConsumerRepository
     public function RouteDataById(Request $request)
     {
         $userId = $request->user()->id;
-        $ulbId = $this->GetUlbId($userId);
+        $ulbId  = $this->GetUlbId($userId);
+        $apt    = "";
+        $cons   = "";
+        $apartmentList   = collect();
+        $consumerList    = collect();
         try {
             $response = array();
             if (isset($request->routeId)) {
@@ -2977,31 +2981,36 @@ class ConsumerRepository implements iConsumerRepository
                     ->where('id', $request->routeId)
                     ->first();
 
-                $apt = explode(',', $record->apartment_ids);
-                $cons = explode(',', $record->consumer_ids);
-                $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no"))
-                    ->whereIn('id', $apt)
-                    ->where('ulb_id', $ulbId)
-                    ->where('is_deactivate', 0)
-                    ->orderBy('id', 'desc');
+                if ($record->apartment_ids)
+                    $apt  = explode(',', $record->apartment_ids);
+                if ($record->consumer_ids)
+                    $cons = explode(',', $record->consumer_ids);
 
-                $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
-                    ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                    ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no'))
-                    ->where('swm_consumers.ulb_id', $ulbId)
-                    ->whereIn('swm_consumers.id', $cons)
-                    ->where('is_deactivate', 0)
-                    ->orderBy('id', 'desc');
+                if ($apt)
+                    $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no"))
+                        ->whereIn('id', $apt)
+                        ->where('ulb_id', $ulbId)
+                        ->where('is_deactivate', 0)
+                        ->orderBy('id', 'desc')
+                        ->get();
 
-                $consumerList = $consumerList->union($apartmentList)->paginate(100);
+                if ($cons)
+                    $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                        ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                        ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no'))
+                        ->where('swm_consumers.ulb_id', $ulbId)
+                        ->whereIn('swm_consumers.id', $cons)
+                        ->where('is_deactivate', 0)
+                        ->orderBy('id', 'desc')
+                        ->get();
 
+                $consumerList = $consumerList->merge($apartmentList);
 
                 foreach ($consumerList as $consumer) {
                     if ($consumer->category == 'Apartment')
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Apartment', $ulbId);
                     else
                         $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Consumer', $ulbId);
-                    //
 
                     $con['id'] = $consumer->id;
                     $con['wardNo'] = $consumer->ward_no;
