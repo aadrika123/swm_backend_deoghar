@@ -476,7 +476,7 @@ class ConsumerController extends Controller
      * Payment Adjustment
      *
      * @param  $request
-     * @return ConsumerRepository->DenialNotificationList
+     * @return ConsumerRepository->PaymentAdjustment
      */
     public function PaymentAdjustment(Request $req)
     {
