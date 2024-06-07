@@ -1161,7 +1161,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Undefind parameter supply!'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
