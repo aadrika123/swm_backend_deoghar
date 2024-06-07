@@ -222,7 +222,7 @@ class ConsumerRepository implements iConsumerRepository
 
                 if (isset($request->apartmentName)) {
                     $field = 'apt_name';
-                    $operator = 'like';
+                    $operator = 'ilike';
                     $value = '%' . $request->apartmentName . '%';
                 }
 
@@ -2104,11 +2104,11 @@ class ConsumerRepository implements iConsumerRepository
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
 
-            $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
-                ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'));
-
             if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
+
+                $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                    ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'));
 
                 if (isset($request->wardNo))
                     $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
@@ -2121,7 +2121,10 @@ class ConsumerRepository implements iConsumerRepository
             }
 
             if (isset($request->consumerNo))
-                $consumerList = $consumerList->where('swm_consumers.consumer_no', $request->consumerNo);
+                $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                    ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
+                    ->where('swm_consumers.consumer_no', $request->consumerNo);
 
 
             $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
@@ -2171,16 +2174,16 @@ class ConsumerRepository implements iConsumerRepository
                 $conArr[] = $con;
             }
             // $data['data']        = $conArr;
-            // $data['total']       =$consumerList->total();
-            // $data['lastPage']    =$consumerList->lastPage();
-            // $data['currentPage'] =$consumerList->currentPage();
+            // $data['total']       = $consumerList->total();
+            // $data['lastPage']    = $consumerList->lastPage();
+            // $data['currentPage'] = $consumerList->currentPage();
             // $data['perPage']     = $request->perPage;
-            return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
+            return response()->json(['status' => True, 'data' => $conArr, 'msg' => '', 'total' => $consumerList->total(), 'lastPage' => $consumerList->lastPage()], 200);
 
             // else
             //     return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
