@@ -2103,11 +2103,12 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
-            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype) || isset($ulbId)) {
 
-                $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
-                    ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'));
+            $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'));
+
+            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
 
                 if (isset($request->wardNo))
                     $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
@@ -2117,65 +2118,67 @@ class ConsumerRepository implements iConsumerRepository
 
                 if (isset($request->consumertype))
                     $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
-
-
-
-                $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
-                //     $perPage = $request->perPage,
-                //     $columns = ['*'],
-                //     $pageName = 'consumers'
-                // );
-
-                //echo "<pre/>";print_r($consumerList);
-                foreach ($consumerList as $consumer) {
-                    $demand = $this->Demand->where('consumer_id', $consumer->id)
-                        ->where('ulb_id', $ulbId)
-                        ->where('paid_status', 0)
-                        ->where('is_deactivate', 0)
-                        ->orderBy('id', 'asc')
-                        ->get();
-                    $total_tax = 0.00;
-                    $demand_upto = '';
-                    $paid_status = 'Paid';
-                    foreach ($demand as $dmd) {
-                        $total_tax += $dmd->total_tax;
-                        $demand_upto = $dmd->demand_date;
-                        $paid_status = 'Unpaid';
-                    }
-                    //
-
-                    $con['id'] = $consumer->id;
-                    $con['wardNo'] = $consumer->ward_no;
-                    $con['holdingNo'] = $consumer->holding_no;
-                    $con['consumerName'] = $consumer->name;
-                    $con['apartmentId'] = $consumer->apartment_id;
-                    $con['consumerNo'] = $consumer->consumer_no;
-                    $con['Address'] = $consumer->address;
-                    $con['pinCode'] = $consumer->pincode;
-                    $con['cansumerCategory'] = $consumer->category;
-                    $con['cansumerType'] = $consumer->type;
-                    $con['mobileNo'] = $consumer->mobile_no;
-                    // $con['activeDemandDetails'] = $demand;
-                    $con['totalDemand'] = $total_tax;
-                    $con['demandUpto'] = $demand_upto;
-                    $con['paidStatus'] = $paid_status;
-                    $con['consumer_category_id'] = $consumer->category_id;
-                    $con['consumer_type_id'] = $consumer->consumer_type_id;
-                    $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
-                    $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
-                    $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
-
-                    $conArr[] = $con;
-                }
-                // $data['data']        = $conArr;
-                // $data['total']       =$consumerList->total();
-                // $data['lastPage']    =$consumerList->lastPage();
-                // $data['currentPage'] =$consumerList->currentPage();
-                // $data['perPage']     = $request->perPage;
-                return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
-            } else {
-                return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
             }
+
+            if (isset($request->consumerNo))
+                $consumerList = $consumerList->where('swm_consumers.consumer_no', $request->consumerNo);
+
+
+            $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
+            //     $perPage = $request->perPage,
+            //     $columns = ['*'],
+            //     $pageName = 'consumers'
+            // );
+
+            //echo "<pre/>";print_r($consumerList);
+            foreach ($consumerList as $consumer) {
+                $demand = $this->Demand->where('consumer_id', $consumer->id)
+                    ->where('ulb_id', $ulbId)
+                    ->where('paid_status', 0)
+                    ->where('is_deactivate', 0)
+                    ->orderBy('id', 'asc')
+                    ->get();
+                $total_tax = 0.00;
+                $demand_upto = '';
+                $paid_status = 'Paid';
+                foreach ($demand as $dmd) {
+                    $total_tax += $dmd->total_tax;
+                    $demand_upto = $dmd->demand_date;
+                    $paid_status = 'Unpaid';
+                }
+
+                $con['id'] = $consumer->id;
+                $con['wardNo'] = $consumer->ward_no;
+                $con['holdingNo'] = $consumer->holding_no;
+                $con['consumerName'] = $consumer->name;
+                $con['apartmentId'] = $consumer->apartment_id;
+                $con['consumerNo'] = $consumer->consumer_no;
+                $con['Address'] = $consumer->address;
+                $con['pinCode'] = $consumer->pincode;
+                $con['cansumerCategory'] = $consumer->category;
+                $con['cansumerType'] = $consumer->type;
+                $con['mobileNo'] = $consumer->mobile_no;
+                // $con['activeDemandDetails'] = $demand;
+                $con['totalDemand'] = $total_tax;
+                $con['demandUpto'] = $demand_upto;
+                $con['paidStatus'] = $paid_status;
+                $con['consumer_category_id'] = $consumer->category_id;
+                $con['consumer_type_id'] = $consumer->consumer_type_id;
+                $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
+                $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
+                $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
+
+                $conArr[] = $con;
+            }
+            // $data['data']        = $conArr;
+            // $data['total']       =$consumerList->total();
+            // $data['lastPage']    =$consumerList->lastPage();
+            // $data['currentPage'] =$consumerList->currentPage();
+            // $data['perPage']     = $request->perPage;
+            return response()->json(['status' => True, 'data' => $conArr, 'msg' => ''], 200);
+
+            // else
+            //     return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
         }
