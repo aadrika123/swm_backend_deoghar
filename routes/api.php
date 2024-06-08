@@ -126,6 +126,8 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('getRouteDataById', 'RouteDataById');
         Route::post('updateRoute', 'updateRoute');
         Route::post('deleteRoute', 'DeleteRoute');
+
+        Route::post('createDefaultConsumerApartment', 'DefaultConsumerApartment');
     });
 
     Route::controller(MasterController::class)->group(function () {

@@ -2103,7 +2103,7 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
-
+            
             if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
 
                 $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
@@ -3233,4 +3233,123 @@ class ConsumerRepository implements iConsumerRepository
             return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
         }
     }
+
+    public function DefaultConsumerAdd(Request $request)
+    {
+
+        try {
+            $user = Auth()->user();
+            $ulbId = $user->ulb_id;
+            $userId = $user->id;
+            $validator = Validator::make($request->all(), [
+                'wardNo' => 'required',
+                'aptName' => 'required',
+                'aptCode' => 'required',
+                'aptAddress' => 'required',
+                'pinCode' => 'required',
+                'noOfFlat' => 'required|int',
+                'consumerCategory' => 'required|int',
+                'consumerType' => 'required|int',
+                'demandFrom' => 'required|date'
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['status' => False, 'msg' => $validator->messages()]);
+            }
+
+            $checkApartment = $this->Apartment->where('apt_name', $request->aptName)
+                                            ->where('apt_code', $request->aptCode)
+                                            ->where('ulb_id', $ulbId)
+                                            ->count();
+            DB::beginTransaction();
+            if($checkApartment == 0)
+            {
+                $apartment = $this->Apartment;
+                $apartment->ward_no  =  $request->wardNo;
+                $apartment->apt_name  =  $request->aptName;
+                $apartment->apt_code  =  $request->aptCode;
+                $apartment->apt_address  =  $request->aptAddress;
+                $apartment->pincode  =  $request->pinCode;
+                $apartment->ulb_id  =  $ulbId;
+                $apartment->is_deactivate  =  0;
+                $apartment->save();
+
+                if (isset($apartment->id) && $apartment->id > 0) 
+                {
+                    
+                    for($i=1; $i<=$request->noOfFlat; $i++)
+                    {
+
+                        $consumer_id = $this->createCon($request, $i);
+
+                        $consumerUpdate = $this->Consumer->find($consumer_id);
+
+                        //Check Consumer for that apartment
+                        $getConsum = $this->Consumer->select('consumer_no')->where('apartment_id', $apartment->id)->where('ulb_id', $ulbId);
+                        $oldConsumerNo = $getConsum->first();
+                        if ($getConsum->count() > 0) {
+                            $apartCount = $getConsum->count() + 1;
+                            $consumerNo = substr($oldConsumerNo->consumer_no, 0, 10) . str_pad($apartCount, 5, "0", STR_PAD_LEFT);
+                        } else {
+                            $serialNo = '0001';
+                            $wardCreated = str_pad($request->wardNo, 2, "0", STR_PAD_LEFT);
+                            $consumerTypeCreated = str_pad($request->consumerType, 2, "0", STR_PAD_LEFT);
+                            $randCreated = str_pad($consumer_id, 5, "0", STR_PAD_LEFT);
+
+                            $consumerNo = $wardCreated . $request->consumerCategory . $consumerTypeCreated . $randCreated . $serialNo;
+                        }
+
+                        $consumerUpdate->apartment_id = $apartment->id;
+                        $consumerUpdate->consumer_no = $consumerNo;
+                        $consumerUpdate->save();
+
+                        $consumerType = $this->ConsumerType->select('rate', 'name')
+                            ->where('id', $request->consumerType)
+                            ->first();
+                        //Generate Demand
+                        $demand = $this->GenerateDemand($this->dbConn, $consumer_id, $consumerType->rate, $request->demandFrom, $userId, $ulbId);
+                        
+                    }
+                }
+                DB::commit();
+                $msg = "Default Consumer created and their demand generated successfully";
+            }
+            else{
+                $msg = "Apartment already exist.";
+            }
+            return response()->json(['status' => true, 'data' => array(), 'msg' => $msg], 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    public function createCon(Request $request, $counter)
+    {
+        $user = Auth()->user();
+        $ulbId = $user->ulb_id;
+        $userId = $user->id;
+        
+        $consumer = new Consumer();
+        $consumer->setConnection($this->dbConn);
+        $consumer->ward_no = $request->wardNo;
+        $consumer->holding_no = null;
+        $consumer->name = $request->aptName."(Consumer-".$counter.")";
+        $consumer->mobile_no = null;
+        $consumer->address = $request->aptAddress;
+        $consumer->firm_name = null;
+        $consumer->pincode = $request->pinCode;
+        $consumer->consumer_category_id = $request->consumerCategory;
+        $consumer->consumer_type_id = $request->consumerType;
+        $consumer->license_no = null;
+        $consumer->user_id = $userId;
+        $consumer->entry_date = date('Y-m-d');
+        $consumer->stampdate = date('Y-m-d H:i:s');
+        $consumer->is_deactivate = 0;
+        $consumer->ulb_id = $ulbId;
+        $consumer->is_default = 1;
+        $consumer->save();
+
+        return $consumer->id;
+    }
+
 }

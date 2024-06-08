@@ -609,6 +609,15 @@ class ConsumerController extends Controller
         return $this->ConResp->PaymentAdjustmentList($req);
     }
 
-    
+    /**
+     * Created default consumers and their demands of that apartment
+     *
+     * @param  $request
+     * @return ConsumerRepository->DefaultConsumerAdd
+     */
+    public function DefaultConsumerApartment(Request $req)
+    {
+        return $this->ConResp->DefaultConsumerAdd($req);
+    }
     
 }
