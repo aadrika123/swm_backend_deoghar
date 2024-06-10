@@ -167,6 +167,9 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::get('test', 'text');
         Route::post('getReportData', 'GetReportData');                               // Route for get all type of report
         Route::post('consumer-edit-details', 'consumerEditLogDetails');
+        Route::post('create-tc-geolocation', 'addTcGeoLocation');
+        Route::post('list-tc-geolocation', 'tcGeolocationList');
+        Route::post('get-tc-geolocation', 'getTcGeolocation');
     });
 });
 
