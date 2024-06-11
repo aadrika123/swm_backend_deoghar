@@ -99,7 +99,12 @@ class ReportController extends Controller
             $logDetail = $mTblTcTracking->listgeoLocation()
                 ->whereBetween('created_at', [$fromDate . ' 00:00:01', $toDate . ' 23:59:59'])
                 ->where('status', true)
-                // ->where('ulb_id', $authUser->current_ulb)
+                ->where('ulb_id', $authUser->current_ulb);
+
+            if ($req->tcId)
+                $logDetail = $logDetail->where('user_id', $req->tcId);
+
+            $logDetail = $logDetail
                 ->paginate($perPage);
 
             return $this->responseMsgs(true, "Tc Geolocation List", $logDetail);
