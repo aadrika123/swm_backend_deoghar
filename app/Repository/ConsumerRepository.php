@@ -2817,7 +2817,7 @@ class ConsumerRepository implements iConsumerRepository
                     $val['amount'] = $trans->total_payable_amt;
                     $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
                     $val['demandUpto'] = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
-                    $val['tcName'] = $getuserdata->name;
+                    $val['tcName'] = $getuserdata->name??"";
                     $response[] = $val;
                 }
 
