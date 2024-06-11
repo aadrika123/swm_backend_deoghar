@@ -764,8 +764,8 @@ class ConsumerRepository implements iConsumerRepository
                         ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
                         ->where('tbl_user_mstr.id', $tran->user_id)
                         ->first();
-                    $tran->transaction_by = $userDtl->name;
-                    $tran->contactno = $userDtl->name;
+                    $tran->transaction_by = $userDtl->name ?? "";
+                    $tran->contactno = $userDtl->name ?? "";
 
                     if ($tran->apt_id) {
                         $dmddtl = $this->GetMonthlyFee($this->dbConn, $tran->apt_id, 'Apartment', $ulbId);
@@ -2104,7 +2104,7 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
-            
+
             if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
 
                 $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
@@ -3258,12 +3258,11 @@ class ConsumerRepository implements iConsumerRepository
             }
 
             $checkApartment = $this->Apartment->where('apt_name', $request->aptName)
-                                            ->where('apt_code', $request->aptCode)
-                                            ->where('ulb_id', $ulbId)
-                                            ->count();
+                ->where('apt_code', $request->aptCode)
+                ->where('ulb_id', $ulbId)
+                ->count();
             DB::beginTransaction();
-            if($checkApartment == 0)
-            {
+            if ($checkApartment == 0) {
                 $apartment = $this->Apartment;
                 $apartment->ward_no  =  $request->wardNo;
                 $apartment->apt_name  =  $request->aptName;
@@ -3274,11 +3273,9 @@ class ConsumerRepository implements iConsumerRepository
                 $apartment->is_deactivate  =  0;
                 $apartment->save();
 
-                if (isset($apartment->id) && $apartment->id > 0) 
-                {
-                    
-                    for($i=1; $i<=$request->noOfFlat; $i++)
-                    {
+                if (isset($apartment->id) && $apartment->id > 0) {
+
+                    for ($i = 1; $i <= $request->noOfFlat; $i++) {
 
                         $consumer_id = $this->createCon($request, $i);
 
@@ -3308,13 +3305,11 @@ class ConsumerRepository implements iConsumerRepository
                             ->first();
                         //Generate Demand
                         $demand = $this->GenerateDemand($this->dbConn, $consumer_id, $consumerType->rate, $request->demandFrom, $userId, $ulbId);
-                        
                     }
                 }
                 DB::commit();
                 $msg = "Default Consumer created and their demand generated successfully";
-            }
-            else{
+            } else {
                 $msg = "Apartment already exist.";
             }
             return response()->json(['status' => true, 'data' => array(), 'msg' => $msg], 200);
@@ -3329,12 +3324,12 @@ class ConsumerRepository implements iConsumerRepository
         $user = Auth()->user();
         $ulbId = $user->ulb_id;
         $userId = $user->id;
-        
+
         $consumer = new Consumer();
         $consumer->setConnection($this->dbConn);
         $consumer->ward_no = $request->wardNo;
         $consumer->holding_no = null;
-        $consumer->name = $request->aptName."(Consumer-".$counter.")";
+        $consumer->name = $request->aptName . "(Consumer-" . $counter . ")";
         $consumer->mobile_no = null;
         $consumer->address = $request->aptAddress;
         $consumer->firm_name = null;
@@ -3352,5 +3347,4 @@ class ConsumerRepository implements iConsumerRepository
 
         return $consumer->id;
     }
-
 }
