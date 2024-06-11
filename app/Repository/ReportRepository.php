@@ -558,13 +558,12 @@ class ReportRepository implements iReportRepository
      */
     public function comparison($logDetail)
     {
-
         $changeBy    = $this->GetUserDetails($logDetail->user_id)->name;
         $changedDate = Carbon::create($logDetail->stampdate)->format('d-m-Y');
         $changedTime = Carbon::create($logDetail->stampdate)->format('h:i A');
         return new Collection([
             ['displayString' => 'Ward No',              'final' => $logDetail->ward_no,           'applied' => $logDetail->previous_ward_no,],
-            ['displayString' => 'Consmer Name',         'final' => $logDetail->consumer_name,     'applied' => $logDetail->previous_consumer_name,],
+            ['displayString' => 'Consumer Name',        'final' => $logDetail->consumer_name,     'applied' => $logDetail->previous_consumer_name,],
             ['displayString' => 'Holding No',           'final' => $logDetail->holding_no,        'applied' => $logDetail->previous_holding_no,],
             ['displayString' => 'Mobile No',            'final' => $logDetail->mobile_no,         'applied' => $logDetail->previous_mobile_no,],
             ['displayString' => 'Address',              'final' => $logDetail->address,           'applied' => $logDetail->previous_address,],
