@@ -2127,7 +2127,8 @@ class ConsumerRepository implements iConsumerRepository
                 $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
                     ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
-                    ->where('swm_consumers.consumer_no', $request->consumerNo);
+                    ->where('swm_consumers.consumer_no', $request->consumerNo)
+                    ->where('swm_consumers.is_deactivate', 0);
 
 
             $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
