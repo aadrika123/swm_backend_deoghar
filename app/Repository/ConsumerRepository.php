@@ -2107,9 +2107,11 @@ class ConsumerRepository implements iConsumerRepository
 
             if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
 
-                $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                $consumerList = $this->Consumer
+                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
+                    ->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'));
+                    ->where('swm_consumers.is_deactivate', 0);
 
                 if (isset($request->wardNo))
                     $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
@@ -2817,7 +2819,7 @@ class ConsumerRepository implements iConsumerRepository
                     $val['amount'] = $trans->total_payable_amt;
                     $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
                     $val['demandUpto'] = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
-                    $val['tcName'] = $getuserdata->name??"";
+                    $val['tcName'] = $getuserdata->name ?? "";
                     $response[] = $val;
                 }
 
