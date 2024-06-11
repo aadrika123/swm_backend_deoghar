@@ -541,7 +541,13 @@ class ReportRepository implements iReportRepository
 
             $data = $this->comparison($logDetail);
 
-            return $this->responseMsgs(true, "Edit Log Details", $data);
+            // return $this->responseMsgs(true, "Edit Log Details", $data,"consumerNo"=>$logDetail->consumer_no);
+            return response()->json([
+                'status' => true,
+                'msg'    => "Edit Log Details",
+                'data'   => $data,
+                "consumerNo" => $logDetail->consumer_no
+            ]);
         } catch (Exception $e) {
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
@@ -554,18 +560,20 @@ class ReportRepository implements iReportRepository
     {
 
         $changeBy    = $this->GetUserDetails($logDetail->user_id)->name;
-        $changedDate = Carbon::create($logDetail->stampdate)->format('d-m-Y h:i A');
+        $changedDate = Carbon::create($logDetail->stampdate)->format('d-m-Y');
+        $changedTime = Carbon::create($logDetail->stampdate)->format('h:i A');
         return new Collection([
             ['displayString' => 'Ward No',              'final' => $logDetail->ward_no,           'applied' => $logDetail->previous_ward_no,],
             ['displayString' => 'Consmer Name',         'final' => $logDetail->consumer_name,     'applied' => $logDetail->previous_consumer_name,],
             ['displayString' => 'Holding No',           'final' => $logDetail->holding_no,        'applied' => $logDetail->previous_holding_no,],
             ['displayString' => 'Mobile No',            'final' => $logDetail->mobile_no,         'applied' => $logDetail->previous_mobile_no,],
             ['displayString' => 'Address',              'final' => $logDetail->address,           'applied' => $logDetail->previous_address,],
-            ['displayString' => 'Consumer No',          'final' => $logDetail->consumer_no,       'applied' => $logDetail->previous_consumer_no,],
+            // ['displayString' => 'Consumer No',          'final' => $logDetail->consumer_no,       'applied' => $logDetail->previous_consumer_no,],
             ['displayString' => 'Pincode',              'final' => $logDetail->pincode,           'applied' => $logDetail->previous_pincode,],
             ['displayString' => 'License No',           'final' => $logDetail->license_no,        'applied' => $logDetail->previous_license_no,],
             ['displayString' => 'Edited By',            'final' => $changeBy,                     'applied' => 'NA',],
-            ['displayString' => 'Edited Date',           'final' => $changedDate,                 'applied' => 'NA',],
+            ['displayString' => 'Edit Date',            'final' => $changedDate,                  'applied' => 'NA',],
+            ['displayString' => 'Edit Time',            'final' => $changedTime,                  'applied' => 'NA',],
         ]);
     }
 }
