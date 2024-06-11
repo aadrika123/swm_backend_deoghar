@@ -1749,6 +1749,7 @@ class ConsumerRepository implements iConsumerRepository
                             WHERE (t.transaction_date BETWEEN '$fromDate' AND '$toDate') 
                             AND t.ulb_id = $ulbId
                             AND t.paid_status != 0  
+                            AND t.payment_mode != 'ONLINE'  
                             " . $checkTc . "
                             GROUP BY 
                             t.user_id, 
