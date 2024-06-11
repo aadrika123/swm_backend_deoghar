@@ -1939,7 +1939,6 @@ class ConsumerRepository implements iConsumerRepository
                     ->where('ulb_id', $ulbId)
                     ->first();
 
-
                 return response()->json(['status' => True, 'data' => $data, 'msg' => 'Cheque DD Details'], 200);
             }
         } catch (Exception $e) {
