@@ -101,7 +101,7 @@ class ReportController extends Controller
                 ->where('status', true)
                 ->where('ulb_id', $authUser->current_ulb);
 
-            if ($req->tcId)
+            if (isset($req->tcId))
                 $logDetail = $logDetail->where('user_id', $req->tcId);
 
             $logDetail = $logDetail
