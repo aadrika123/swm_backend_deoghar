@@ -373,6 +373,18 @@ class ConsumerController extends Controller
         return $this->ConResp->CashVerification($req);
     }
 
+    
+    /**
+     * Get Cheque dd details.
+     *
+     * @param  $request
+     * @return ConsumerRepository->getChequeDdDetails
+     */
+    public function getChequeDdDetails(Request $req)
+    {
+        return $this->ConResp->getChequeDdDetails($req);
+    }
+
 
     /**
      * Make Bank Reconcilliation.

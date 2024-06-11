@@ -93,6 +93,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('getCashVerificationList', 'getCashVerificationList');
         Route::post('getCashVerificationFullDetails', 'getCashVerificationFullDetails');
         Route::post('postCashVerification', 'CashVerification');
+        Route::post('getChequeDdDetails', 'getChequeDdDetails');
 
         Route::post('postClearanceForm', 'ClearanceForm');                           // Route for make bank reconciliation
         Route::post('getBankReconciliationList', 'GetBankReconciliationList');        // Route for get bank reconciliation
