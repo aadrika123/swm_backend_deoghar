@@ -782,12 +782,6 @@ class CitizenController extends Controller
             $consumerType        = $req->consumerType;
             $consumerRepo        = app(ConsumerRepository::class);
 
-            $receiptIdParam    = Config::get('constants.ID_GENERATION_PARAMS.RECEIPT');
-            // $ulbDtls       = UlbMaster::find($penaltyDetails->ulb_id);
-            // $idGeneration  = new IdGeneration($receiptIdParam, $penaltyDetails->ulb_id, $section, 0);
-            // $transactionNo = $idGeneration->generate();
-            $transactionNo = "12231231231";
-
             if ($consumerType == 'apartment')
                 $paymentData = $mRazorpayReq->getPaymentRecord($req)
                     ->where('apartment_id', $req->consumerId)

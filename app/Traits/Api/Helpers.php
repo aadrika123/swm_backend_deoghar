@@ -223,7 +223,7 @@ trait Helpers
             if ($user)
                 $current_ulb = $user->current_ulb;
             else
-                $current_ulb = 21;
+                $current_ulb = 11;
             $ulb = Ulb::find($current_ulb);
             // print_r($ulb);
             // //Session::put('ulb', $ulb->db_name);
@@ -233,7 +233,7 @@ trait Helpers
 
     static function GetUlbId($userId)
     {
-        $default = 21;
+        $default = 11;
         if (isset($userId) && $userId <> '') {
             $userPerm = TblUserMstr::select('current_ulb')
                 ->where('id', $userId)
