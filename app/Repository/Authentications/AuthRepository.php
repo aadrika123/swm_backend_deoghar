@@ -176,7 +176,7 @@ class AuthRepository implements iAuth
                 return response()->json($message, 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -186,7 +186,7 @@ class AuthRepository implements iAuth
             Auth::logout();
             return response()->json(['status' => True, 'data' => '', 'msg' => 'You are login out'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -285,7 +285,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Employee created but user not created due to technical issue'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -404,7 +404,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Employee not updated'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -449,7 +449,7 @@ class AuthRepository implements iAuth
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -469,7 +469,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => False, 'data' => '', 'msg' => 'Undefined parameter suppied or lack of information missing'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -487,7 +487,7 @@ class AuthRepository implements iAuth
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -517,7 +517,7 @@ class AuthRepository implements iAuth
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -541,7 +541,7 @@ class AuthRepository implements iAuth
                 }
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -585,7 +585,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Menu created but permission not granted due to technical issue'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -621,7 +621,7 @@ class AuthRepository implements iAuth
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -669,7 +669,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Menu updated successfully'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -712,7 +712,7 @@ class AuthRepository implements iAuth
                 return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 

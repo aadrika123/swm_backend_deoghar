@@ -53,7 +53,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -89,7 +89,7 @@ class MasterRepository implements iMasterRepository
             $responseData['apartmentList'] = $aptlist;
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -118,7 +118,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -135,7 +135,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -174,7 +174,7 @@ class MasterRepository implements iMasterRepository
                 return response()->json(['status' => False, 'data' => '', 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -212,7 +212,7 @@ class MasterRepository implements iMasterRepository
             // }
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Add new Apartment successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -231,7 +231,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -258,7 +258,7 @@ class MasterRepository implements iMasterRepository
             if ($catgory->id)
                 return response()->json(['status' => True, 'data' => $responseData, 'msg' => 'Consumer Category Added successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -285,7 +285,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => 'Consumer Category Updated successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -314,7 +314,7 @@ class MasterRepository implements iMasterRepository
                 return response()->json(['status' => False, 'data' => $responseData, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -340,7 +340,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -370,7 +370,7 @@ class MasterRepository implements iMasterRepository
             if ($conType->id)
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Consumer Type Added successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -400,7 +400,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Consumer Type Updated successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -434,7 +434,7 @@ class MasterRepository implements iMasterRepository
                 return response()->json(['status' => False, 'data' => $responseData, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -455,7 +455,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -484,7 +484,7 @@ class MasterRepository implements iMasterRepository
             if ($ulbdata->id)
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Ulb Added successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -512,7 +512,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Ulb Updated successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -541,7 +541,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => '', 'msg' => $msg], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -563,7 +563,7 @@ class MasterRepository implements iMasterRepository
                 return response()->json(['status' => True, 'data' => $responseData, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -585,7 +585,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -614,7 +614,7 @@ class MasterRepository implements iMasterRepository
             if ($ward->id)
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Ward Added successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -640,7 +640,7 @@ class MasterRepository implements iMasterRepository
 
             return response()->json(['status' => True, 'data' => '', 'msg' => 'Consumer Type Updated successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -665,7 +665,7 @@ class MasterRepository implements iMasterRepository
                 return response()->json(['status' => False, 'data' => $responseData, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 }

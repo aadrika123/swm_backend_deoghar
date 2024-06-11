@@ -1117,7 +1117,7 @@ class ConsumerRepository implements iConsumerRepository
                 // }
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1252,7 +1252,7 @@ class ConsumerRepository implements iConsumerRepository
                 }
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1290,7 +1290,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1347,7 +1347,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1432,7 +1432,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => '', 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1669,7 +1669,7 @@ class ConsumerRepository implements iConsumerRepository
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('db_swm')->rollBack();
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1712,7 +1712,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -1781,7 +1781,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2227,7 +2227,7 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => True, 'data' => '', 'msg' => 'Payment Denied successfully'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2262,7 +2262,7 @@ class ConsumerRepository implements iConsumerRepository
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2436,7 +2436,7 @@ class ConsumerRepository implements iConsumerRepository
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2618,7 +2618,7 @@ class ConsumerRepository implements iConsumerRepository
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2879,7 +2879,7 @@ class ConsumerRepository implements iConsumerRepository
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -2968,7 +2968,7 @@ class ConsumerRepository implements iConsumerRepository
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -3042,7 +3042,7 @@ class ConsumerRepository implements iConsumerRepository
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => $msg], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -3230,7 +3230,7 @@ class ConsumerRepository implements iConsumerRepository
             }
             return response()->json(['status' => True, 'data' => $response, 'msg' => $msg], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 

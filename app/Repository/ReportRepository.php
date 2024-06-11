@@ -102,7 +102,7 @@ class ReportRepository implements iReportRepository
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e], 400);
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
