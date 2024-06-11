@@ -77,7 +77,7 @@ class CitizenController extends Controller
     public function wardList(Request $request)
     {
         try {
-            $ulbId    = "21";
+            $ulbId    = "11";
             $wardList = $this->mWard;
             $wardList = $wardList->where('ulb_id', $ulbId)->orderBy('sqorder')->get();
 
@@ -502,7 +502,7 @@ class CitizenController extends Controller
                 'errors' => "Validation Error"
             ], 200);
         try {
-            $ulbId = 21;
+            $ulbId = 11;
             $perPage = $request->perPage ?? 10;
             $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
                 ->where('swm_apartments.is_deactivate', 0)
@@ -545,7 +545,7 @@ class CitizenController extends Controller
                 'errors' => "Validation Error"
             ], 200);
         try {
-            $ulbId = 21;
+            $ulbId = 11;
 
             $apartmentDtls = $this->mApartment->where('swm_apartments.id', $request->id)
                 // ->where('swm_apartments.is_deactivate', 0)
@@ -892,7 +892,7 @@ class CitizenController extends Controller
      */
     public function listTaxCollector(Request $req)
     {
-        $ulbId = 21;
+        $ulbId = 11;
         try {
             $tcDetails = TblUserMstr::select('tbl_user_mstr.id', 'tbl_user_details.name', 'tbl_user_details.contactno', 'tbl_user_ward.user_id', 'ward_id')
                 ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')

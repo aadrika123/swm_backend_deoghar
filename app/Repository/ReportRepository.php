@@ -515,7 +515,7 @@ class ReportRepository implements iReportRepository
             ], 200);
         try {
 
-             $logDetail = $this->mConsumerEditLog
+            $logDetail = $this->mConsumerEditLog
                 ->select(
                     "ward_no",
                     "name as consumer_name",
@@ -533,6 +533,8 @@ class ReportRepository implements iReportRepository
                     "previous_consumer_no",
                     "previous_pincode",
                     "previous_license_no",
+                    "user_id",
+                    "stampdate"
                 )
                 ->where('swm_log_consumers.id', $req->id)
                 ->first();
@@ -550,6 +552,9 @@ class ReportRepository implements iReportRepository
      */
     public function comparison($logDetail)
     {
+
+        $changeBy    = $this->GetUserDetails($logDetail->user_id)->name;
+        $changedDate = Carbon::create($logDetail->stampdate)->format('d-m-Y h:i A');
         return new Collection([
             ['displayString' => 'Ward No',              'final' => $logDetail->ward_no,           'applied' => $logDetail->previous_ward_no,],
             ['displayString' => 'Consmer Name',         'final' => $logDetail->consumer_name,     'applied' => $logDetail->previous_consumer_name,],
@@ -559,8 +564,8 @@ class ReportRepository implements iReportRepository
             ['displayString' => 'Consumer No',          'final' => $logDetail->consumer_no,       'applied' => $logDetail->previous_consumer_no,],
             ['displayString' => 'Pincode',              'final' => $logDetail->pincode,           'applied' => $logDetail->previous_pincode,],
             ['displayString' => 'License No',           'final' => $logDetail->license_no,        'applied' => $logDetail->previous_license_no,],
-            // ['displayString' => 'Applier/Approver',     'final' => $logDetail->user_name,            'applied' => $logDetail->user_name,],
-            // ['displayString' => 'Ward No',              'final' => ($logDetail->created_at)->format('d-m-Y'), 'applied' => ($logDetail->created_at)->format('d-m-Y'),],
+            ['displayString' => 'Edited By',            'final' => $changeBy,                     'applied' => 'NA',],
+            ['displayString' => 'Edited Date',           'final' => $changedDate,                 'applied' => 'NA',],
         ]);
     }
 }
