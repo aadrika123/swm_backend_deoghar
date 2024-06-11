@@ -97,6 +97,9 @@ class ReportRepository implements iReportRepository
                 if ($request->reportType == 'consumereditlog')
                     $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId);
 
+                if ($request->reportType == 'monthlyComparison')
+                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo);
+
                 return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
             } else {
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
@@ -493,6 +496,14 @@ class ReportRepository implements iReportRepository
             $val['changedDate'] = Carbon::create($detail->stampdate)->format('d-m-Y h:i A');
             $response[] = $val;
         }
+
+        return $response;
+    }
+
+    public function monthlyComparison($fromMonth, $wardNo)
+    {
+        $response = array();
+        $this->Transaction->where();
 
         return $response;
     }

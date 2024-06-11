@@ -36,7 +36,8 @@ class TblTcTracking extends Model
             DB::raw("TO_CHAR(created_at, 'DD-MM-YYYY') as date"),
             DB::raw("TO_CHAR(created_at, 'HH12:MI:SS AM') as time"),
         )
-            ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_tc_trackings.user_id');
+            ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_tc_trackings.user_id')
+            ->orderbydesc('tbl_tc_trackings.id');
 
         return $data;
     }
