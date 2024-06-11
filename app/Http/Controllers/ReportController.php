@@ -90,6 +90,7 @@ class ReportController extends Controller
                 'errors' => "Validation Error"
             ], 200);
         try {
+            $perPage = $req->perPage ?? 10;
             $authUser = auth()->user();
             $fromDate = $req->fromDate ?? Carbon::now()->format('Y-m-d');
             $toDate   = $req->toDate   ?? Carbon::now()->format('Y-m-d');
@@ -99,7 +100,7 @@ class ReportController extends Controller
                 ->whereBetween('created_at', [$fromDate . ' 00:00:01', $toDate . ' 23:59:59'])
                 ->where('status', true)
                 // ->where('ulb_id', $authUser->current_ulb)
-                ->get();
+                ->paginate($perPage);
 
             return $this->responseMsgs(true, "Tc Geolocation List", $logDetail);
         } catch (Exception $e) {
