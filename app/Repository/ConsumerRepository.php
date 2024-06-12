@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Traits\Api\Helpers;
 use PhpOption\None;
 use Carbon\Carbon;
+use Razorpay\Api\Card;
 
 /**
  * | Created On-08-09-2022 
@@ -1928,15 +1929,28 @@ class ConsumerRepository implements iConsumerRepository
             if ($validator->fails()) {
                 return response()->json(['status' => False, 'msg' => $validator->messages()]);
             }
-            
+
             $transactionId = $request->transactionId;
             if (isset($transactionId)) {
                 $userId = $request->user()->id;
                 $ulbId = $this->GetUlbId($userId);
 
                 $data = $this->Transaction
-                    ->where('id', $transactionId)
-                    ->where('ulb_id', $ulbId)
+                    ->select(
+                        'swm_transactions.id',
+                        'transaction_no',
+                        'transaction_date',
+                        'total_demand_amt',
+                        'total_payable_amt',
+                        'payment_mode',
+                        'bank_name',
+                        'branch_name',
+                        'cheque_dd_no',
+                        'cheque_dd_date',
+                    )
+                    ->join('swm_transaction_details', 'swm_transaction_details.transaction_id', 'swm_transactions.id')
+                    ->where('swm_transactions.id', $transactionId)
+                    ->where('swm_transactions.ulb_id', $ulbId)
                     ->first();
 
                 return response()->json(['status' => True, 'data' => $data, 'msg' => 'Cheque DD Details'], 200);
@@ -3249,6 +3263,7 @@ class ConsumerRepository implements iConsumerRepository
 
     public function AnalyticDashboardData2(Request $request)
     {
+        $currentMonth = Carbon::now();
         $user = Auth()->user();
         $ulbId = $user->current_ulb;
         $userId = $user->id;
@@ -3262,7 +3277,7 @@ class ConsumerRepository implements iConsumerRepository
                     FROM swm_consumers 
                     where is_deactivate = 0";
 
-            $consumerdtls = DB::connection($this->dbConn)->select($sql);
+         return   $consumerdtls = DB::connection($this->dbConn)->select($sql);
 
 
 
