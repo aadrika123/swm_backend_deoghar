@@ -502,23 +502,49 @@ class ReportRepository implements iReportRepository
 
     public function monthlyComparison($fromMonth, $wardNo)
     {
+        $wardNo = $wardNo??1;
         $currentMonth = Carbon::now()->format('m');
         $response = array();
-        $response = $this->Transaction
+
+        $consumerDtls = $this->Consumer
             ->select(
-                'consumer_id',
-                'swm_consumers.ward_no',
+                'id',
+                'ward_no',
                 'consumer_no',
                 'name',
-                ''
-                // 'a.apt_code',
-                // 'a.apt_name'
             )
-            ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
-            // ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
-            ->where('swm_consumers.ward_no', 1)
-            ->groupBy('consumer_id','ward_no','name','consumer_no')
+            ->where('swm_consumers.ward_no', $wardNo)
             ->get();
+
+        foreach ($consumerDtls as $consumer) {
+            $tranDtls = $this->Transaction
+                ->select(
+                    DB::raw('EXTRACT (YEAR from transaction_date) as year'),
+                    DB::raw('EXTRACT (MONTH from transaction_date) as month'),
+                    DB::raw('TO_CHAR(transaction_date, \'Month\') as month_name'),
+                    DB::raw('SUM(total_payable_amt) as value'),
+                    DB::raw('SUM(CASE WHEN paid_status = 1 THEN total_payable_amt ELSE 0 END) as total_collection'),
+                )
+                ->where('consumer_id', $consumer->id)
+                ->groupBy(
+                    DB::raw('EXTRACT (YEAR from transaction_date)'),
+                    DB::raw('EXTRACT (MONTH from transaction_date)'),
+                    DB::raw('TO_CHAR(transaction_date, \'Month\')')
+                )
+                ->get();
+
+            $val['consumer_id']           = $consumer->id;
+            $val['consumer_ward_no']      = $consumer->ward_no;
+            $val['consumer_consumer_no']  = $consumer->consumer_no;
+            $val['consumer_name']         = $consumer->name;
+            $val['transactionsDtls']      = $tranDtls;
+            $transactions[]               = $val;
+        }
+        return $transactions;
+
+
+
+
 
         return $response;
     }
