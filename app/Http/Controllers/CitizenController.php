@@ -610,6 +610,22 @@ class CitizenController extends Controller
                 ->orderBy('swm_transactions.id', 'desc')
                 ->take(10)
                 ->get();
+            foreach ($tranDtls as $trans) {
+                $collection = $this->mCollections->where('transaction_id', $trans->id);
+                $firstrecord = $collection->orderBy('id', 'asc')->first();
+                $lastrecord = $collection->latest('id')->first();
+                $getuserdata = $this->GetUserDetails($trans->user_id);
+
+                $val['transaction_id']    = $trans->id;
+                $val['transaction_no']    = $trans->transaction_no;
+                $val['payment_mode']      = $trans->payment_mode;
+                $val['transaction_date']  = Carbon::create($trans->transaction_date)->format('d-m-Y');
+                $val['total_payable_amt'] = $trans->total_payable_amt;
+                $val['demand_from']       = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('Y-m-d') : '';
+                $val['demand_upto']       = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('Y-m-d') : '';
+                $val['tc_name']           = $getuserdata->name ?? "";
+                $transactions[]           = $val;
+            }
 
             $data['id'] = $apartmentDtls->id;
             $data['ward_no'] = $apartmentDtls->ward_no;
@@ -620,7 +636,7 @@ class CitizenController extends Controller
             $data['apartment_monthly_demand'] = collect($consumerArr)->sum('monthly_demand');
             $data['apartment_total_demand'] = collect($consumerArr)->sum('total_demand');
             $data['consumerDtls'] = $consumerArr;
-            $data['transaction_details'] = $tranDtls;
+            $data['transaction_details'] = $transactions;
 
             return $this->responseMsgs(true, "Apartment Details By Id", $data);
         } catch (Exception $e) {
