@@ -455,6 +455,24 @@ class ConsumerRepository implements iConsumerRepository
             $response['appliedBy'] = $userId;
             $response['appliedDate'] = date('Y-m-d');
 
+            #_Whatsaap Message
+            if (strlen($consumer->mobile_no) == 10) {
+                $whatsapp2 = (Whatsapp_Send(
+                    $consumer->mobile_no,
+                    "all_module_succesfull_generation",
+                    [
+                        "content_type" => "text",
+                        [
+                            $request->consumerName ?? "Citizen",
+                            "SWM",
+                            "Consumer No.",
+                            $consumerNo,
+                            "1800123123"
+                        ]
+                    ]
+                ));
+            }
+
             return response()->json(['status' => true, 'data' => $response, 'msg' => "Consumer created and demand generated successfully"], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
