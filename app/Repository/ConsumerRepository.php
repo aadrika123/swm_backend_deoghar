@@ -1110,6 +1110,25 @@ class ConsumerRepository implements iConsumerRepository
                         $response['tcName'] = $getTc->name ?? null;
                         $response['tcMobile'] = $getTc->contactno ?? null;
                         $response = array_merge($response, $this->GetUlbData($ulbId));
+
+                        #_Whatsaap Message
+                        if (strlen($consumer->mobile_no) == 10) {
+                            $whatsapp2 = (Whatsapp_Send(
+                                $consumer->mobile_no,
+                                "all_module_payment_receipt",
+                                [
+                                    "content_type" => "text",
+                                    [
+                                        $consumer->name ?? "Consumer",
+                                        $totalPayableAmt,
+                                        "Consumer No.",
+                                        $consumer->consumer_no,
+                                        "https://deoghar.smartulb.co.in/swm/swm-payment-receipt/$trans->id"
+                                    ]
+                                ]
+                            ));
+                        }
+
                         return response()->json(['status' => True, 'data' => $response, 'msg' => 'Payment Done Successfully'], 200);
                     }
                 }
@@ -3263,9 +3282,12 @@ class ConsumerRepository implements iConsumerRepository
 
     public function AnalyticDashboardData2(Request $request)
     {
-        $currentMonth = Carbon::now();
-        $user = Auth()->user();
-        $ulbId = $user->current_ulb;
+        $currentMonth  = Carbon::now()->format('m');
+        $currentYear   = Carbon::now()->format('Y');
+        $startOfMonth  = Carbon::now()->startOfMonth()->toDateString();
+        $endOfMonth    = Carbon::now()->endOfMonth()->toDateString();
+        $user   = Auth()->user();
+        $ulbId  = $user->current_ulb;
         $userId = $user->id;
 
         try {
@@ -3277,10 +3299,66 @@ class ConsumerRepository implements iConsumerRepository
                     FROM swm_consumers 
                     where is_deactivate = 0";
 
-         return   $consumerdtls = DB::connection($this->dbConn)->select($sql);
+            $consumerdtls = DB::connection($this->dbConn)->select($sql);
+
+            $sql = "SELECT count(*) as total_consumer,
+                          count(CASE WHEN consumer_category_id = 1 THEN id end) as residential,
+                          count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
+                    FROM swm_consumers 
+                    where is_deactivate = 0
+                    AND   EXTRACT(MONTH FROM entry_date) = $currentMonth
+                    AND   EXTRACT(YEAR FROM entry_date)  = $currentYear";
+
+            $newconsumerdtls = DB::connection($this->dbConn)->select($sql);
+
+            $sql = "SELECT 
+                            sum(total_tax) as current_demand
+                    FROM  swm_demands
+                    WHERE is_deactivate = 0
+                    AND   EXTRACT(MONTH FROM payment_from) = $currentMonth
+                    AND   EXTRACT(YEAR FROM payment_from)  = $currentYear";
+
+            $currentDemand = DB::connection($this->dbConn)->select($sql);
 
 
+            $sql = "SELECT 
+                            sum(total_tax) as arrear_demand
+                    FROM  swm_demands
+                    WHERE is_deactivate = 0
+                    AND   paid_status   = 0
+                    AND   EXTRACT(MONTH FROM payment_from) < $currentMonth
+                    AND   EXTRACT(YEAR FROM payment_from)  < $currentYear";
 
+            $arrearDemand = DB::connection($this->dbConn)->select($sql);
+
+            $From = Carbon::create($request->fromDate)->format('Y-m-d');
+            $Upto = Carbon::create($request->toDate)->format('Y-m-d');
+
+            # Old Query 
+            $sqlcollection = "SELECT 
+                                    sum(total_payable_amt) as value,
+                                    sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
+                                    sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
+                            FROM swm_transactions
+                            LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
+                            WHERE swm_transactions.ulb_id=" . $ulbId . " 
+                            and swm_transaction_deactivates.transaction_id is null 
+                            and swm_transactions.paid_status!=0
+                            and (transaction_date between '" . $startOfMonth . "' and '" . $endOfMonth . "')";
+
+            $current_totalcolls = DB::connection($this->dbConn)->select($sqlcollection);
+
+            $sqlcollection = "SELECT 
+                                    sum(total_payable_amt) as value,
+                                    sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
+                                    sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
+                            FROM swm_transactions
+                            LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
+                            WHERE swm_transactions.ulb_id=" . $ulbId . " 
+                            and swm_transaction_deactivates.transaction_id is null 
+                            and swm_transactions.paid_status!=0";
+
+            $overAllcolls = DB::connection($this->dbConn)->select($sqlcollection);
 
 
 
