@@ -502,8 +502,23 @@ class ReportRepository implements iReportRepository
 
     public function monthlyComparison($fromMonth, $wardNo)
     {
+        $currentMonth = Carbon::now()->format('m');
         $response = array();
-        $this->Transaction->where();
+        $response = $this->Transaction
+            ->select(
+                'consumer_id',
+                'swm_consumers.ward_no',
+                'consumer_no',
+                'name',
+                ''
+                // 'a.apt_code',
+                // 'a.apt_name'
+            )
+            ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
+            // ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
+            ->where('swm_consumers.ward_no', 1)
+            ->groupBy('consumer_id','ward_no','name','consumer_no')
+            ->get();
 
         return $response;
     }

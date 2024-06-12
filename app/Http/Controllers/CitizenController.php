@@ -604,6 +604,13 @@ class CitizenController extends Controller
                 $consumerArr[] = $con;
             }
 
+            $tranDtls = $this->mTransaction
+                ->select('id', 'transaction_no', 'transaction_date', 'payment_mode', 'total_payable_amt', 'user_id')
+                ->where('swm_transactions.apartment_id', $apartmentDtls->id)
+                ->orderBy('swm_transactions.id', 'desc')
+                ->take(10)
+                ->get();
+
             $data['id'] = $apartmentDtls->id;
             $data['ward_no'] = $apartmentDtls->ward_no;
             $data['apartment_name'] = $apartmentDtls->apt_name;
@@ -613,6 +620,7 @@ class CitizenController extends Controller
             $data['apartment_monthly_demand'] = collect($consumerArr)->sum('monthly_demand');
             $data['apartment_total_demand'] = collect($consumerArr)->sum('total_demand');
             $data['consumerDtls'] = $consumerArr;
+            $data['transaction_details'] = $tranDtls;
 
             return $this->responseMsgs(true, "Apartment Details By Id", $data);
         } catch (Exception $e) {
