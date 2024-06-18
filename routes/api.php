@@ -120,6 +120,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         // For Complain
         Route::post('postTcComplain', 'TcComplain');
         Route::post('getComplainList', 'getComplainList');
+        Route::post('getComplainDetails', 'getComplainDetails');
 
         // For Routes
         Route::post('postNewRoute', 'addRoute');
@@ -190,4 +191,5 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('consumer-type-list', 'listConsumerType');
     Route::post('tax-collector-list', 'listTaxCollector');
     Route::post('citizen-payment-receipt', 'paymentReceipt');
+    Route::post('consumer-details', 'consumerDetailByConsumerNo');
 });

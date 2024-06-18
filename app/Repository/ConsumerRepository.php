@@ -2913,55 +2913,177 @@ class ConsumerRepository implements iConsumerRepository
         }
     }
 
+    // public function addTcComplain(Request $request)
+    // {
+
+    //     try {
+    //         $userId = $request->user()->id;
+    //         $ulbId = $this->GetUlbId($userId);
+    //         $validator = Validator::make($request->all(), [
+    //             'complain' => 'required|MIN:5',
+    //         ]);
+    //         if ($validator->fails()) {
+    //             return response()->json(['status' => False, 'msg' => $validator->messages()]);
+    //         }
+
+    //         $complain = $this->TcComplaint;
+    //         $complain->user_id   =  $userId;
+    //         $complain->complain  =  $request->complain;
+    //         $complain->complain_date  =  Carbon::now();
+    //         $complain->ulb_id  =  $ulbId;
+    //         $complain->save();
+
+    //         return response()->json(['status' => True, 'data' => '', 'msg' => 'Your complain save successfully'], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
+
     public function addTcComplain(Request $request)
     {
-
         try {
             $userId = $request->user()->id;
             $ulbId = $this->GetUlbId($userId);
             $validator = Validator::make($request->all(), [
-                'complain' => 'required|MIN:5',
+                'complain'     => 'required',
+                'consumerWard' => 'required',
+                'latitude'     => 'required',
+                'longitude'    => 'required',
+                // 'photo' => 'required|mimes:jpg,jpeg,png',
             ]);
             if ($validator->fails()) {
-                return response()->json(['status' => False, 'msg' => $validator->messages()]);
+                return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
             }
 
             $complain = $this->TcComplaint;
-            $complain->user_id  =  $userId;
-            $complain->complain  =  $request->complain;
-            $complain->complain_date  =  Carbon::now();
-            $complain->ulb_id  =  $ulbId;
+            $complain->user_id        =  $userId;
+            $complain->complain       =  $request->complain;
+            $complain->ward_no        =  $request->consumerWard;
+            $complain->consumer_no    =  $request->consumerNo;
+            $complain->address        =  $request->consumerAddress;
+            $complain->latitude       =  $request->latitude;
+            $complain->longitude      =  $request->longitude;
+            $complain->remarks        =  $request->remarks;
+
+            if (!empty($request->photo)) {
+                $randomNumber  = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
+                $filePath = md5($randomNumber) . '.' . $request->photo->extension();
+                $request->photo->move(public_path('uploads'), $filePath);
+
+                $complain->photo = $filePath;
+            }
+            $complain->complain_date  = Carbon::now();
+            $complain->created_at     = Carbon::now();
+            $complain->ulb_id         = $ulbId;
+            $complain->complain_no    = $this->generateComplainNumber($request->consumerWard);
             $complain->save();
 
-            return response()->json(['status' => True, 'data' => '', 'msg' => 'Your complain save successfully'], 200);
+            return response()->json(['status' => True, 'data' => $complain->complain_no, 'msg' => 'Your complain save successfully and complain no is ' . $complain->complain_no], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
+
+    // public function getTcComplain(Request $request)
+    // {
+    //     $userId = $request->user()->id;
+    //     $ulbId = $this->GetUlbId($userId);
+    //     try {
+    //         $response = array();
+    //         $records = $this->TcComplaint
+    //             ->where('is_deactivate', 0)
+    //             ->where('ulb_id', $ulbId);
+    //         if (isset($request->tcId))
+    //             $records = $records->where('user_id', $request->tcId);
+    //         $records = $records->orderBy('id', 'DESC')
+    //             ->paginate(1000);
+
+    //         foreach ($records as $record) {
+    //             $getuserdata = $this->GetUserDetails($record->user_id);
+    //             $val['tcName'] = $getuserdata->name;
+    //             $val['complain'] = $record->complain;
+    //             $val['date'] = Carbon::create($record->complain_date)->format('d-m-Y');
+    //             $response[] = $val;
+    //         }
+
+    //         return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
 
     public function getTcComplain(Request $request)
     {
         $userId = $request->user()->id;
         $ulbId = $this->GetUlbId($userId);
         try {
+
             $response = array();
             $records = $this->TcComplaint
                 ->where('is_deactivate', 0)
                 ->where('ulb_id', $ulbId);
+
             if (isset($request->tcId))
                 $records = $records->where('user_id', $request->tcId);
+
             $records = $records->orderBy('id', 'DESC')
                 ->paginate(1000);
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
-                $val['tcName'] = $getuserdata->name;
-                $val['complain'] = $record->complain;
-                $val['date'] = Carbon::create($record->complain_date)->format('d-m-Y');
+                $val['tcName']      = $getuserdata->name;
+                $val['ward_no']     = $record->ward_no;
+                $val['latitude']    = $record->latitude;
+                $val['longitude']   = $record->longitude;
+                $val['address']     = $record->address;
+                $val['complain']    = $record->complain;
+                $val['complain_no'] = $record->complain_no;
+                $val['date']        = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    public function getComplainDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'    => 'required|numeric',
+            // 'photo' => 'required|mimes:jpg,jpeg,png',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+
+        // $userId = $request->user()->id;
+        // $ulbId = $this->GetUlbId($userId);
+        try {
+            $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
+            // $docUrl  = "http://172.18.1.131:6969";
+            $record = $this->TcComplaint
+                ->where('is_deactivate', 0)
+                // ->where('ulb_id', $ulbId)
+                ->where('id', $request->id)
+                ->first();
+
+            if (!$record)
+                return response()->json(['status' => False, 'msg' => "No Data Found", 'data' => ""]);
+
+            $getuserdata = $this->GetUserDetails($record->user_id);
+            $val['tcName']      = $getuserdata->name;
+            $val['ward_no']     = $record->ward_no;
+            $val['latitude']    = $record->latitude;
+            $val['longitude']   = $record->longitude;
+            $val['address']     = $record->address;
+            $val['complain']    = $record->complain;
+            $val['complain_no'] = $record->complain_no;
+            $val['photo']       = $docUrl."/uploads/".$record->photo;
+            $val['date']        = Carbon::create($record->complain_date)->format('d-m-Y');
+
+            return response()->json(['status' => True, 'data' => $val, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }

@@ -1049,4 +1049,26 @@ class CitizenController extends Controller
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Get the Consumer Details By Consumer No
+     */
+    public function consumerDetailByConsumerNo(Request $req)
+    {
+        $ulbId = 11;
+        try {
+            $data = $this->mConsumer
+                ->where('consumer_no', $req->consumerNo)
+                ->where('is_deactivate', 0)
+                ->where('ulb_id', $ulbId)
+                ->first();
+
+            if ($data)
+                return $this->responseMsgs(true, "Consumer Details", $data);
+            else
+                return $this->responseMsgs(false, "No Data Found", "");
+        } catch (Exception $e) {
+            return $this->responseMsgs(false,  $e->getMessage(), "");
+        }
+    }
 }

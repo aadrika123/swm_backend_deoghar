@@ -7,6 +7,7 @@ use App\Models\ViewUser;
 use App\Models\Ward;
 use App\Models\Ulb;
 use App\Models\TblUserMstr;
+use App\Models\TcComplaint;
 use App\Models\UserWardPermission;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Session;
@@ -261,7 +262,7 @@ trait Helpers
                 $ulbData['accountName'] = $ulb->account_name;
                 $ulbData['accountNo'] = $ulb->account_no;
                 $ulbData['ifscNo'] = $ulb->ifsc_no;
-                $ulbData['logo'] =  $docUrl."/uploads/logo/" . $ulb->logo;
+                $ulbData['logo'] =  $docUrl . "/uploads/logo/" . $ulb->logo;
             }
             return $ulbData;
         }
@@ -277,6 +278,24 @@ trait Helpers
             'msg'   => $msg,
             'data' => $data
         ]);
+    }
+
+    /**
+     * | Generate Complain No
+     */
+    function generateComplainNumber($wardNo)
+    {
+        $ulb     = "11";
+        $today   = Carbon::now();
+        $month   = $today->format('m');
+        $year    = $today->format('Y');
+        $wardNo  = str_pad($wardNo, 2, '0', STR_PAD_LEFT);
+        $count   = DB::connection('db_swm')->table('swm_tc_complaint')->max('id');
+        // $count         = $tcComplain->all()->count();
+        $count++;
+        $serialNo   = str_pad($count, 5, '0', STR_PAD_LEFT);
+        $ComplainNo = $ulb . $wardNo . $year . $month . $serialNo;
+        return $ComplainNo;
     }
 
     /**

@@ -552,6 +552,14 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->getTcComplain($req);
     }
+    
+    /**
+     * | Complain Details
+     */
+    public function getComplainDetails(Request $req)
+    {
+        return $this->ConResp->getComplainDetails($req);
+    }
 
 
     /**
