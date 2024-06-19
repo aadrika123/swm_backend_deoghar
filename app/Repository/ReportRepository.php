@@ -502,18 +502,30 @@ class ReportRepository implements iReportRepository
 
     public function monthlyComparison($fromMonth, $wardNo)
     {
-        $wardNo = $wardNo??1;
+        $wardNo = $wardNo ?? 1;
         $currentMonth = Carbon::now()->format('m');
+        $currentYear  = Carbon::now()->format('Y');
         $response = array();
 
-        $consumerDtls = $this->Consumer
+        return  $consumerDtls = $this->Consumer
             ->select(
-                'id',
+                'swm_consumers.id as consumer_id ',
+                'swm_demands.id as demand_id',
                 'ward_no',
                 'consumer_no',
                 'name',
+                'total_tax',
+                'payment_from',
+                'paid_status'
             )
-            ->where('swm_consumers.ward_no', $wardNo)
+            // ->where('swm_consumers.ward_no', $wardNo)
+            ->join('swm_demands', 'swm_demands.consumer_id', 'swm_consumers.id')
+            ->where('swm_consumers.id', 82063)
+            ->where('swm_demands.is_deactivate', 0)
+            ->whereDate('payment_from', '>=', Carbon::now()->subMonths(3)->startOfMonth())
+            // ->whereMonth('payment_from', '>=',  $currentMonth)
+            // ->whereYear('payment_from', $currentYear)
+            ->orderByDesc('swm_demands.id')
             ->get();
 
         foreach ($consumerDtls as $consumer) {

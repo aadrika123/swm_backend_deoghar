@@ -561,6 +561,21 @@ class ConsumerController extends Controller
         return $this->ConResp->getComplainDetails($req);
     }
 
+    /**
+     * | Switch Status
+     */
+    public function switchStatus(Request $req)
+    {
+        return $this->ConResp->switchStatus($req);
+    }
+    
+    /**
+     * | Complain Resolved
+     */
+    public function complainResolved(Request $req)
+    {
+        return $this->ConResp->complainResolved($req);
+    }
 
     /**
      * add routes 

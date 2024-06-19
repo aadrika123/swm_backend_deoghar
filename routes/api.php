@@ -121,6 +121,8 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('postTcComplain', 'TcComplain');
         Route::post('getComplainList', 'getComplainList');
         Route::post('getComplainDetails', 'getComplainDetails');
+        Route::post('switchStatus', 'switchStatus');
+        Route::post('complainResolved', 'complainResolved');
 
         // For Routes
         Route::post('postNewRoute', 'addRoute');

@@ -2960,17 +2960,18 @@ class ConsumerRepository implements iConsumerRepository
             $complain->complain       =  $request->complain;
             $complain->ward_no        =  $request->consumerWard;
             $complain->consumer_no    =  $request->consumerNo;
+            $complain->consumer_name  =  $request->consumerName;
             $complain->address        =  $request->consumerAddress;
             $complain->latitude       =  $request->latitude;
             $complain->longitude      =  $request->longitude;
-            $complain->remarks        =  $request->remarks;
+            $complain->tc_remarks     =  $request->remarks;
 
             if (!empty($request->photo)) {
                 $randomNumber  = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
                 $filePath = md5($randomNumber) . '.' . $request->photo->extension();
                 $request->photo->move(public_path('uploads'), $filePath);
 
-                $complain->photo = $filePath;
+                $complain->tc_photo = $filePath;
             }
             $complain->complain_date  = Carbon::now();
             $complain->created_at     = Carbon::now();
@@ -3031,14 +3032,16 @@ class ConsumerRepository implements iConsumerRepository
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
-                $val['tcName']      = $getuserdata->name;
-                $val['ward_no']     = $record->ward_no;
-                $val['latitude']    = $record->latitude;
-                $val['longitude']   = $record->longitude;
-                $val['address']     = $record->address;
-                $val['complain']    = $record->complain;
-                $val['complain_no'] = $record->complain_no;
-                $val['date']        = Carbon::create($record->complain_date)->format('d-m-Y');
+                $val['id']            = $record->id;
+                $val['ward_no']       = $record->ward_no;
+                $val['consumer_name'] = $record->consumer_name;
+                $val['latitude']      = $record->latitude;
+                $val['longitude']     = $record->longitude;
+                $val['address']       = $record->address;
+                $val['complain']      = $record->complain;
+                $val['complain_no']   = $record->complain_no;
+                $val['tcName']        = $getuserdata->name;
+                $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
 
@@ -3052,17 +3055,17 @@ class ConsumerRepository implements iConsumerRepository
     {
         $validator = Validator::make($request->all(), [
             'id'    => 'required|numeric',
-            // 'photo' => 'required|mimes:jpg,jpeg,png',
         ]);
         if ($validator->fails()) {
             return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
         }
 
-        // $userId = $request->user()->id;
+        $user       = $request->user();
+        $userTypeId = $user->user_type_id;
         // $ulbId = $this->GetUlbId($userId);
         try {
-            $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
-            // $docUrl  = "http://172.18.1.131:6969";
+            // $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
+            $docUrl  = "http://172.18.1.131:6969";
             $record = $this->TcComplaint
                 ->where('is_deactivate', 0)
                 // ->where('ulb_id', $ulbId)
@@ -3073,21 +3076,96 @@ class ConsumerRepository implements iConsumerRepository
                 return response()->json(['status' => False, 'msg' => "No Data Found", 'data' => ""]);
 
             $getuserdata = $this->GetUserDetails($record->user_id);
-            $val['tcName']      = $getuserdata->name;
-            $val['ward_no']     = $record->ward_no;
-            $val['latitude']    = $record->latitude;
-            $val['longitude']   = $record->longitude;
-            $val['address']     = $record->address;
-            $val['complain']    = $record->complain;
-            $val['complain_no'] = $record->complain_no;
-            $val['photo']       = $docUrl."/uploads/".$record->photo;
-            $val['date']        = Carbon::create($record->complain_date)->format('d-m-Y');
+            $val['id']            = $record->id;
+            $val['ward_no']       = $record->ward_no;
+            $val['consumer_no']   = $record->consumer_no;
+            $val['consumer_name'] = $record->consumer_name;
+            $val['latitude']      = $record->latitude;
+            $val['longitude']     = $record->longitude;
+            $val['address']       = $record->address;
+            $val['tc_remarks']    = $record->tc_remarks;
+            $val['tl_remarks']    = $record->tl_remarks;
+            $val['complain']      = $record->complain;
+            $val['complain_no']   = $record->complain_no;
+            $val['status']        = $record->status;
+            $val['tc_photo']      = $docUrl . "/uploads/" . $record->tc_photo;
+            $val['tl_photo']      = isset($record->tl_photo) ? $docUrl . "/uploads/" . $record->tl_photo : "";
+            $val['tcName']        = $getuserdata->name;
+            $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
+            $val['is_tl']         = $userTypeId == 4 ? true : false;
 
             return response()->json(['status' => True, 'data' => $val, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
+
+    public function switchStatus(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'    => 'required|numeric',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+
+        $user = $request->user();
+        try {
+            $record = $this->TcComplaint
+                ->where('status', 3)
+                ->where('id', $request->id)
+                ->first();
+
+            if ($record) {
+                if ($user->user_type_id == 4) {
+                    $record->update(['status' => 2]);
+                }
+            }
+            return response()->json(['status' => True, 'data' => "", 'msg' => "Status Updated"], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    public function complainResolved(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'       => 'required|numeric',
+            'photo'    => 'required|mimes:png,jpeg,jpg',
+            'remarks'  => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+
+        $user = $request->user();
+        try {
+            $complain = $this->TcComplaint
+                ->where('status', 2)
+                ->where('id', $request->id)
+                ->first();
+            if (!$complain)
+                return response()->json(['status' => False, 'msg' => "No Data Found", 'data' => ""]);
+
+            if ($user->user_type_id == 4) {
+                if (!empty($request->photo)) {
+                    $randomNumber  = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
+                    $filePath = md5($randomNumber) . '.' . $request->photo->extension();
+                    $request->photo->move(public_path('uploads'), $filePath);
+
+                    $complain->tl_photo   = $filePath;
+                    $complain->tl_remarks = $request->remarks;
+                    $complain->status     = 1;
+                    $complain->save();
+                }
+            }
+
+            return response()->json(['status' => True, 'data' => "", 'msg' => "Status Updated"], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
 
     public function addRoute(Request $request)
     {

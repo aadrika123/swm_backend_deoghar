@@ -11,6 +11,7 @@ class TcComplaint extends Model
     protected $connection;
     public $timestamps = false;
     protected $table = 'swm_tc_complaint';
+    protected $guarded = [];
 
     public function __construct($data = null)
     {
