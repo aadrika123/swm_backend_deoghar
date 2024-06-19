@@ -21,7 +21,9 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Razorpay\Api\Api;
@@ -1067,6 +1069,74 @@ class CitizenController extends Controller
                 return $this->responseMsgs(true, "Consumer Details", $data);
             else
                 return $this->responseMsgs(false, "No Data Found", "");
+        } catch (Exception $e) {
+            return $this->responseMsgs(false,  $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | 
+     */
+    public function saleTransaction(Request $req)
+    {
+        try {
+            // $req = new Request([
+            //     "saleTxnId"   => "637635161297869671",
+            //     "saleAmount"  => "5000.00",
+            //     "mobileNo"    => "9555274574",
+            //     "email"       => "pks247@gmail.com",
+            //     "customerName" => "Pramod",
+            //     "description" => "payment request",
+            //     "skuIds"      => "ASD212121 ",
+            //     "field1"      => "pks@okhddfc",
+            //     "field2"      => 'abcd',
+            //     "field3"      => null,
+            //     "field4"      => null,
+            //     "field5"      => null
+            // ]);
+            $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
+            
+
+
+
+            #_Encryption
+            $cryptoKey = "F7556B6D2A034B0FA2EB387DA36F8D84"; // Replace with your actual crypto key
+            $cryptoKeyHex = bin2hex($cryptoKey);
+            $payload = [
+                "saleTxnId"   => "637635161297869671",
+                "saleAmount"  => "5000.00",
+                "mobileNo"    => "9555274574",
+                "email"       => "pks247@gmail.com",
+                "customerName" => "Pramod",
+                "description" => "payment request",
+                "skuIds"      => "ASD212121 ",
+                "field1"      => "pks@okhddfc",
+                "field2"      => 'abcd',
+                "field3"      => null,
+                "field4"      => null,
+                "field5"      => null
+            ]; // Replace with your actual payload
+
+            $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+            // Encrypt the payload
+            $encryptedPayload = Crypt::encryptString($payloadJson);
+
+            $transfer = [
+                "payLoadData"   => $encryptedPayload,
+            ];
+
+            // $encryptedPayloadHex = bin2hex($encryptedPayload);
+            // $encryptedPayloadHexEncoded = urlencode($encryptedPayloadHex);
+            // $url = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn" . $encryptedPayloadHexEncoded;
+
+
+
+            return   $returnData = Http::withHeaders([
+                "Client_apikey"         => "MDVGMDY0Q0MyMkRDNDE2MDlEMzhGRTNGQ0FBMTYyRTA=",
+            ])->post("$api", $transfer);
+
+            
         } catch (Exception $e) {
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }

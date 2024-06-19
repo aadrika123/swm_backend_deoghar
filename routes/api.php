@@ -194,4 +194,6 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('tax-collector-list', 'listTaxCollector');
     Route::post('citizen-payment-receipt', 'paymentReceipt');
     Route::post('consumer-details', 'consumerDetailByConsumerNo');
+
+    Route::post('sale-transaction', 'saleTransaction');
 });
