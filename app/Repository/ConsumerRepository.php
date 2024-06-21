@@ -3630,7 +3630,7 @@ class ConsumerRepository implements iConsumerRepository
             $तोतलडएमण्ड                                       = $arrearDemand->arrear_demand + $currentDemand->current_demand;
             $response['totalDemand']                          = $तोतलडएमण्ड->toString() ?? 0;
 
-            return $this->responseMsgs(true, "You Got Late", $response);
+             $this->responseMsgs(true, "You Got Late", $response);
 
 
 
