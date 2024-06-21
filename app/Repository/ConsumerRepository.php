@@ -3628,9 +3628,9 @@ class ConsumerRepository implements iConsumerRepository
             $response['currentMonthDemand']                   = $currentDemand->current_demand ?? 0;
             $response['arrearDemand']                         = $arrearDemand->arrear_demand ?? 0;
             $तोतलडएमण्ड                                       = $arrearDemand->arrear_demand + $currentDemand->current_demand;
-            $response['totalDemand']                          = $तोतलडएमण्ड->toString() ?? 0;
+            // $response['totalDemand']                          = $तोतलडएमण्ड->toString() ?? 0;S
 
-             $this->responseMsgs(true, "You Got Late", $response);
+            //  $this->responseMsgs(true, "You Got Late", $response);
 
 
 
@@ -3757,15 +3757,19 @@ class ConsumerRepository implements iConsumerRepository
 
                 $response['totalDemand'] = $total_demand ?? 0;
                 $response['outstandingDemand'] = $Report->outstanding_amount ?? 0;
-                $response['totalConsumer'] = $Report->total_consumer ?? 0;
                 $response['totalCollection'] = $total_collection ?? 0;
                 $response['reconcilePending'] = $total_reconcile ?? 0;
                 $response['adjustmentAmount'] = $Report->adjust_amount ?? 0;
-                $response['totalResidenstialConsumer'] = $Report->residential ?? 0;
-                $response['totalCommercialConsumer'] = $Report->commercial ?? 0;
                 $response['demand'] = $totalDmds;
                 $response['collection'] = $totalcolls;
                 $response['arrear'] = $totalarrears;
+
+                // $response['totalConsumer'] = $Report->total_consumer ?? 0;
+                // $response['totalResidenstialConsumer'] = $Report->residential ?? 0;
+                // $response['totalCommercialConsumer'] = $Report->commercial ?? 0;
+                $response['totalConsumer']            = $consumerdtls->total_consumer ?? 0;
+                $response['totalResidenstialConsumer'] = $consumerdtls->residential ?? 0;
+                $response['totalCommercialConsumer']  = $consumerdtls->commercial ?? 0;
 
                 $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
                 $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;
