@@ -30,6 +30,12 @@ class ReportController extends Controller
     {
         return $this->rep->consumerEditLogDetails($request);
     }
+    
+
+    public function monthlyComparison(Request $request)
+    {
+        return $this->rep->monthlyComparison($request);
+    }
 
     /**
      * | Add TC Geo Location

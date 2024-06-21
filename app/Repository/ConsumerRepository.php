@@ -3015,8 +3015,9 @@ class ConsumerRepository implements iConsumerRepository
 
     public function getTcComplain(Request $request)
     {
-        $userId = $request->user()->id;
-        $ulbId = $this->GetUlbId($userId);
+        $userId  = $request->user()->id;
+        $perPage = $request->perPage ?? 10;
+        $ulbId   = $this->GetUlbId($userId);
         try {
 
             $response = array();
@@ -3024,11 +3025,20 @@ class ConsumerRepository implements iConsumerRepository
                 ->where('is_deactivate', 0)
                 ->where('ulb_id', $ulbId);
 
+            if (isset($request->fromDate) && isset($request->toDate))
+                $records = $records->whereBetween('complain_date', [$request->fromDate, $request->toDate]);
+
             if (isset($request->tcId))
                 $records = $records->where('user_id', $request->tcId);
 
+            if (isset($request->complainNo))
+                $records = $records->where('complain_no', $request->complainNo);
+
+            if (isset($request->wardNo))
+                $records = $records->where('ward_no', $request->wardNo);
+
             $records = $records->orderBy('id', 'DESC')
-                ->paginate(1000);
+                ->paginate($perPage);
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
@@ -3046,6 +3056,60 @@ class ConsumerRepository implements iConsumerRepository
             }
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    public function getTcComplainV2(Request $request)
+    {
+        $userId  = $request->user()->id;
+        $perPage = $request->perPage ?? 10;
+        $ulbId   = $this->GetUlbId($userId);
+        try {
+
+            $response = array();
+            $records = $this->TcComplaint
+                ->where('is_deactivate', 0)
+                ->where('ulb_id', $ulbId);
+
+            if (isset($request->fromDate) && isset($request->uptoDate))
+                $records = $records->whereBetween('complain_date', [$request->fromDate, $request->uptoDate]);
+
+            if (isset($request->tcId))
+                $records = $records->where('user_id', $request->tcId);
+
+            if (isset($request->complainNo))
+                $records = $records->where('complain_no', $request->complainNo);
+
+            if (isset($request->wardNo))
+                $records = $records->where('ward_no', $request->wardNo);
+
+            $records = $records->orderBy('id', 'DESC')
+                ->paginate($perPage);
+
+            foreach ($records as $record) {
+                $getuserdata = $this->GetUserDetails($record->user_id);
+                $val['id']            = $record->id;
+                $val['ward_no']       = $record->ward_no;
+                $val['consumer_name'] = $record->consumer_name;
+                $val['latitude']      = $record->latitude;
+                $val['longitude']     = $record->longitude;
+                $val['address']       = $record->address;
+                $val['complain']      = $record->complain;
+                $val['complain_no']   = $record->complain_no;
+                $val['tcName']        = $getuserdata->name;
+                $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
+                $response[] = $val;
+            }
+
+            $data['data'] = $response;
+            $data['current_page'] = $records->currentPage();
+            $data['last_page']    = $records->lastPage();
+            $data['total']        = $records->total();
+            $data['per_page']     = $perPage;
+
+            return response()->json(['status' => True, 'data' => $data, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
@@ -3155,6 +3219,7 @@ class ConsumerRepository implements iConsumerRepository
 
                     $complain->tl_photo   = $filePath;
                     $complain->tl_remarks = $request->remarks;
+                    $complain->tl_id      = $user->id;
                     $complain->status     = 1;
                     $complain->save();
                 }
@@ -3511,14 +3576,16 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $response = array();
 
+            # Total Consumer
             $sql = "SELECT count(*) as total_consumer,
                           count(CASE WHEN consumer_category_id = 1 THEN id end) as residential,
                           count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
                     FROM swm_consumers 
                     where is_deactivate = 0";
-
             $consumerdtls = DB::connection($this->dbConn)->select($sql);
+            $consumerdtls = collect($consumerdtls)->first();
 
+            # New Total Consumer
             $sql = "SELECT count(*) as total_consumer,
                           count(CASE WHEN consumer_category_id = 1 THEN id end) as residential,
                           count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
@@ -3526,19 +3593,21 @@ class ConsumerRepository implements iConsumerRepository
                     where is_deactivate = 0
                     AND   EXTRACT(MONTH FROM entry_date) = $currentMonth
                     AND   EXTRACT(YEAR FROM entry_date)  = $currentYear";
-
             $newconsumerdtls = DB::connection($this->dbConn)->select($sql);
+            $newconsumerdtls = collect($newconsumerdtls)->first();
 
+            # Current Demand
             $sql = "SELECT 
                             sum(total_tax) as current_demand
                     FROM  swm_demands
                     WHERE is_deactivate = 0
                     AND   EXTRACT(MONTH FROM payment_from) = $currentMonth
                     AND   EXTRACT(YEAR FROM payment_from)  = $currentYear";
-
             $currentDemand = DB::connection($this->dbConn)->select($sql);
+            $currentDemand = collect($currentDemand)->first();
 
 
+            # Arrear Demand
             $sql = "SELECT 
                             sum(total_tax) as arrear_demand
                     FROM  swm_demands
@@ -3546,8 +3615,24 @@ class ConsumerRepository implements iConsumerRepository
                     AND   paid_status   = 0
                     AND   EXTRACT(MONTH FROM payment_from) < $currentMonth
                     AND   EXTRACT(YEAR FROM payment_from)  < $currentYear";
-
             $arrearDemand = DB::connection($this->dbConn)->select($sql);
+            $arrearDemand = collect($arrearDemand)->first();
+
+
+            $response['totalConsumer']            = $consumerdtls->total_consumer ?? 0;
+            $response['totalResidenstialConsumer'] = $consumerdtls->residential ?? 0;
+            $response['totalCommercialConsumer']  = $consumerdtls->commercial ?? 0;
+            $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
+            $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;
+            $response['currentMonthTotalCommercialConsumer']  = $newconsumerdtls->commercial ?? 0;
+            $response['currentMonthDemand']                   = $currentDemand->current_demand ?? 0;
+            $response['arrearDemand']                         = $arrearDemand->arrear_demand ?? 0;
+            $तोतलडएमण्ड                                       = $arrearDemand->arrear_demand + $currentDemand->current_demand;
+            $response['totalDemand']                          = $तोतलडएमण्ड->toString() ?? 0;
+
+            return $this->responseMsgs(true, "You Got Late", $response);
+
+
 
             $From = Carbon::create($request->fromDate)->format('Y-m-d');
             $Upto = Carbon::create($request->toDate)->format('Y-m-d');
@@ -3681,6 +3766,10 @@ class ConsumerRepository implements iConsumerRepository
                 $response['demand'] = $totalDmds;
                 $response['collection'] = $totalcolls;
                 $response['arrear'] = $totalarrears;
+
+                $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
+                $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;
+                $response['currentMonthTotalCommercialConsumer']  = $newconsumerdtls->commercial ?? 0;
             }
 
             return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);

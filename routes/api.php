@@ -120,6 +120,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         // For Complain
         Route::post('postTcComplain', 'TcComplain');
         Route::post('getComplainList', 'getComplainList');
+        Route::post('v2/getComplainList', 'getTcComplainV2');
         Route::post('getComplainDetails', 'getComplainDetails');
         Route::post('switchStatus', 'switchStatus');
         Route::post('complainResolved', 'complainResolved');
@@ -170,6 +171,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
     Route::controller(ReportController::class)->group(function () {
         Route::get('test', 'text');
         Route::post('getReportData', 'GetReportData');                               // Route for get all type of report
+        Route::post('monthlyComparison', 'monthlyComparison');                               // Route for get all type of report
         Route::post('consumer-edit-details', 'consumerEditLogDetails');
         Route::post('create-tc-geolocation', 'addTcGeoLocation');
         Route::post('list-tc-geolocation', 'tcGeolocationList');

@@ -80,7 +80,7 @@ class ConsumerController extends Controller
      */
     public function getAnalyticDashboardData(Request $req)
     {
-        return $this->ConResp->AnalyticDashboardData($req);
+        return $this->ConResp->AnalyticDashboardData2($req);
     }
 
 
@@ -551,6 +551,11 @@ class ConsumerController extends Controller
     public function getComplainList(Request $req)
     {
         return $this->ConResp->getTcComplain($req);
+    }
+
+    public function getTcComplainV2(Request $req)
+    {
+        return $this->ConResp->getTcComplainV2($req);
     }
     
     /**

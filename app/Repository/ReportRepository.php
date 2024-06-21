@@ -7,6 +7,7 @@ use App\Models\ConsumerDeactivateDeatils;
 use App\Models\Transaction;
 use App\Models\Collections;
 use App\Models\ConsumerEditLog;
+use App\Models\Demand;
 use App\Models\TransactionDeactivate;
 use App\Models\TransactionModeChange;
 use App\Models\TransactionVerification;
@@ -42,6 +43,7 @@ class ReportRepository implements iReportRepository
     protected $PaymentDeny;
     protected $TransactionModeChange;
     protected $mConsumerEditLog;
+    protected $mDemand;
 
     public function __construct(Request $request)
     {
@@ -55,6 +57,7 @@ class ReportRepository implements iReportRepository
         $this->PaymentDeny = new PaymentDeny($this->dbConn);
         $this->TransactionModeChange = new TransactionModeChange($this->dbConn);
         $this->mConsumerEditLog = new ConsumerEditLog($this->dbConn);
+        $this->mDemand = new Demand($this->dbConn);
     }
     #Arshad  
     public function ReportData(Request $request)
@@ -500,65 +503,67 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function monthlyComparison($fromMonth, $wardNo)
+    public function monthlyComparison($request)
     {
-        $wardNo = $wardNo ?? 1;
-        $currentMonth = Carbon::now()->format('m');
-        $currentYear  = Carbon::now()->format('Y');
-        $response = array();
+        $perPage = $request->perPage ?? 10;
+        $wardNo  = $request->wardNo ?? 1;
+        $toDate  = isset($request->toDate) ? $request->toDate . '-01' : Carbon::now()->startOfMonth()->format('Y-m-d');
 
-        return  $consumerDtls = $this->Consumer
+        $currentMonth = Carbon::parse($toDate)->subMonths(2)->format('m');
+        $currentYear  = Carbon::parse($toDate)->format('Y');
+
+        $consumerDtls = $this->Consumer
             ->select(
-                'swm_consumers.id as consumer_id ',
-                'swm_demands.id as demand_id',
+                'id',
                 'ward_no',
                 'consumer_no',
+                'mobile_no',
                 'name',
-                'total_tax',
-                'payment_from',
-                'paid_status'
             )
-            // ->where('swm_consumers.ward_no', $wardNo)
-            ->join('swm_demands', 'swm_demands.consumer_id', 'swm_consumers.id')
-            ->where('swm_consumers.id', 82063)
-            ->where('swm_demands.is_deactivate', 0)
-            ->whereDate('payment_from', '>=', Carbon::now()->subMonths(3)->startOfMonth())
-            // ->whereMonth('payment_from', '>=',  $currentMonth)
-            // ->whereYear('payment_from', $currentYear)
-            ->orderByDesc('swm_demands.id')
-            ->get();
+            ->where('swm_consumers.ward_no', $wardNo)
+            ->paginate($perPage);
 
         foreach ($consumerDtls as $consumer) {
-            $tranDtls = $this->Transaction
+
+            $demandDtls = $this->mDemand
                 ->select(
-                    DB::raw('EXTRACT (YEAR from transaction_date) as year'),
-                    DB::raw('EXTRACT (MONTH from transaction_date) as month'),
-                    DB::raw('TO_CHAR(transaction_date, \'Month\') as month_name'),
-                    DB::raw('SUM(total_payable_amt) as value'),
-                    DB::raw('SUM(CASE WHEN paid_status = 1 THEN total_payable_amt ELSE 0 END) as total_collection'),
+                    'swm_demands.id as demand_id',
+                    'consumer_id',
+                    'total_tax',
+                    'payment_from',
+                    'paid_status',
+                    (DB::raw("TO_CHAR(payment_from, 'Month') || ' ' || TO_CHAR(payment_from, 'YYYY') as month_year")),
+                    // DB::raw('TO_CHAR(payment_from, \'Month\') as month'),
+                    // DB::raw('EXTRACT(MONTH from payment_from) as month'),
                 )
-                ->where('consumer_id', $consumer->id)
-                ->groupBy(
-                    DB::raw('EXTRACT (YEAR from transaction_date)'),
-                    DB::raw('EXTRACT (MONTH from transaction_date)'),
-                    DB::raw('TO_CHAR(transaction_date, \'Month\')')
-                )
+                ->where('swm_demands.consumer_id', $consumer->id)
+                ->where('swm_demands.is_deactivate', 0)
+                // ->whereDate('payment_from', '>=', Carbon::now()->subMonths(3)->startOfMonth())
+                ->whereMonth('payment_from', '>=',  $currentMonth)
+                ->whereYear('payment_from', $currentYear)
+                ->orderByDesc('swm_demands.id')
+                ->take(3)
                 ->get();
+
+            if (collect($demandDtls)->isEmpty())
+                continue;
 
             $val['consumer_id']           = $consumer->id;
             $val['consumer_ward_no']      = $consumer->ward_no;
             $val['consumer_consumer_no']  = $consumer->consumer_no;
+            $val['consumer_mobile_no']    = $consumer->mobile_no;
             $val['consumer_name']         = $consumer->name;
-            $val['transactionsDtls']      = $tranDtls;
+            $val['demandDtls']            = $demandDtls;
             $transactions[]               = $val;
         }
-        return $transactions;
 
+        $data['data']         = $transactions;
+        $data['current_page'] = $consumerDtls->currentPage();
+        $data['last_page']    = $consumerDtls->lastPage();
+        $data['total']        = $consumerDtls->total();
+        $data['per_page']     = $perPage;
 
-
-
-
-        return $response;
+        return $this->responseMsgs(true, "Data Fetched", $data);
     }
 
     /**
