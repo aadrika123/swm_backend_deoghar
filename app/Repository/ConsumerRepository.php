@@ -3050,7 +3050,7 @@ class ConsumerRepository implements iConsumerRepository
                 $val['address']       = $record->address;
                 $val['complain']      = $record->complain;
                 $val['complain_no']   = $record->complain_no;
-                $val['tcName']        = $getuserdata->name;
+                $val['tcName']        = $getuserdata->name ?? "Citizen";
                 $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
@@ -3098,7 +3098,7 @@ class ConsumerRepository implements iConsumerRepository
                 $val['address']       = $record->address;
                 $val['complain']      = $record->complain;
                 $val['complain_no']   = $record->complain_no;
-                $val['tcName']        = $getuserdata->name;
+                $val['tcName']        = $getuserdata->name ?? "Citizen";
                 $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
@@ -3154,7 +3154,7 @@ class ConsumerRepository implements iConsumerRepository
             $val['status']        = $record->status;
             $val['tc_photo']      = $docUrl . "/uploads/" . $record->tc_photo;
             $val['tl_photo']      = isset($record->tl_photo) ? $docUrl . "/uploads/" . $record->tl_photo : "";
-            $val['tcName']        = $getuserdata->name;
+            $val['tcName']        = $getuserdata->name ?? "Citizen";
             $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
             $val['is_tl']         = $userTypeId == 4 ? true : false;
 

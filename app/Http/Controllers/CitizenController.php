@@ -10,6 +10,7 @@ use App\Models\Demand;
 use App\Models\RazorpayReq;
 use App\Models\RazorpayResponse;
 use App\Models\TblUserMstr;
+use App\Models\TcComplaint;
 use App\Models\Transaction;
 use App\Models\Ward;
 use App\Repository\ConsumerRepository;
@@ -42,6 +43,7 @@ class CitizenController extends Controller
     protected $mCollections;
     protected $mApartment;
     protected $mConsumerType;
+    protected $mTcComplaint;
 
     public function __construct(Request $request)
     {
@@ -54,6 +56,7 @@ class CitizenController extends Controller
         $this->mCollections  = new Collections($this->dbConn);
         $this->mApartment    = new Apartment($this->dbConn);
         $this->mConsumerType = new ConsumerType($this->dbConn);
+        $this->mTcComplaint   = new TcComplaint($this->dbConn);
         // $this->ConsumerType = new ConsumerType($this->dbConn);
         // $this->ConsumerCategory = new ConsumerCategory($this->dbConn);
         // $this->ConsumerDeactivateDeatils = new ConsumerDeactivateDeatils($this->dbConn);
@@ -1075,6 +1078,161 @@ class CitizenController extends Controller
     }
 
     /**
+     * | Post Citizen Complain
+     */
+    public function postCitizenComplain(Request $request)
+    {
+        try {
+            // $userId = $request->user()->id;
+            $ulbId = 11;
+            $validator = Validator::make($request->all(), [
+                'complain'     => 'required',
+                'consumerWard' => 'required',
+                'latitude'     => 'required',
+                'longitude'    => 'required',
+                // 'photo' => 'required|mimes:jpg,jpeg,png',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+            }
+
+            $complain = $this->mTcComplaint;
+            $complain->complain       =  $request->complain;
+            $complain->ward_no        =  $request->consumerWard;
+            $complain->consumer_no    =  $request->consumerNo;
+            $complain->consumer_name  =  $request->consumerName;
+            $complain->address        =  $request->consumerAddress;
+            $complain->latitude       =  $request->latitude;
+            $complain->longitude      =  $request->longitude;
+            $complain->tc_remarks     =  $request->remarks;
+
+            if (!empty($request->photo)) {
+                $randomNumber  = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
+                $filePath = md5($randomNumber) . '.' . $request->photo->extension();
+                $request->photo->move(public_path('uploads'), $filePath);
+
+                $complain->tc_photo = $filePath;
+            }
+            $complain->complain_date  = Carbon::now();
+            $complain->created_at     = Carbon::now();
+            $complain->ulb_id         = $ulbId;
+            $complain->complain_no    = $this->generateComplainNumber($request->consumerWard);
+            $complain->save();
+
+            return response()->json(['status' => True, 'data' => $complain->complain_no, 'msg' => 'Your complain has been registeredW and complain no is ' . $complain->complain_no], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * | Get Citizen Complain
+     */
+    public function getCitizenComplain(Request $request)
+    {
+        // $userId  = $request->user()->id;
+        $perPage = $request->perPage ?? 10;
+        $ulbId   = 11;
+        $validator = Validator::make($request->all(), [
+            'complainNo'     => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+        try {
+
+            $response = array();
+            $records = $this->mTcComplaint
+                ->where('is_deactivate', 0)
+                ->where('ulb_id', $ulbId);
+
+            if (isset($request->tcId))
+                $records = $records->where('user_id', $request->tcId);
+
+            if (isset($request->complainNo))
+                $records = $records->where('complain_no', $request->complainNo);
+
+            if (isset($request->wardNo))
+                $records = $records->where('ward_no', $request->wardNo);
+
+            $records = $records->orderBy('id', 'DESC')
+                ->paginate($perPage);
+
+            foreach ($records as $record) {
+                $getuserdata = $this->GetUserDetails($record->user_id);
+                $val['id']            = $record->id;
+                $val['ward_no']       = $record->ward_no;
+                $val['consumer_name'] = $record->consumer_name;
+                $val['latitude']      = $record->latitude;
+                $val['longitude']     = $record->longitude;
+                $val['address']       = $record->address;
+                $val['complain']      = $record->complain;
+                $val['complain_no']   = $record->complain_no;
+                $val['tcName']        = $getuserdata->name??"Citizen";
+                $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
+                $response[] = $val;
+            }
+
+            $data['data'] = $response;
+            $data['current_page'] = $records->currentPage();
+            $data['last_page']    = $records->lastPage();
+            $data['total']        = $records->total();
+            $data['per_page']     = $perPage;
+
+            return response()->json(['status' => True, 'data' => $data, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * | Get Citizen Complain Details
+     */
+    public function citizenComplainDetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'    => 'required|numeric',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+
+        try {
+            // $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
+            $docUrl  = "http://172.18.1.131:6969";
+            $record = $this->mTcComplaint
+                ->where('is_deactivate', 0)
+                ->where('id', $request->id)
+                ->first();
+
+            if (!$record)
+                return response()->json(['status' => False, 'msg' => "No Data Found", 'data' => ""]);
+
+            $getuserdata = $this->GetUserDetails($record->user_id);
+            $val['id']            = $record->id;
+            $val['ward_no']       = $record->ward_no;
+            $val['consumer_no']   = $record->consumer_no;
+            $val['consumer_name'] = $record->consumer_name;
+            $val['latitude']      = $record->latitude;
+            $val['longitude']     = $record->longitude;
+            $val['address']       = $record->address;
+            $val['tc_remarks']    = $record->tc_remarks;
+            $val['tl_remarks']    = $record->tl_remarks;
+            $val['complain']      = $record->complain;
+            $val['complain_no']   = $record->complain_no;
+            $val['status']        = $record->status;
+            $val['tc_photo']      = $docUrl . "/uploads/" . $record->tc_photo;
+            $val['tl_photo']      = isset($record->tl_photo) ? $docUrl . "/uploads/" . $record->tl_photo : "";
+            $val['tcName']        = $getuserdata->name;
+            $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y'); 
+
+            return response()->json(['status' => True, 'data' => $val, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * | 
      */
     public function saleTransaction(Request $req)
@@ -1095,7 +1253,7 @@ class CitizenController extends Controller
             //     "field5"      => null
             // ]);
             $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
-            
+
 
 
 
@@ -1135,8 +1293,6 @@ class CitizenController extends Controller
             return   $returnData = Http::withHeaders([
                 "Client_apikey"         => "MDVGMDY0Q0MyMkRDNDE2MDlEMzhGRTNGQ0FBMTYyRTA=",
             ])->post("$api", $transfer);
-
-            
         } catch (Exception $e) {
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }

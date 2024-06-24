@@ -197,5 +197,9 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('citizen-payment-receipt', 'paymentReceipt');
     Route::post('consumer-details', 'consumerDetailByConsumerNo');
 
+    Route::post('post-citizen-complain', 'postCitizenComplain');
+    Route::post('get-citizen-complain', 'getCitizenComplain');
+    Route::post('citizen-complain-details', 'citizenComplainDetails');
+
     Route::post('sale-transaction', 'saleTransaction');
 });
