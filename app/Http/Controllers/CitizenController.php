@@ -1198,8 +1198,8 @@ class CitizenController extends Controller
         }
 
         try {
-            // $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
-            $docUrl  = "http://172.18.1.131:6969";
+            $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
+            // $docUrl  = "http://172.18.1.131:6969";
             $record = $this->mTcComplaint
                 ->where('is_deactivate', 0)
                 ->where('id', $request->id)

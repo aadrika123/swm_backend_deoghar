@@ -3128,8 +3128,8 @@ class ConsumerRepository implements iConsumerRepository
         $userTypeId = $user->user_type_id;
         // $ulbId = $this->GetUlbId($userId);
         try {
-            // $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
-            $docUrl  = "http://172.18.1.131:6969";
+            $docUrl  = "https://deoghar.smartulb.co.in/swm-deoghar";
+            // $docUrl  = "http://172.18.1.131:6969";
             $record = $this->TcComplaint
                 ->where('is_deactivate', 0)
                 // ->where('ulb_id', $ulbId)
