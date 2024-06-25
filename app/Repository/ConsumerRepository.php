@@ -2965,6 +2965,7 @@ class ConsumerRepository implements iConsumerRepository
             $complain->latitude       =  $request->latitude;
             $complain->longitude      =  $request->longitude;
             $complain->tc_remarks     =  $request->remarks;
+            $complain->mobile_no      =  $request->mobileNo;
 
             if (!empty($request->photo)) {
                 $randomNumber  = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
@@ -2978,6 +2979,27 @@ class ConsumerRepository implements iConsumerRepository
             $complain->ulb_id         = $ulbId;
             $complain->complain_no    = $this->generateComplainNumber($request->consumerWard);
             $complain->save();
+
+
+            #_Whatsaap Message
+            if (strlen($complain->mobile_no) == 10) {
+                $whatsapp2 = (Whatsapp_Send(
+                    $complain->mobile_no,
+                    "all_module_generate_complain",
+                    [
+                        "content_type" => "text",
+                        [
+                            $complain->consumer_name ?? "Citizen",
+                            "SWM",
+                            "Complain No.",
+                            $complain->complain_no,
+                            "Consumer No.",
+                            $complain->consumer_no ?? "-",
+                            "1800123123"
+                        ]
+                    ]
+                ));
+            }
 
             return response()->json(['status' => True, 'data' => $complain->complain_no, 'msg' => 'Your complain save successfully and complain no is ' . $complain->complain_no], 200);
         } catch (Exception $e) {
@@ -3224,6 +3246,27 @@ class ConsumerRepository implements iConsumerRepository
                     $complain->save();
                 }
             }
+
+            #_Whatsaap Message
+            if (strlen($complain->mobile_no) == 10) {
+                $whatsapp2 = (Whatsapp_Send(
+                    $complain->mobile_no,
+                    "all_module_resolved_complain",
+                    [
+                        "content_type" => "text",
+                        [
+                            $complain->consumer_name ?? "Citizen",
+                            "SWM",
+                            "Complain No.",
+                            $complain->complain_no,
+                            "Consumer No.",
+                            $complain->consumer_no ?? "-",
+                            "1800123123"
+                        ]
+                    ]
+                ));
+            }
+
 
             return response()->json(['status' => True, 'data' => "", 'msg' => "Status Updated"], 200);
         } catch (Exception $e) {
