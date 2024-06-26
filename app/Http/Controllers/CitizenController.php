@@ -7,6 +7,7 @@ use App\Models\Collections;
 use App\Models\Consumer;
 use App\Models\ConsumerType;
 use App\Models\Demand;
+use App\Models\OtpRequest;
 use App\Models\RazorpayReq;
 use App\Models\RazorpayResponse;
 use App\Models\TblUserMstr;
@@ -1060,6 +1061,12 @@ class CitizenController extends Controller
      */
     public function consumerDetailByConsumerNo(Request $req)
     {
+        $validator = Validator::make($req->all(), [
+            'consumerNo'     => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
         $ulbId = 11;
         try {
             $data = $this->mConsumer
@@ -1141,7 +1148,7 @@ class CitizenController extends Controller
                 ));
             }
 
-            return response()->json(['status' => True, 'data' => $complain->complain_no, 'msg' => 'Your complain has been registeredW and complain no is ' . $complain->complain_no], 200);
+            return response()->json(['status' => True, 'data' => $complain->complain_no, 'msg' => 'Your complain has been registered and complain no is ' . $complain->complain_no], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
@@ -1190,7 +1197,7 @@ class CitizenController extends Controller
                 $val['address']       = $record->address;
                 $val['complain']      = $record->complain;
                 $val['complain_no']   = $record->complain_no;
-                $val['tcName']        = $getuserdata->name??"Citizen";
+                $val['tcName']        = $getuserdata->name ?? "Citizen";
                 $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
@@ -1246,11 +1253,128 @@ class CitizenController extends Controller
             $val['tc_photo']      = $docUrl . "/uploads/" . $record->tc_photo;
             $val['tl_photo']      = isset($record->tl_photo) ? $docUrl . "/uploads/" . $record->tl_photo : "";
             $val['tcName']        = $getuserdata->name;
-            $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y'); 
+            $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
 
             return response()->json(['status' => True, 'data' => $val, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * | Send Otp
+     */
+    public function sendOtp(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
+                'type' => "nullable|in:Register,Forgot",
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+            }
+            $mOtpRequest = new OtpRequest();
+            $generateOtp = $this->generateOtp();
+            $mOtpRequest->saveOtp($request, $generateOtp);
+
+            $whatsaapData = (Whatsapp_Send(
+                $request->mobileNo,
+                "send_sms",
+                [
+                    "content_type" => "text",
+                    [
+                        "Complain Register",
+                        $generateOtp
+                    ]
+                ]
+            ));
+
+            return response()->json(['status' => True, 'data' => '', 'msg' => $whatsaapData['status']], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * | Generate Random OTP 
+     */
+    public function generateOtp()
+    {
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
+        // $otp = 123123;
+        return $otp;
+    }
+
+    /**
+     * | Verify Otp
+     */
+    public function verifyOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
+            'otp'      => "required|Numeric",
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => False, 'msg' => $validator->messages()->first(), 'data' => ""]);
+        }
+
+        try {
+            $mOtpMaster             = new OtpRequest();
+            $checkOtp = $mOtpMaster::orderByDesc("id")
+                ->where('mobile_no', request()->input('mobileNo'))
+                ->where('otp', request()->input('otp'))
+                ->first();
+
+            if (!$checkOtp) {
+                throw new Exception("OTP not match!");
+            }
+            if ($checkOtp->expires_at < Carbon::now()) {
+                $this->transerLog($checkOtp);
+                throw new Exception("OTP is expired");
+            }
+            $checkOtp->use_date_time = Carbon::now();
+            $request->merge([
+                "tokenableType"  => $checkOtp->gettable(),
+                "tokenableId"  => $checkOtp->id,
+                "userType"     => $checkOtp->user_type,
+                "userId"     => $checkOtp->user_id,
+            ]);
+
+            DB::beginTransaction();
+            $checkOtp->update();
+            $this->transerLog($checkOtp);
+
+            $sms = "OTP Validated!";
+            $response = [];
+            DB::commit();
+
+           return $this->responseMsgs(true, $sms, $response);
+        } catch (Exception $e) {
+            DB::rollBack();
+           return $this->responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+    private function transerLog(OtpRequest $checkOtp)
+    {
+        $OldOtps =  OtpRequest::where("expires_at", Carbon::now())
+            ->whereNotNull("expires_at")
+            ->where(DB::raw("CAST(created_at AS Date)"), Carbon::now()->format("Y-m-d"))
+            ->get();
+        foreach ($OldOtps as $val) {
+            $otpLog = $val->replicate();
+            $otpLog->setTable('log_otp_requests');
+            $otpLog->id = $val->id;
+            $otpLog->save();
+            $checkOtp->delete();
+        }
+        if ($checkOtp) {
+            $otpLog = $checkOtp->replicate();
+            $otpLog->setTable('log_otp_requests');
+            $otpLog->id = $checkOtp->id;
+            $otpLog->save();
+            $checkOtp->delete();
         }
     }
 

@@ -115,6 +115,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
 
         Route::post('consumerListByWardNo', 'ConsumerOrApartmentList');
         Route::post('getReminderList', 'GetReminderList');
+        Route::post('tcReminderList', 'tcReminderList');
         Route::post('getConsumerPastTransactions', 'ConsumerPastTransactions');
 
         // For Complain
@@ -196,10 +197,12 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('tax-collector-list', 'listTaxCollector');
     Route::post('citizen-payment-receipt', 'paymentReceipt');
     Route::post('consumer-details', 'consumerDetailByConsumerNo');
-
     Route::post('post-citizen-complain', 'postCitizenComplain');
     Route::post('get-citizen-complain', 'getCitizenComplain');
     Route::post('citizen-complain-details', 'citizenComplainDetails');
+
+    Route::post('send-otp', 'sendOtp');
+    Route::post('verify-otp', 'verifyOtp');
 
     Route::post('sale-transaction', 'saleTransaction');
 });

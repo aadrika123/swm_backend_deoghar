@@ -1866,9 +1866,9 @@ class ConsumerRepository implements iConsumerRepository
                         ->first();
                     $collection->verify_by = $userDtl->name ?? "";
 
-                    $coll = $this->Collections->where('transaction_id', $collection->trans_id);
-                    $firstrecord = $coll->orderBy('id', 'asc')->first();
-                    $lastrecord = $coll->latest('id')->first();
+                    $coll = $this->Collections->where('transaction_id', $collection->trans_id)->orderBy('id')->get();
+                    $firstrecord = collect($coll)->first();
+                    $lastrecord  = collect($coll)->last();
 
                     if ($collection->payment_mode == 'Cash')
                         $totalCash += $collection->total_payable_amt;
@@ -2143,9 +2143,9 @@ class ConsumerRepository implements iConsumerRepository
             $transactions = DB::connection($this->dbConn)->select($sql);
 
             foreach ($transactions as $transaction) {
-                $collection = $this->Collections->where('transaction_id', $transaction->trans_id)->where('ulb_id', $ulbId);
-                $firstrecord = $collection->orderBy('id', 'asc')->first();
-                $lastrecord = $collection->latest('id')->first();
+                $collection  = $this->Collections->where('transaction_id', $transaction->trans_id)->where('ulb_id', $ulbId)->orderBy('id')->get();
+                $firstrecord = collect($collection)->first();
+                $lastrecord  = collect($collection)->last();
 
                 $verificationType = ($transaction->reconcile_id) ? 'Bounce' : 'Clear';
                 if ($transaction->consumer_id)
@@ -2858,6 +2858,88 @@ class ConsumerRepository implements iConsumerRepository
         }
     }
 
+    public function tcReminderList(Request $request)
+    {
+        $todayDate = Carbon::now();
+        $userId    = $request->user()->id;
+        $ulbId     = $this->GetUlbId($userId);
+        $response  = array();
+        try {
+
+            $todayReminderList = $this->CosumerReminder
+                ->whereDate('reminder_date', $todayDate)
+                ->where('user_id', $userId)
+                ->get();
+
+            $consumerList      = collect($todayReminderList)->where('reference_type', 'Consumer');
+            $apartmentList     = collect($todayReminderList)->where('reference_type', 'Apartment');
+
+            $consumerIds      = collect($consumerList)->pluck('reference_id');
+            $apartmentIds     = collect($apartmentList)->pluck('reference_id');
+
+
+            // foreach ($todayReminderList as $reminder) {
+
+            //     if ($reminder->reference_type == 'Consumer') {
+            //         $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+            //             ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+            //             ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no'))
+            //             ->where('swm_consumers.ulb_id', $ulbId)
+            //             ->where('swm_consumers.id', $reminder->reference_id)
+            //             ->where('is_deactivate', 0)
+            //             ->orderBy('id', 'desc')
+            //             ->get();
+            //     }
+            // }
+
+            $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no"))
+                ->whereIn('id', $apartmentIds)
+                ->where('ulb_id', $ulbId)
+                ->where('is_deactivate', 0)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no'))
+                ->where('swm_consumers.ulb_id', $ulbId)
+                ->whereIn('swm_consumers.id', $consumerIds)
+                ->where('is_deactivate', 0)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $consumerList = $consumerList->merge($apartmentList);
+
+            foreach ($consumerList as $consumer) {
+                if ($consumer->category == 'Apartment')
+                    $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Apartment', $ulbId);
+                else
+                    $demand = $this->GetDemand($this->dbConn, $consumer->id, 'Consumer', $ulbId);
+
+                $con['id']                = $consumer->id;
+                $con['wardNo']            = $consumer->ward_no;
+                $con['consumerName']      = ($consumer->category != 'Apartment') ? $consumer->name : "";
+                $con['consumerNo']        = ($consumer->category != 'Apartment') ? $consumer->ref_no : "";
+                $con['apartmentName']     = ($consumer->category == 'Apartment') ? $consumer->name : "";
+                $con['apartmentCode']     = ($consumer->category == 'Apartment') ? $consumer->ref_no : "";
+                $con['Address']           = $consumer->address;
+                $con['cansumerCategory']  = $consumer->category;
+                $con['cansumerType']      = $consumer->type;
+                $con['mobileNo']          = $consumer->mobile_no;
+                $con['outstandingDemand'] = $demand['demandAmt'];
+                $con['demandFrom']        = $demand['demandFrom'];
+                $con['demandUpto']        = $demand['demandUpto'];
+                $con['paidStatus']        = ($demand['demandAmt'] > 0) ? "Unpaid" : "Paid";
+
+                $response[] = $con;
+            }
+
+            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
     public function ConsumerPastTransactions(Request $request)
     {
         try {
@@ -3112,6 +3194,7 @@ class ConsumerRepository implements iConsumerRepository
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
+                $tldata      = $this->GetUserDetails($record->tl_id);
                 $val['id']            = $record->id;
                 $val['ward_no']       = $record->ward_no;
                 $val['consumer_name'] = $record->consumer_name;
@@ -3121,6 +3204,7 @@ class ConsumerRepository implements iConsumerRepository
                 $val['complain']      = $record->complain;
                 $val['complain_no']   = $record->complain_no;
                 $val['tcName']        = $getuserdata->name ?? "Citizen";
+                $val['tlName']        = $tldata->name ?? "";
                 $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
                 $response[] = $val;
             }
@@ -3610,8 +3694,8 @@ class ConsumerRepository implements iConsumerRepository
     {
         $currentMonth  = Carbon::now()->format('m');
         $currentYear   = Carbon::now()->format('Y');
-        $startOfMonth  = Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth    = Carbon::now()->endOfMonth()->toDateString();
+        $startOfMonth  = Carbon::parse($request->fromDate)->startOfMonth()->toDateString();
+        $endOfMonth    = Carbon::parse($request->toDate)->endOfMonth()->toDateString();
         $user   = Auth()->user();
         $ulbId  = $user->current_ulb;
         $userId = $user->id;
@@ -3634,8 +3718,8 @@ class ConsumerRepository implements iConsumerRepository
                           count(CASE WHEN consumer_category_id != 1 THEN id end) as commercial
                     FROM swm_consumers 
                     where is_deactivate = 0
-                    AND   EXTRACT(MONTH FROM entry_date) = $currentMonth
-                    AND   EXTRACT(YEAR FROM entry_date)  = $currentYear";
+                    AND   entry_date between '" . $startOfMonth . "' and '" . $endOfMonth . "'";
+
             $newconsumerdtls = DB::connection($this->dbConn)->select($sql);
             $newconsumerdtls = collect($newconsumerdtls)->first();
 
@@ -3662,16 +3746,15 @@ class ConsumerRepository implements iConsumerRepository
             $arrearDemand = collect($arrearDemand)->first();
 
 
-            $response['totalConsumer']            = $consumerdtls->total_consumer ?? 0;
+            $response['totalConsumer']             = $consumerdtls->total_consumer ?? 0;
             $response['totalResidenstialConsumer'] = $consumerdtls->residential ?? 0;
-            $response['totalCommercialConsumer']  = $consumerdtls->commercial ?? 0;
+            $response['totalCommercialConsumer']   = $consumerdtls->commercial ?? 0;
             $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
             $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;
             $response['currentMonthTotalCommercialConsumer']  = $newconsumerdtls->commercial ?? 0;
             $response['currentMonthDemand']                   = $currentDemand->current_demand ?? 0;
             $response['arrearDemand']                         = $arrearDemand->arrear_demand ?? 0;
-            $तोतलडएमण्ड                                       = $arrearDemand->arrear_demand + $currentDemand->current_demand;
-            // $response['totalDemand']                          = $तोतलडएमण्ड->toString() ?? 0;
+            $response['totalDemand']                          = $arrearDemand->arrear_demand + $currentDemand->current_demand;
 
             //  $this->responseMsgs(true, "You Got Late", $response);
 
@@ -3798,7 +3881,7 @@ class ConsumerRepository implements iConsumerRepository
 
 
 
-                $response['totalDemand'] = $total_demand ?? 0;
+                // $response['totalDemand'] = $total_demand ?? 0;
                 $response['outstandingDemand'] = $Report->outstanding_amount ?? 0;
                 $response['totalCollection'] = $total_collection ?? 0;
                 $response['reconcilePending'] = $total_reconcile ?? 0;
@@ -3810,9 +3893,9 @@ class ConsumerRepository implements iConsumerRepository
                 // $response['totalConsumer'] = $Report->total_consumer ?? 0;
                 // $response['totalResidenstialConsumer'] = $Report->residential ?? 0;
                 // $response['totalCommercialConsumer'] = $Report->commercial ?? 0;
-                $response['totalConsumer']            = $consumerdtls->total_consumer ?? 0;
+                $response['totalConsumer']             = $consumerdtls->total_consumer ?? 0;
                 $response['totalResidenstialConsumer'] = $consumerdtls->residential ?? 0;
-                $response['totalCommercialConsumer']  = $consumerdtls->commercial ?? 0;
+                $response['totalCommercialConsumer']   = $consumerdtls->commercial ?? 0;
 
                 $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
                 $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;

@@ -71,7 +71,7 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->ConsumerAdd($req);
     }
-    
+
     /**
      * Get Analytic dashboard data.
      *
@@ -373,7 +373,7 @@ class ConsumerController extends Controller
         return $this->ConResp->CashVerification($req);
     }
 
-    
+
     /**
      * Get Cheque dd details.
      *
@@ -520,6 +520,14 @@ class ConsumerController extends Controller
     }
 
     /**
+     * | Tc Reminder List
+     */
+    public function tcReminderList(Request $req)
+    {
+        return $this->ConResp->tcReminderList($req);
+    }
+
+    /**
      * Get Consumer/Apartment Past Transaction
      *
      * @param  $request
@@ -557,7 +565,7 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->getTcComplainV2($req);
     }
-    
+
     /**
      * | Complain Details
      */
@@ -573,7 +581,7 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->switchStatus($req);
     }
-    
+
     /**
      * | Complain Resolved
      */
@@ -593,7 +601,7 @@ class ConsumerController extends Controller
         return $this->ConResp->addRoute($req);
     }
 
-    
+
     /**
      * get routes 
      *
@@ -604,7 +612,7 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->RouteList($req);
     }
-    
+
     /**
      * get route by id
      *
@@ -637,7 +645,7 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->DeleteRoute($req);
     }
-    
+
     /**
      * payment adjustment list
      *
@@ -659,5 +667,4 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->DefaultConsumerAdd($req);
     }
-    
 }
