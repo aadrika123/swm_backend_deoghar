@@ -79,7 +79,7 @@ if (!function_exists('Whatsapp_Send')) {
         // $mobileno = 8797770238;
         // $mobileno = 6387148933;
         // $mobileno = 9031248170;
-        $mobileno = 9153975142;
+        // $mobileno = 9153975142;
         $res = WHATSAPPJHGOVT($mobileno, $templateid, $message);
         return $res;
     }
