@@ -272,8 +272,7 @@ class ConsumerRepository implements iConsumerRepository
                 $sql = "SELECT a.*, c.id as consumer_id,  c.pincode as pincode, c.name as consumer_name, c.mobile_no as contactno, c.holding_no, c.consumer_no,c.user_id,c.entry_date FROM swm_apartments a 
                 LEFT JOIN (SELECT * FROM swm_consumers WHERE is_deactivate=0) c on c.apartment_id=a.id
                 WHERE a.id=" . $request->id . " and a.ulb_id=" . $ulbId .
-                    "order by entry_date desc"
-                ;
+                    "order by entry_date desc";
                 $apartments = DB::connection($this->dbConn)->select($sql);
 
                 $apt_tot_tax = 0;
@@ -2881,7 +2880,6 @@ class ConsumerRepository implements iConsumerRepository
 
 
             // foreach ($todayReminderList as $reminder) {
-
             //     if ($reminder->reference_type == 'Consumer') {
             //         $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
             //             ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
@@ -2894,19 +2892,25 @@ class ConsumerRepository implements iConsumerRepository
             //     }
             // }
 
-            $apartmentList = $this->Apartment->select(DB::raw("id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no"))
-                ->whereIn('id', $apartmentIds)
-                ->where('ulb_id', $ulbId)
+            $apartmentList = $this->Apartment
+                ->select(DB::raw("swm_apartments.id,ward_no, apt_name as name, apt_code as ref_no,apt_address as address, 'Apartment' as category, '' as type, '' as mobile_no,swm_consumer_reminders.remarks"))
+                ->join('swm_consumer_reminders', 'swm_consumer_reminders.reference_id', 'swm_apartments.id')
+                ->whereIn('swm_apartments.id', $apartmentIds)
+                ->where('swm_apartments.ulb_id', $ulbId)
                 ->where('is_deactivate', 0)
-                ->orderBy('id', 'desc')
+                ->whereDate('reminder_date', $todayDate)
+                ->orderBy('swm_apartments.id', 'desc')
                 ->get();
 
-            $consumerList = $this->Consumer->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+            $consumerList = $this->Consumer
+                ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no,swm_consumer_reminders.remarks'))
+                ->leftjoin('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                 ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                ->select(DB::raw('swm_consumers.id, ward_no, swm_consumers.name as name, consumer_no as ref_no,address, swm_consumer_categories.name as category, swm_consumer_types.name as type, mobile_no'))
+                ->join('swm_consumer_reminders', 'swm_consumer_reminders.reference_id', 'swm_consumers.id')
                 ->where('swm_consumers.ulb_id', $ulbId)
                 ->whereIn('swm_consumers.id', $consumerIds)
                 ->where('is_deactivate', 0)
+                ->whereDate('reminder_date', $todayDate)
                 ->orderBy('id', 'desc')
                 ->get();
 
@@ -2928,6 +2932,7 @@ class ConsumerRepository implements iConsumerRepository
                 $con['cansumerCategory']  = $consumer->category;
                 $con['cansumerType']      = $consumer->type;
                 $con['mobileNo']          = $consumer->mobile_no;
+                $con['reminder']          = $consumer->remarks;
                 $con['outstandingDemand'] = $demand['demandAmt'];
                 $con['demandFrom']        = $demand['demandFrom'];
                 $con['demandUpto']        = $demand['demandUpto'];
