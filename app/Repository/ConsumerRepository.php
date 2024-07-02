@@ -3728,8 +3728,8 @@ class ConsumerRepository implements iConsumerRepository
                             sum(total_tax) as current_demand
                     FROM  swm_demands
                     WHERE is_deactivate = 0
-                    AND   EXTRACT(MONTH FROM payment_from) = $currentMonth
-                    AND   EXTRACT(YEAR FROM payment_from)  = $currentYear";
+                    AND   payment_from between '" . $startOfMonth . "' and '" . $endOfMonth . "'";
+
             $currentDemand = DB::connection($this->dbConn)->select($sql);
             $currentDemand = collect($currentDemand)->first();
 
@@ -3752,7 +3752,7 @@ class ConsumerRepository implements iConsumerRepository
             $response['currentMonthTotalConsumer']            = $newconsumerdtls->total_consumer ?? 0;
             $response['currentMonthTotalResidentialConsumer'] = $newconsumerdtls->residential ?? 0;
             $response['currentMonthTotalCommercialConsumer']  = $newconsumerdtls->commercial ?? 0;
-            $response['currentMonthDemand']                   = $currentDemand->current_demand ?? 0;
+            $response['currentDemand']                        = $currentDemand->current_demand ?? 0;
             $response['arrearDemand']                         = $arrearDemand->arrear_demand ?? 0;
             $response['totalDemand']                          = $arrearDemand->arrear_demand + $currentDemand->current_demand;
 
@@ -3760,8 +3760,8 @@ class ConsumerRepository implements iConsumerRepository
 
 
 
-            $From = Carbon::create($request->fromDate)->format('Y-m-d');
-            $Upto = Carbon::create($request->toDate)->format('Y-m-d');
+            $From = Carbon::parse($request->fromDate)->startOfMonth()->toDateString();
+            $Upto = Carbon::parse($request->toDate)->endOfMonth()->toDateString();
 
             # Old Query 
             $sqlcollection = "SELECT 
@@ -3777,6 +3777,7 @@ class ConsumerRepository implements iConsumerRepository
 
             $current_totalcolls = DB::connection($this->dbConn)->select($sqlcollection);
 
+            # Total Collection
             $sqlcollection = "SELECT 
                                     sum(total_payable_amt) as value,
                                     sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
@@ -3788,14 +3789,13 @@ class ConsumerRepository implements iConsumerRepository
                             and swm_transactions.paid_status!=0";
 
             $overAllcolls = DB::connection($this->dbConn)->select($sqlcollection);
-
-
+            $overAllcolls = collect($overAllcolls)->first();
 
 
             if (isset($request->fromDate) && isset($request->toDate)) {
 
-                $From = Carbon::create($request->fromDate)->format('Y-m-d');
-                $Upto = Carbon::create($request->toDate)->format('Y-m-d');
+                $From = Carbon::create($request->fromDate)->startOfMonth()->toDateString();
+                $Upto = Carbon::create($request->toDate)->endOfMonth()->toDateString();
 
                 $whereParam = "";
                 if (isset($request->wardNo))
@@ -3861,30 +3861,34 @@ class ConsumerRepository implements iConsumerRepository
                 $totalarrears = DB::connection($this->dbConn)->select($sqlarrear);
 
                 // Collection Details
-                $sqlcollection = "SELECT EXTRACT(YEAR FROM transaction_date) as year, EXTRACT(MONTH FROM transaction_date) as month,sum(total_payable_amt) as value,
-                sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
-                sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
-                FROM swm_transactions
-                LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
-                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
-                WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and (transaction_date between '" . $From . "' and '" . $Upto . "')
-                GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)";
+                $sqlcollection = "SELECT 
+                                        EXTRACT(YEAR FROM transaction_date) as year,
+                                        EXTRACT(MONTH FROM transaction_date) as month,
+                                        sum(total_payable_amt) as value,
+                                        sum(CASE WHEN paid_status = 1 and paid_status !=0 THEN total_payable_amt END) as total_collection,
+                                        sum(CASE WHEN paid_status = 2 THEN total_payable_amt END) as total_reconcile_pending_amount
+                                FROM swm_transactions
+                                LEFT JOIN swm_transaction_deactivates on swm_transaction_deactivates.transaction_id=swm_transactions.id
+                                LEFT JOIN swm_consumers on swm_transactions.consumer_id=swm_consumers.id " . $whereParam . "
+                                        WHERE swm_transactions.ulb_id=" . $ulbId . " and swm_transaction_deactivates.transaction_id is null and swm_transactions.paid_status!=0 and (transaction_date between '" . $From . "' and '" . $Upto . "')
+                                        GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)";
 
                 $totalcolls = DB::connection($this->dbConn)->select($sqlcollection);
 
-                $total_collection = 0;
+                $currentCollection = 0;
                 $total_reconcile = 0;
                 foreach ($totalcolls as $coll) {
-                    $total_collection += $coll->total_collection;
+                    $currentCollection += $coll->total_collection;
                     $total_reconcile += $coll->total_reconcile_pending_amount;
                 }
 
 
-
                 // $response['totalDemand'] = $total_demand ?? 0;
                 $response['outstandingDemand'] = $Report->outstanding_amount ?? 0;
-                $response['totalCollection'] = $total_collection ?? 0;
-                $response['totalBalance']    = (($arrearDemand->arrear_demand + $currentDemand->current_demand) - ($total_collection + $total_reconcile)) ?? 0;
+                $response['totalCollection']   = $overAllcolls->value ?? 0;
+                $response['currentCollection']   = $currentCollection ?? 0;
+                $response['totalBalance']      = (($arrearDemand->arrear_demand + $currentDemand->current_demand) - $overAllcolls->value) ?? 0;
+                // $response['currentBalance']    = ($currentDemand->current_demand - $currentCollection) ?? 0;
                 $response['reconcilePending'] = $total_reconcile ?? 0;
                 $response['adjustmentAmount'] = $Report->adjust_amount ?? 0;
                 $response['demand'] = $totalDmds;
