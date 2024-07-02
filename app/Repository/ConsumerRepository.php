@@ -271,7 +271,9 @@ class ConsumerRepository implements iConsumerRepository
 
                 $sql = "SELECT a.*, c.id as consumer_id,  c.pincode as pincode, c.name as consumer_name, c.mobile_no as contactno, c.holding_no, c.consumer_no,c.user_id,c.entry_date FROM swm_apartments a 
                 LEFT JOIN (SELECT * FROM swm_consumers WHERE is_deactivate=0) c on c.apartment_id=a.id
-                WHERE a.id=" . $request->id . " and a.ulb_id=" . $ulbId;
+                WHERE a.id=" . $request->id . " and a.ulb_id=" . $ulbId .
+                    "order by entry_date desc"
+                ;
                 $apartments = DB::connection($this->dbConn)->select($sql);
 
                 $apt_tot_tax = 0;
