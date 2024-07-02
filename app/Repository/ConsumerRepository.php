@@ -3885,9 +3885,9 @@ class ConsumerRepository implements iConsumerRepository
 
                 // $response['totalDemand'] = $total_demand ?? 0;
                 $response['outstandingDemand'] = $Report->outstanding_amount ?? 0;
-                $response['totalCollection']   = $overAllcolls->value ?? 0;
+                $response['totalCollection']   = round($overAllcolls->value) ?? 0;
                 $response['currentCollection']   = $currentCollection ?? 0;
-                $response['totalBalance']      = (($arrearDemand->arrear_demand + $currentDemand->current_demand) - $overAllcolls->value) ?? 0;
+                $response['totalBalance']      = (($arrearDemand->arrear_demand + $currentDemand->current_demand) - round($overAllcolls->value)) ?? 0;
                 // $response['currentBalance']    = ($currentDemand->current_demand - $currentCollection) ?? 0;
                 $response['reconcilePending'] = $total_reconcile ?? 0;
                 $response['adjustmentAmount'] = $Report->adjust_amount ?? 0;
