@@ -1443,4 +1443,8 @@ class CitizenController extends Controller
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
+
+    # generate order id and save in table
+    
+    
 }

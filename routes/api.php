@@ -117,6 +117,10 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('getReminderList', 'GetReminderList');
         Route::post('tcReminderList', 'tcReminderList');
         Route::post('getConsumerPastTransactions', 'ConsumerPastTransactions');
+        
+        # Online Payment        
+        Route::post('generate-order-id', 'generateOrderId');
+        Route::post('save-order-response', 'saveOrderResponse');
 
         // For Complain
         Route::post('postTcComplain', 'TcComplain');

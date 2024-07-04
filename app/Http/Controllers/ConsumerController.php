@@ -538,6 +538,21 @@ class ConsumerController extends Controller
         return $this->ConResp->ConsumerPastTransactions($req);
     }
 
+    /**
+     * | To Generate Order Id For Tc
+     */
+    public function generateOrderId(Request $req)
+    {
+        return $this->ConResp->generateOrderId($req);
+    }
+
+    /**
+     * | Save Order Response
+     */
+    public function saveOrderResponse(Request $req)
+    {
+        return $this->ConResp->saveOrderResponse($req);
+    }
 
     /**
      * Add Tc Complain 
