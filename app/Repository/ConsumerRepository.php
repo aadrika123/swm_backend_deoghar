@@ -3025,9 +3025,7 @@ class ConsumerRepository implements iConsumerRepository
             ], 200);
 
         try {
-
-            $apiId = "0701";
-            $version = "01";
+            $user         = auth()->user();
             $mRazorpayReq = new RazorpayReq();
             $consumerType = $req->consumerType;
             $apartmentId     = null;
@@ -3045,14 +3043,14 @@ class ConsumerRepository implements iConsumerRepository
                 throw new Exception("Consumer Not Found");
 
             // $orderData = $api->order->create(array('amount' => $req->amount * 100, 'currency' => 'INR',));
-            $orderId = time();
+            $orderId = time().$user->id;
 
             $mReqs = [
                 "order_id"       => $orderId,
                 "payment_type"   => $consumerType,
                 "consumer_id"    => $consumerId,
                 "apartment_id"   => $apartmentId,
-                "user_id"        => 0,
+                "user_id"        => $user->id,
                 "amount"         => $req->amount,
                 "ulb_id"         => $consumerDetails->ulb_id,
                 "ip_address"     => $this->getClientIpAddress()
