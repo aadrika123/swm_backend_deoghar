@@ -1400,9 +1400,6 @@ class CitizenController extends Controller
             // ]);
             $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
 
-
-
-
             #_Encryption
             $cryptoKey = "F7556B6D2A034B0FA2EB387DA36F8D84"; // Replace with your actual crypto key
             $cryptoKeyHex = bin2hex($cryptoKey);
@@ -1434,11 +1431,10 @@ class CitizenController extends Controller
             // $encryptedPayloadHexEncoded = urlencode($encryptedPayloadHex);
             // $url = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn" . $encryptedPayloadHexEncoded;
 
-
-
             return   $returnData = Http::withHeaders([
                 "Client_apikey"         => "MDVGMDY0Q0MyMkRDNDE2MDlEMzhGRTNGQ0FBMTYyRTA=",
             ])->post("$api", $transfer);
+            
         } catch (Exception $e) {
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }

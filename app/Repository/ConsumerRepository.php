@@ -3311,8 +3311,8 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->tcId))
                 $records = $records->where('user_id', $request->tcId);
 
-            if (isset($request->complainNo))
-                $records = $records->where('complain_no', $request->complainNo);
+            if (isset($request->search))
+                $records = $records->where('complain_no', $request->search);
 
             if (isset($request->wardNo))
                 $records = $records->where('ward_no', $request->wardNo);
