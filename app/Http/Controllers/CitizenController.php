@@ -1349,10 +1349,10 @@ class CitizenController extends Controller
             $response = [];
             DB::commit();
 
-           return $this->responseMsgs(true, $sms, $response);
+            return $this->responseMsgs(true, $sms, $response);
         } catch (Exception $e) {
             DB::rollBack();
-           return $this->responseMsgs(false, $e->getMessage(), "");
+            return $this->responseMsgs(false, $e->getMessage(), "");
         }
     }
 
@@ -1381,66 +1381,305 @@ class CitizenController extends Controller
     /**
      * | 
      */
+    // public function saleTransaction(Request $req)
+    // {
+    //     try {
+
+    //         $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
+    //         #_Encryption
+    //         $cryptoKey = "F7556B6D2A034B0FA2EB387DA36F8D84"; // Replace with your actual crypto key
+    //         $cryptoKeyHex = bin2hex($cryptoKey);
+    //         $payload = [
+    //             "saleTxnId"   => time(),
+    //             "saleAmount"  => "5000.00",
+    //             "mobileNo"    => "8797770238",
+    //             "email"       => "p2ks247@gmail.com",
+    //             "customerName" => "Almash",
+    //             "description" => "payment request"
+
+    //         ]; // Replace with your actual payload
+
+    //         $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+    //         // Encrypt the payload
+    //         $encryptedPayload = Crypt::encryptString($payloadJson);
+
+    //         $transfer = [
+    //             "payLoadData"   => $encryptedPayload,
+    //             "tid"           => time()
+    //         ];
+
+    //         $returnData = Http::withHeaders([
+
+    //             "Client_apikey"         => "MDVGMDY0Q0MyMkRDNDE2MDlEMzhGRTNGQ0FBMTYyRTA=",
+    //         ])->post("$api", $transfer);
+
+    //         $encryptedResponse = $returnData->body();
+    //         $decryptedResponse = Crypt::decryptString($encryptedResponse);
+
+
+    //     } catch (Exception $e) {
+    //         return $this->responseMsgs(false,  $e->getMessage(), "");
+    //     }
+    // }
+
     public function saleTransaction(Request $req)
     {
         try {
-            // $req = new Request([
-            //     "saleTxnId"   => "637635161297869671",
-            //     "saleAmount"  => "5000.00",
-            //     "mobileNo"    => "9555274574",
-            //     "email"       => "pks247@gmail.com",
-            //     "customerName" => "Pramod",
-            //     "description" => "payment request",
-            //     "skuIds"      => "ASD212121 ",
-            //     "field1"      => "pks@okhddfc",
-            //     "field2"      => 'abcd',
-            //     "field3"      => null,
-            //     "field4"      => null,
-            //     "field5"      => null
-            // ]);
             $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
-
-            #_Encryption
-            $cryptoKey = "F7556B6D2A034B0FA2EB387DA36F8D84"; // Replace with your actual crypto key
-            $cryptoKeyHex = bin2hex($cryptoKey);
+            $aes = new AES("F7556B6D2A034B0FA2EB387DA36F8D84");
             $payload = [
-                "saleTxnId"   => "637635161297869671",
-                "saleAmount"  => "5000.00",
-                "mobileNo"    => "9555274574",
-                "email"       => "pks247@gmail.com",
-                "customerName" => "Pramod",
-                "description" => "payment request",
-                "skuIds"      => "ASD212121 ",
-                "field1"      => "pks@okhddfc",
-                "field2"      => 'abcd',
-                "field3"      => null,
-                "field4"      => null,
-                "field5"      => null
-            ]; // Replace with your actual payload
+                "saleTxnId"   => time(),
+                "saleAmount"  => "5.00",
+                "mobileNo"    => "8797770238",
+                "email"       => "p2ks247@gmail.com",
+                "customerName" => "Almash",
+                "description" => "payment request"
+            ];
 
-            $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+            $payloadJson = json_encode($payload);
+            $encryptedPayload = $aes->encrypt($payloadJson);
+            echo "Encrypted: " . $encryptedPayload . "\n";
+
+            // $decryptedPayload = $aes->decrypt($encryptedPayload);
+            // echo "Decrypted: " . $decryptedPayload . "\n";
+
+
+            // echo $this->EncryptTextToHex("Hello World", "0123456789ABCDEF");
+            // echo $this->DecryptHexToText("2B7E151628AED2A6ABF7158809CF4F3C", "0123456789ABCDEF");
+            //     $a = Crypt::encryptString("Hello World");
+            //    return $decryptedResponse = Crypt::decryptString($a);
+
+            // $api = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn";
+            #_Encryption
+            // $secretKey = "F7556B6D2A034B0FA2EB387DA36F8D84"; // Replace with your actual crypto key
+            // $cryptoKeyHex = bin2hex($secretKey);
+            // $payload = [
+            //     "saleTxnId"   => time(),
+            //     "saleAmount"  => "5000.00",
+            //     "mobileNo"    => "8797770238",
+            //     "email"       => "p2ks247@gmail.com",
+            //     "customerName" => "Almash",
+            //     "description" => "payment request"
+
+            // ]; // Replace with your actual payload
+
+            // $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+            // $encryptedResponse = Crypt::encryptString($payloadJson);
+            // $decryptedResponse = Crypt::decryptString($encryptedResponse);
+
+            // $encryptedPayload =  $this->encrypt($payloadJson, "F7556B6D2A034B0FA2EB387DA36F8D84");
+            // $encryptedPayload =  $this->EncryptTextToHex($payloadJson, "F7556B6D2A034B0FA2EB387DA36F8D84");
 
             // Encrypt the payload
-            $encryptedPayload = Crypt::encryptString($payloadJson);
+            // $a = Crypt::encryptString($payloadJson, "F7556B6D2A034B0FA2EB387DA36F8D84");
 
             $transfer = [
                 "payLoadData"   => $encryptedPayload,
+                "tid"           => 41501122
             ];
 
-            // $encryptedPayloadHex = bin2hex($encryptedPayload);
-            // $encryptedPayloadHexEncoded = urlencode($encryptedPayloadHex);
-            // $url = "https://testcallbh.bonushub.co.in:9443/api/ecr/v1/saletxn" . $encryptedPayloadHexEncoded;
-
-            return   $returnData = Http::withHeaders([
+            $returnData = Http::withHeaders([
                 "Client_apikey"         => "MDVGMDY0Q0MyMkRDNDE2MDlEMzhGRTNGQ0FBMTYyRTA=",
             ])->post("$api", $transfer);
-            
+
+
+            $encryptedResponse = $returnData->body();
+            $encryptedResponse = json_decode($encryptedResponse);
+
+            $decryptedPayload = $aes->decrypt($encryptedResponse->payLoadData );
+            // $sms = "Decrypted: " . $decryptedPayload . "\n";
+
+            return $this->responseMsgs(true, "Decrypted Succesfully", json_decode($decryptedPayload));
+            //  $this->decrypt($encryptedResponse->payLoadData, "F7556B6D2A034B0FA2EB387DA36F8D84");
+            // return $decryptedResponse = Crypt::decryptString($returnData->body());
         } catch (Exception $e) {
             return $this->responseMsgs(false,  $e->getMessage(), "");
         }
     }
 
-    # generate order id and save in table
-    
-    
+    # 1
+    public function EncryptTextToHex($plainText, $key)
+    {
+        $plainBytes = mb_convert_encoding($plainText, 'UTF-8');
+        $aesManaged = $this->GetAesManaged($key);
+
+        $edata = $this->encrypt($plainBytes, $aesManaged);
+        return $this->bytesToHexString($edata);
+    }
+
+    # 2
+    public function GetAesManaged($secretKey)
+    {
+        // $keyBytes = str_repeat(chr(0), 16);
+        // $secretKeyBytes = $this->HexToByteArray($secretKey);
+
+        // // Initialization vector for AES ECB mode (empty for ECB)
+        // $iv = '';
+        // // AES parameters
+        // $cipher = 'aes-128-ecb'; // AES with 128-bit key in ECB mode
+        // $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING; // Use raw data and zero padding
+
+        // return [$cipher, $options, $secretKeyBytes, $iv];
+        $secretKeyBytes = hex2bin($secretKey);
+
+        // AES parameters
+        $cipher = 'aes-128-ecb'; // AES with 128-bit key in ECB mode
+        $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING; // Use raw data and zero padding
+
+        return [$cipher, $options, $secretKeyBytes];
+    }
+
+    # 3
+    public function hexToByteArray($hexString)
+    {
+        // Remove spaces
+        $hexString = str_replace(' ', '', $hexString);
+
+        // Check if the length of the hex string is even
+        if (strlen($hexString) % 2 != 0) {
+            throw new Exception("The hexString cannot have an odd number of digits");
+        }
+
+        $hexAsBytes = [];
+        for ($i = 0; $i < strlen($hexString); $i += 2) {
+            $byteValue = substr($hexString, $i, 2);
+            $hexAsBytes[] = hexdec($byteValue);
+        }
+
+        return $hexAsBytes;
+    }
+
+    # 4
+    public function encrypt($plainBytes, $aesManaged)
+    {
+        // Extract AES parameters
+        list($cipher, $options, $secretKeyBytes) = $aesManaged;
+
+        // Encrypt using AES ECB mode
+        $encryptedData = openssl_encrypt($plainBytes, $cipher, $secretKeyBytes, $options);
+
+        if ($encryptedData === false) {
+            throw new Exception('Encryption failed');
+        }
+
+        return $encryptedData;
+    }
+
+    # 5
+    function bytesToHexString($byteArray)
+    {
+        // Convert byte array to hexadecimal string
+        $hexString = bin2hex($byteArray);
+
+        return $hexString;
+    }
 }
+
+    
+
+
+    // function GetAesManaged($secretKey)
+    // {
+    //     $keyBytes = array_fill(0, 16, 0);
+    //     $secretKeyBytes = $this->HexToByteArray($secretKey);
+    //     return array(
+    //         'Mode' => 'CipherMode.ECB',
+    //         'Padding' => 'PaddingMode.PKCS7',
+    //         'Key' => $secretKeyBytes,
+    //     );
+    // }
+
+    // function HexToByteArray($hexString)
+    // {
+    //     $hexString = str_replace(" ", "", $hexString);
+    //     if (strlen($hexString) % 2 != 0) {
+    //         throw new Exception("The hexString cannot have an odd number of digits");
+    //     }
+    //     $HexAsBytes = array_fill(0, strlen($hexString) / 2, 0);
+    //     for ($index = 0; $index < count($HexAsBytes); $index++) {
+    //         $byteValue = substr($hexString, $index * 2, 2);
+    //         $HexAsBytes[$index] = hexdec($byteValue);
+    //     }
+
+    //     return $HexAsBytes;
+    // }
+
+    // function BytesToHexString($byteArray)
+    // {
+    //     $result = "";
+    //     $result = implode("", array_map(function ($b) {
+    //         return dechex($b);
+    //     }, $byteArray));
+    //     return $result;
+    // }
+
+    // function Encrypt($plainBytes, $aesManaged)
+    // {
+    //     return $aesManaged'CreateEncryptor'
+    //         ->TransformFinalBlock($plainBytes, 0, count($plainBytes));
+    // }
+
+    // function Decrypt($encryptedData, $aesManaged)
+    // {
+    //     return $aesManaged'CreateDecryptor'
+    //         ->TransformFinalBlock($encryptedData, 0, count($encryptedData));
+    // }
+
+    // function EncryptTextToHex($plainText, $key)
+    // {
+    //     $plainBytes = str_split($plainText);
+    //     $edata[] = Encrypt($plainBytes, $this->GetAesManaged($key));
+    //     return $this->BytesToHexString($edata);
+    // }
+
+    // function DecryptHexToText($encryptedText, $key)
+    // {
+    //     $encryptedBytes = $this->HexToByteArray($encryptedText);
+    //     return implode("", array_map("chr", Decrypt($encryptedBytes, $this->GetAesManaged($key))));
+    // }
+
+
+
+
+
+
+
+    // public static function hexToByteArray($hexString)
+    // {
+    //     $hexString = str_replace(' ', '', $hexString);
+    //     if (strlen($hexString) % 2 != 0) {
+    //         throw new \InvalidArgumentException("The hexString cannot have an odd number of digits");
+    //     }
+    //     return pack('H*', $hexString);
+    // }
+
+    // public static function bytesToHexString($byteArray)
+    // {
+    //     return strtoupper(bin2hex($byteArray));
+    // }
+
+    // public static function getAesCipher($secretKey)
+    // {
+    //     $keyBytes = self::hexToByteArray($secretKey);
+    //     if (strlen($keyBytes) !== 16) {
+    //         throw new \InvalidArgumentException("Key must be 16 bytes long");
+    //     }
+    //     return $keyBytes;
+    // }
+
+    // public static function encrypt($plainText, $secretKey)
+    // {
+    //     $key = self::getAesCipher($secretKey);
+    //     $encrypted = openssl_encrypt($plainText, 'aes-128-ecb', $key);
+    //     return self::bytesToHexString($encrypted);
+    // }
+
+    // public static function decrypt($encryptedText, $secretKey)
+    // {
+    //     $key = self::getAesCipher($secretKey);
+    //     $encryptedBytes = self::hexToByteArray($encryptedText);
+    //     $decrypted = openssl_decrypt($encryptedBytes, 'aes-128-ecb', $key);
+    //     return rtrim($decrypted, "\0"); // Remove padding
+    // }
