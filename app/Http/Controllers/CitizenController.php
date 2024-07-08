@@ -1430,7 +1430,7 @@ class CitizenController extends Controller
             $aes = new AES("F7556B6D2A034B0FA2EB387DA36F8D84");
             $payload = [
                 "saleTxnId"   => time(),
-                "saleAmount"  => "5.00",
+                "saleAmount"  => $req->amount,
                 "mobileNo"    => "8797770238",
                 "email"       => "p2ks247@gmail.com",
                 "customerName" => "Almash",
