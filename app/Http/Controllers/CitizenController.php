@@ -1477,7 +1477,7 @@ class CitizenController extends Controller
 
             $transfer = [
                 "payLoadData"   => $encryptedPayload,
-                "tid"           => 41501122
+                "tid"           => $req->tid ?? 41501122
             ];
 
             $returnData = Http::withHeaders([
@@ -1488,7 +1488,7 @@ class CitizenController extends Controller
             $encryptedResponse = $returnData->body();
             $encryptedResponse = json_decode($encryptedResponse);
 
-            $decryptedPayload = $aes->decrypt($encryptedResponse->payLoadData );
+            $decryptedPayload = $aes->decrypt($encryptedResponse->payLoadData);
             // $sms = "Decrypted: " . $decryptedPayload . "\n";
 
             return $this->responseMsgs(true, "Decrypted Succesfully", json_decode($decryptedPayload));
