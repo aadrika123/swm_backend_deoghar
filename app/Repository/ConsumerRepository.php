@@ -2546,7 +2546,7 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->tcId))
                 $whereParam = " and user_id=" . $request->tcId;
             if (isset($request->wardNo))
-                $whereParam1 = " and ward_no=" . $request->wardNo;
+                $whereParam1 = " and ward_no=" . "'$request->wardNo'";
             if (isset($fromDate) && isset($toDate))
                 $whereParam2 = " and d.deny_date BETWEEN '$fromDate 00:00:01'  AND '$toDate 23:59:59' ";
             if (isset($request->category))
