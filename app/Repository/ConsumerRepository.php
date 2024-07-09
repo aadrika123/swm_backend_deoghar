@@ -861,10 +861,10 @@ class ConsumerRepository implements iConsumerRepository
 
                 if ($tran) {
                     if ($tran->payment_mode != "Cash" && $tran->paid_status != 2) {
-                        $status = false;
+                        $status = true;
                         $data = '';
-                        $msg = "Transaction Cant be deactivate because of Tranction No." . $request->transactionNo . "Cleared from bank end.";
-                        return response()->json(['status' => false,  'msg' => $msg], 200);
+                        $msg = "Transaction can't be deactivate because of Transaction No." . $request->transactionNo . "Cleared from bank end.";
+                        return response()->json(['status' => true,  'msg' => $msg], 200);
                     } else {
                         $filePath = '';
                         if (!empty($request->receiptFile)) {
