@@ -172,7 +172,7 @@ class ReportRepository implements iReportRepository
             $val['consumerId'] = $trans->consumer_id;
             $val['apartmentCode'] = $trans->apt_code;
             $val['apartmentName'] = $trans->apt_name;
-            $val['transactionNo'] = $trans->transaction_no;
+            $val['transactionNo'] = (string)$trans->transaction_no;
             $val['transactionMode'] = $trans->payment_mode;
             $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
             $val['transactionTime'] = Carbon::create($trans->stampdate)->format('h:i A');
