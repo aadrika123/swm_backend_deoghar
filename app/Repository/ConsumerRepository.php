@@ -148,7 +148,7 @@ class ConsumerRepository implements iConsumerRepository
                 foreach ($consumerList as $consumer) {
                     $demand = $this->Demand->where('consumer_id', $consumer->id)
                         ->where('paid_status', 0)
-                        ->whereBetween('is_deactivate', [0,1])
+                        //->whereBetween('is_deactivate', [0,1])
                         ->where('ulb_id', $ulbId)
                         ->orderBy('id', 'asc')
                         ->get();
@@ -2233,7 +2233,7 @@ class ConsumerRepository implements iConsumerRepository
 
                 $val['wardNo'] = $refdata->ward_no;
                 $val['tranId'] = $transaction->trans_id;
-                $val['tranNo'] = $transaction->transaction_no;
+                $val['tranNo'] = (string)$transaction->transaction_no;
                 $val['tranDate'] = Carbon::create($transaction->transaction_date)->format('d-m-Y');
                 $val['paymentMode'] = $transaction->payment_mode;
                 $val['chequeNo'] = $transaction->cheque_dd_no;
