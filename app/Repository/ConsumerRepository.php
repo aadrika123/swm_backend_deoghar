@@ -829,31 +829,105 @@ class ConsumerRepository implements iConsumerRepository
     }
 
 
+    // public function TransactionDeactivate(Request $request)
+    // {
+
+    //     try {
+
+    //         $userId = $request->user()->id;
+    //         $ulbId = $this->GetUlbId($userId);
+    //         $status = '';
+    //         $data = '';
+    //         $msg = '';
+
+    //         $validator = Validator::make($request->all(), [
+    //             'transactionNo' => 'required',
+    //             'receiptFile' => 'mimes:jpeg,png,jpg,png,pdf|max:1024',
+    //             'remarks' => 'required'
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json(['status' => False, 'msg' => $validator->messages()]);
+    //         }
+
+
+    //         if (isset($request->transactionNo)) {
+
+    //             $tran = $this->Transaction->select('id', 'paid_status', 'payment_mode')
+    //                 ->where('transaction_no', $request->transactionNo)
+    //                 ->where('paid_status', '!=', 0)
+    //                 ->where('ulb_id', $ulbId)
+    //                 ->first();
+
+    //             if ($tran) {
+    //                 if ($tran->payment_mode != "Cash" && $tran->paid_status != 2) {
+    //                     $status = true;
+    //                     $data = '';
+    //                     $msg = "Transaction can't be deactivate because of Transaction No." . $request->transactionNo . "Cleared from bank end.";
+    //                     return response()->json(['status' => true,  'msg' => $msg], 200);
+    //                 } else {
+    //                     $filePath = '';
+    //                     if (!empty($request->receiptFile)) {
+    //                         $filePath = md5($request->transactionNo) . '.' . $request->receiptFile->extension();
+    //                         $request->receiptFile->move(public_path('uploads/transaction_deactivate'), $filePath);
+    //                     }
+
+    //                     $transDeactivate = $this->TransactionDeactivate;
+    //                     $transDeactivate->transaction_id = $tran->id;
+    //                     $transDeactivate->date = date('Y-m-d');
+    //                     $transDeactivate->remarks = ($request->remarks) ? $request->remarks : "";
+    //                     $transDeactivate->img_path = $filePath;
+    //                     $transDeactivate->stampdate = date('Y-m-d H:i:s');
+    //                     $transDeactivate->user_id = $userId;
+    //                     $transDeactivate->ip_address = $request->ip();
+    //                     $transDeactivate->save();
+
+    //                     if ($transDeactivate->id > 0) {
+    //                         $tran->paid_status = 0;
+    //                         $tran->save();
+
+    //                         $collection = $this->Demand->join('swm_collections', 'swm_collections.demand_id', '=', 'swm_demands.id')
+    //                             ->where('swm_collections.transaction_id', $tran->id)
+    //                             ->update(['paid_status' => 0, 'swm_collections.is_deactivate' => 1]);
+    //                     }
+
+
+    //                     $status = True;
+    //                     $msg = "Deactivated Successfully";
+    //                 }
+    //             } else {
+    //                 $status = False;
+    //                 $msg = "Transaction No. not found";
+    //             }
+    //         } else {
+    //             $status = False;
+    //             $msg = "Undefined parameter supply";
+    //         }
+    //         return response()->json(['status' => $status, 'data' => $data, 'msg' => $msg], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
+
     public function TransactionDeactivate(Request $request)
     {
-
         try {
-
             $userId = $request->user()->id;
             $ulbId = $this->GetUlbId($userId);
-            $status = '';
-            $data = '';
-            $msg = '';
 
             $validator = Validator::make($request->all(), [
                 'transactionNo' => 'required',
-                'receiptFile' => 'mimes:jpeg,png,jpg,png,pdf|max:1024',
+                'receiptFile' => 'mimes:jpeg,png,jpg,pdf|max:1024',
                 'remarks' => 'required'
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => False, 'msg' => $validator->messages()]);
+                return response()->json(['status' => false, 'msg' => $validator->messages()], 400);
             }
 
-
             if (isset($request->transactionNo)) {
-
-                $tran = $this->Transaction->select('id', 'paid_status', 'payment_mode')
+                $tran = $this->Transaction
+                    ->select('id', 'paid_status', 'payment_mode')
                     ->where('transaction_no', $request->transactionNo)
                     ->where('paid_status', '!=', 0)
                     ->where('ulb_id', $ulbId)
@@ -861,13 +935,11 @@ class ConsumerRepository implements iConsumerRepository
 
                 if ($tran) {
                     if ($tran->payment_mode != "Cash" && $tran->paid_status != 2) {
-                        $status = true;
-                        $data = '';
-                        $msg = "Transaction can't be deactivate because of Transaction No." . $request->transactionNo . "Cleared from bank end.";
-                        return response()->json(['status' => true,  'msg' => $msg], 200);
+                        $msg = "Transaction can't be deactivated because it is cleared from the bank end.";
+                        return response()->json(['status' => true, 'msg' => $msg], 200);
                     } else {
                         $filePath = '';
-                        if (!empty($request->receiptFile)) {
+                        if ($request->hasFile('receiptFile')) {
                             $filePath = md5($request->transactionNo) . '.' . $request->receiptFile->extension();
                             $request->receiptFile->move(public_path('uploads/transaction_deactivate'), $filePath);
                         }
@@ -875,37 +947,39 @@ class ConsumerRepository implements iConsumerRepository
                         $transDeactivate = $this->TransactionDeactivate;
                         $transDeactivate->transaction_id = $tran->id;
                         $transDeactivate->date = date('Y-m-d');
-                        $transDeactivate->remarks = ($request->remarks) ? $request->remarks : "";
+                        $transDeactivate->remarks = $request->remarks ?? "";
                         $transDeactivate->img_path = $filePath;
                         $transDeactivate->stampdate = date('Y-m-d H:i:s');
                         $transDeactivate->user_id = $userId;
                         $transDeactivate->ip_address = $request->ip();
                         $transDeactivate->save();
 
-                        if ($transDeactivate->id > 0) {
-                            $tran->paid_status = 0;
-                            $tran->save();
+                        // Update transaction status
+                        $this->Transaction
+                            ->where('transaction_no', $request->transactionNo)
+                            ->update(['paid_status' => 0]);
 
-                            $collection = $this->Demand->join('swm_collections', 'swm_collections.demand_id', '=', 'swm_demands.id')
-                                ->where('swm_collections.transaction_id', $tran->id)
-                                ->update(['paid_status' => 0, 'swm_collections.is_deactivate' => 1]);
-                        }
+                        // Update related collections
+                        $this->Demand
+                            ->join('swm_collections', 'swm_collections.demand_id', '=', 'swm_demands.id')
+                            ->where('swm_collections.transaction_id', $tran->id)
+                            ->update(['paid_status' => 0, 'swm_collections.is_deactivate' => 1]);
 
-
-                        $status = True;
+                        $status = true;
                         $msg = "Deactivated Successfully";
                     }
                 } else {
-                    $status = False;
+                    $status = false;
                     $msg = "Transaction No. not found";
                 }
             } else {
-                $status = False;
-                $msg = "Undefined parameter supply";
+                $status = false;
+                $msg = "Undefined parameter supplied";
             }
-            return response()->json(['status' => $status, 'data' => $data, 'msg' => $msg], 200);
+
+            return response()->json(['status' => $status, 'msg' => $msg], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+            return response()->json(['status' => false, 'msg' => $e->getMessage()], 400);
         }
     }
 
@@ -3043,7 +3117,7 @@ class ConsumerRepository implements iConsumerRepository
                 throw new Exception("Consumer Not Found");
 
             // $orderData = $api->order->create(array('amount' => $req->amount * 100, 'currency' => 'INR',));
-            $orderId = time().$user->id;
+            $orderId = time() . $user->id;
 
             $mReqs = [
                 "order_id"       => $orderId,
