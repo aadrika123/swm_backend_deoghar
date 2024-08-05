@@ -148,7 +148,7 @@ class ConsumerRepository implements iConsumerRepository
                 foreach ($consumerList as $consumer) {
                     $demand = $this->Demand->where('consumer_id', $consumer->id)
                         ->where('paid_status', 0)
-                        ->where('is_deactivate', 0)
+                        ->whereBetween('is_deactivate', [0,1])
                         ->where('ulb_id', $ulbId)
                         ->orderBy('id', 'asc')
                         ->get();
