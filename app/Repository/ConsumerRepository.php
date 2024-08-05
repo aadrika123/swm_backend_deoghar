@@ -781,7 +781,7 @@ class ConsumerRepository implements iConsumerRepository
 
                 if ($tran) {
                     $tran = $tran[0];
-
+                    $transactionNo = $tran->transaction_no;
                     # New Query
                     $userDtl = TblUserMstr::select('name', 'contactno')
                         ->join('tbl_user_details', 'tbl_user_details.id', 'tbl_user_mstr.user_det_id')
@@ -795,7 +795,7 @@ class ConsumerRepository implements iConsumerRepository
                     } else {
                         $dmddtl = $this->GetMonthlyFee($this->dbConn, $tran->consumer_id, 'Consumer', $ulbId);
                     }
-                    $response['transactionNo'] = $tran->transaction_no;
+                    $response['transactionNo'] = $transactionNo;
                     $response['transactionDate'] = date('d-m-Y', strtotime($tran->transaction_date));
                     $response['transactionAmount'] = $tran->total_payable_amt;
                     $response['transactionBy'] = $tran->transaction_by;
