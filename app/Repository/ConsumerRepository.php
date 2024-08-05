@@ -795,7 +795,7 @@ class ConsumerRepository implements iConsumerRepository
                     } else {
                         $dmddtl = $this->GetMonthlyFee($this->dbConn, $tran->consumer_id, 'Consumer', $ulbId);
                     }
-                    $response['transactionNo'] = $transactionNo;
+                    $response['transactionNo'] = (string)$transactionNo;
                     $response['transactionDate'] = date('d-m-Y', strtotime($tran->transaction_date));
                     $response['transactionAmount'] = $tran->total_payable_amt;
                     $response['transactionBy'] = $tran->transaction_by;
