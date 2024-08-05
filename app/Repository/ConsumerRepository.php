@@ -598,7 +598,7 @@ class ConsumerRepository implements iConsumerRepository
                     $demand = $demand->join('swm_consumers as a', 'swm_demands.consumer_id', '=', 'a.id')
                         ->where('a.apartment_id', $request->apartmentId);
                 $demand = $demand->where('paid_status', 0)
-                    ->where('swm_demands.is_deactivate', 0)
+                    //->whereBetween('swm_demands.is_deactivate',[0,1])
                     ->where('swm_demands.ulb_id', $ulbId)
                     ->groupBy('payment_to')
                     ->orderBy('payment_to', 'asc')
