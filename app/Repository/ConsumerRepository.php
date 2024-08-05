@@ -644,7 +644,7 @@ class ConsumerRepository implements iConsumerRepository
                 }
                 $demand = $demand->where('paid_status', 0)
                     ->where('swm_demands.ulb_id', $ulbId)
-                    ->where('swm_demands.is_deactivate', 0)
+                    //->where('swm_demands.is_deactivate', 0)
                     ->whereDate('swm_demands.payment_to', '<=', $request->payUpto)
                     ->orderBy('swm_demands.id', 'asc')
                     ->sum('total_tax');
