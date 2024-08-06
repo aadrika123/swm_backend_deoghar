@@ -1122,7 +1122,7 @@ class ConsumerRepository implements iConsumerRepository
 
                 $totalDemandAmt = $this->Demand->where('consumer_id', $consumerId)
                     ->where('paid_status', 0)
-                   // ->where('is_deactivate', 0)
+                    // ->where('is_deactivate', 0)
                     ->where('ulb_id', $ulbId)
                     ->sum('total_tax');
 
@@ -3415,36 +3415,112 @@ class ConsumerRepository implements iConsumerRepository
         }
     }
 
+    // public function getTcComplainV2(Request $request)
+    // {
+    //     $userId  = $request->user()->id;
+    //     $perPage = $request->perPage ?? 10;
+    //     $ulbId   = $this->GetUlbId($userId);
+    //     try {
+
+    //         $response = array();
+    //         $records = $this->TcComplaint
+    //             ->where('is_deactivate', 0)
+    //             ->where('ulb_id', $ulbId);
+
+    //         if (isset($request->fromDate) && isset($request->uptoDate))
+    //             $records = $records->whereBetween('complain_date', [$request->fromDate, $request->uptoDate]);
+
+    //         if (isset($request->tcId))
+    //             $records = $records->where('user_id', $request->tcId);
+
+    //         if (isset($request->complainNo))
+    //             $records = $records->where('complain_no', $request->complainNo);
+
+    //         if (isset($request->wardNo))
+    //             $records = $records->where('ward_no', $request->wardNo);
+
+    //         $records = $records->orderBy('id', 'DESC')
+    //             ->paginate($perPage);
+
+    //         foreach ($records as $record) {
+    //             $getuserdata = $this->GetUserDetails($record->user_id);
+    //             $tldata      = $this->GetUserDetails($record->tl_id);
+    //             $val['id']            = $record->id;
+    //             $val['ward_no']       = $record->ward_no;
+    //             $val['consumer_name'] = $record->consumer_name;
+    //             $val['latitude']      = $record->latitude;
+    //             $val['longitude']     = $record->longitude;
+    //             $val['address']       = $record->address;
+    //             $val['complain']      = $record->complain;
+    //             $val['complain_no']   = $record->complain_no;
+    //             $val['tcName']        = $getuserdata->name ?? "Citizen";
+    //             $val['tlName']        = $tldata->name ?? "";
+    //             $val['date']          = Carbon::create($record->complain_date)->format('d-m-Y');
+    //             $response[] = $val;
+    //         }
+
+    //         $data['data'] = $response;
+    //         $data['current_page'] = $records->currentPage();
+    //         $data['last_page']    = $records->lastPage();
+    //         $data['total']        = $records->total();
+    //         $data['per_page']     = $perPage;
+
+    //         return response()->json(['status' => True, 'data' => $data, 'msg' => ''], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
+
+
+    # 
     public function getTcComplainV2(Request $request)
     {
         $userId  = $request->user()->id;
         $perPage = $request->perPage ?? 10;
         $ulbId   = $this->GetUlbId($userId);
-        try {
 
+        try {
             $response = array();
             $records = $this->TcComplaint
                 ->where('is_deactivate', 0)
                 ->where('ulb_id', $ulbId);
 
-            if (isset($request->fromDate) && isset($request->uptoDate))
+            if (array_key_exists('citizenId', $request->all())) {
+                $records = $records->where(function ($query) {
+                    $query->whereNull('user_id')
+                          ->orWhere('user_id', '0');
+                });
+            } else {
+                if (isset($request->fromDate) && isset($request->uptoDate)) {
+                    $records = $records->whereBetween('complain_date', [$request->fromDate, $request->uptoDate]);
+                }
+
+                if (isset($request->tcId) && $request->tcId !== '') {
+                    $records = $records->where('user_id', $request->tcId);
+                }
+
+                if (isset($request->complainNo) && $request->complainNo !== '') {
+                    $records = $records->where('complain_no', $request->complainNo);
+                }
+
+                if (isset($request->wardNo) && $request->wardNo !== '') {
+                    $records = $records->where('ward_no', $request->wardNo);
+                }
+            }
+            if (isset($request->fromDate) && isset($request->uptoDate)) {
                 $records = $records->whereBetween('complain_date', [$request->fromDate, $request->uptoDate]);
-
-            if (isset($request->tcId))
-                $records = $records->where('user_id', $request->tcId);
-
-            if (isset($request->complainNo))
-                $records = $records->where('complain_no', $request->complainNo);
-
-            if (isset($request->wardNo))
+            }
+    
+            if (isset($request->wardNo) && $request->wardNo !== '') {
                 $records = $records->where('ward_no', $request->wardNo);
+            }
 
-            $records = $records->orderBy('id', 'DESC')
-                ->paginate($perPage);
+            $records = $records->orderBy('id', 'DESC')->paginate($perPage);
 
             foreach ($records as $record) {
                 $getuserdata = $this->GetUserDetails($record->user_id);
                 $tldata      = $this->GetUserDetails($record->tl_id);
+
                 $val['id']            = $record->id;
                 $val['ward_no']       = $record->ward_no;
                 $val['consumer_name'] = $record->consumer_name;
@@ -3465,11 +3541,12 @@ class ConsumerRepository implements iConsumerRepository
             $data['total']        = $records->total();
             $data['per_page']     = $perPage;
 
-            return response()->json(['status' => True, 'data' => $data, 'msg' => ''], 200);
+            return response()->json(['status' => true, 'data' => $data, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+            return response()->json(['status' => false, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
+
 
     public function getComplainDetails(Request $request)
     {

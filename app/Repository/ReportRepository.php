@@ -66,6 +66,7 @@ class ReportRepository implements iReportRepository
         $ulbId = $this->GetUlbId($userId);
         try {
             $response = array();
+            $category = $request->consumerCategory;
             if (isset($request->fromDate) && isset($request->toDate) && isset($request->reportType)) {
                 $response = array();
                 // if ($request->reportType == 'dailyCollection')
@@ -89,7 +90,7 @@ class ReportRepository implements iReportRepository
                     $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId);
 
                 if ($request->reportType == 'bankRec')
-                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId);
+                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request);
 
                 if ($request->reportType == 'tcDaily')
                     $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId);
@@ -329,44 +330,120 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId)
+    // public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId)
+    // {
+    //     $response = array();
+    //     $From = Carbon::create($From)->format('Y-m-d');
+    //     $Upto = Carbon::create($Upto)->format('Y-m-d');
+
+    //     $sql = "SELECT reconcile_id,reconcilition_date,t.transaction_no,transaction_date,t.payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id as transby, name, consumer_no, a.apt_code, a.apt_name, bc.user_id as verify_by
+    //         FROM  swm_transactions t
+    //         JOIN swm_bank_reconcile bc on bc.transaction_id=t.id
+    //         LEFT JOIN swm_consumers c on t.consumer_id=c.id
+    //         LEFT JOIN swm_apartments a on t.apartment_id=a.id
+    //         LEFT JOIN swm_bank_reconcile_details bd on bd.reconcile_id=bc.id
+    //         LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
+    //         WHERE (transaction_date BETWEEN '$From' and '$Upto') and t.paid_status>0 and t.ulb_id=" . $ulbId;
+
+    //     $transactions = DB::connection($this->dbConn)->select($sql);
+
+    //     foreach ($transactions as $trans) {
+    //         $val['clearanceDate'] = ($trans->reconcilition_date) ? Carbon::create($trans->reconcilition_date)->format('d-m-Y') : '';
+    //         $val['amount'] = $trans->total_payable_amt;
+    //         $val['transactionNo'] = $trans->transaction_no;
+    //         $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
+    //         $val['transactionBy'] = $this->GetUserDetails($trans->transby)->name;
+    //         $val['consumerName'] = $trans->name;
+    //         $val['consumerNo'] = $trans->consumer_no;
+    //         $val['apartmentName'] = $trans->apt_name;
+    //         $val['apartmentCode'] = $trans->apt_code;
+    //         $val['transactionMode'] = $trans->payment_mode;
+    //         $val['chequeNo'] = $trans->cheque_dd_no;
+    //         $val['chequeDate'] = ($trans->cheque_dd_date) ? Carbon::create($trans->cheque_dd_date)->format('d-m-Y') : '';
+    //         $val['bankName'] = $trans->bank_name;
+    //         $val['branchName'] = $trans->branch_name;
+    //         $val['verifiedBy'] = $this->GetUserDetails($trans->verify_by)->name;
+    //         $val['remarks'] = $trans->remarks;
+    //         $response[] = $val;
+    //     }
+    //     return $response;
+    // }
+
+    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId, $request)
     {
-        $response = array();
+        $response = [];
         $From = Carbon::create($From)->format('Y-m-d');
         $Upto = Carbon::create($Upto)->format('Y-m-d');
 
-        $sql = "SELECT reconcile_id,reconcilition_date,t.transaction_no,transaction_date,t.payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id as transby, name, consumer_no, a.apt_code, a.apt_name, bc.user_id as verify_by
-            FROM  swm_transactions t
-            JOIN swm_bank_reconcile bc on bc.transaction_id=t.id
-            LEFT JOIN swm_consumers c on t.consumer_id=c.id
-            LEFT JOIN swm_apartments a on t.apartment_id=a.id
-            LEFT JOIN swm_bank_reconcile_details bd on bd.reconcile_id=bc.id
-            LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
-            WHERE (transaction_date BETWEEN '$From' and '$Upto') and t.paid_status>0 and t.ulb_id=" . $ulbId;
+        // Base SQL Query
+        $sql = "
+        SELECT 
+            reconcile_id, 
+            reconcilition_date, 
+            t.transaction_no, 
+            transaction_date, 
+            t.payment_mode, 
+            cheque_dd_no, 
+            cheque_dd_date, 
+            bank_name, 
+            branch_name, 
+            total_payable_amt, 
+            bc.remarks, 
+            t.user_id as transby, 
+            c.name, 
+            c.consumer_no, 
+            a.apt_code, 
+            a.apt_name, 
+            bc.user_id as verify_by
+        FROM swm_transactions t
+        JOIN swm_bank_reconcile bc ON bc.transaction_id = t.id
+        LEFT JOIN swm_consumers c ON t.consumer_id = c.id
+        LEFT JOIN swm_apartments a ON t.apartment_id = a.id
+        LEFT JOIN swm_bank_reconcile_details bd ON bd.reconcile_id = bc.id
+        LEFT JOIN swm_transaction_details td ON td.transaction_id = t.id
+        WHERE t.transaction_date BETWEEN ? AND ?
+          AND t.paid_status > 0
+          AND t.ulb_id = ?
+    ";
 
-        $transactions = DB::connection($this->dbConn)->select($sql);
+        // Parameters for the query
+        $parameters = [$From, $Upto, $ulbId];
 
+        // Add additional filters if present in the request
+        if ($request->consumerCategory) {
+            $sql .= " AND c.consumer_category_id = ?";
+            $parameters[] = $request->consumerCategory;
+        }
+
+        // Execute the query
+        $transactions = DB::connection($this->dbConn)->select($sql, $parameters);
+
+        // Process the results
         foreach ($transactions as $trans) {
-            $val['clearanceDate'] = ($trans->reconcilition_date) ? Carbon::create($trans->reconcilition_date)->format('d-m-Y') : '';
-            $val['amount'] = $trans->total_payable_amt;
-            $val['transactionNo'] = $trans->transaction_no;
-            $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
-            $val['transactionBy'] = $this->GetUserDetails($trans->transby)->name;
-            $val['consumerName'] = $trans->name;
-            $val['consumerNo'] = $trans->consumer_no;
-            $val['apartmentName'] = $trans->apt_name;
-            $val['apartmentCode'] = $trans->apt_code;
-            $val['transactionMode'] = $trans->payment_mode;
-            $val['chequeNo'] = $trans->cheque_dd_no;
-            $val['chequeDate'] = ($trans->cheque_dd_date) ? Carbon::create($trans->cheque_dd_date)->format('d-m-Y') : '';
-            $val['bankName'] = $trans->bank_name;
-            $val['branchName'] = $trans->branch_name;
-            $val['verifiedBy'] = $this->GetUserDetails($trans->verify_by)->name;
-            $val['remarks'] = $trans->remarks;
+            $val = [
+                'clearanceDate' => $trans->reconcilition_date ? Carbon::create($trans->reconcilition_date)->format('d-m-Y') : '',
+                'amount' => $trans->total_payable_amt,
+                'transactionNo' => $trans->transaction_no,
+                'transactionDate' => Carbon::create($trans->transaction_date)->format('d-m-Y'),
+                'transactionBy' => $this->GetUserDetails($trans->transby)->name ?? 'Unknown',
+                'consumerName' => $trans->name,
+                'consumerNo' => $trans->consumer_no,
+                'apartmentName' => $trans->apt_name,
+                'apartmentCode' => $trans->apt_code,
+                'transactionMode' => $trans->payment_mode,
+                'chequeNo' => $trans->cheque_dd_no,
+                'chequeDate' => $trans->cheque_dd_date ? Carbon::create($trans->cheque_dd_date)->format('d-m-Y') : '',
+                'bankName' => $trans->bank_name,
+                'branchName' => $trans->branch_name,
+                'verifiedBy' => $this->GetUserDetails($trans->verify_by)->name ?? 'Unknown',
+                'remarks' => $trans->remarks,
+            ];
             $response[] = $val;
         }
+
         return $response;
     }
+
 
     public function TcDailyActivity($From, $Upto, $tcId, $ulbId)
     {
