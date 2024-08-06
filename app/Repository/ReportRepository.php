@@ -727,7 +727,7 @@ class ReportRepository implements iReportRepository
         try {
             $response = array();
             $user = Auth()->user();
-            $ulbId = $user->ulb_id;
+            $ulbId = $user->ulb_id ??11;
             $userId = $user->id;
             $whereParam = "";
             $whereParam1 = "";
