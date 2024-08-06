@@ -37,6 +37,10 @@ class ReportController extends Controller
         return $this->rep->monthlyComparison($request);
     }
 
+    public function GetDemandReceiptData(Request $request)
+    {
+        return $this->rep->DemandReceipt($request);
+    }
     /**
      * | Add TC Geo Location
      */

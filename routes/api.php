@@ -181,6 +181,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('create-tc-geolocation', 'addTcGeoLocation');
         Route::post('list-tc-geolocation', 'tcGeolocationList');
         Route::post('get-tc-geolocation', 'getTcGeolocation');
+        Route::post('getDemandReceiptData', 'GetDemandReceiptData'); 
     });
 });
 
