@@ -2762,6 +2762,8 @@ class ConsumerRepository implements iConsumerRepository
                 ->where('swm_demand_adjustments.ulb_id', $ulbId)
                 ->where('swm_demand_adjustments.is_deactivate', 0)
                 ->get();
+            if (isset($request->wardNo))
+                $paymentAdjustment = $$paymentAdjustment->where('ward_no', $request->wardNo);
 
             foreach ($paymentAdjustment as $adj) {
                 $val['consumerName'] = $adj->name;
@@ -3488,7 +3490,7 @@ class ConsumerRepository implements iConsumerRepository
             if (array_key_exists('citizenId', $request->all())) {
                 $records = $records->where(function ($query) {
                     $query->whereNull('user_id')
-                          ->orWhere('user_id', '0');
+                        ->orWhere('user_id', '0');
                 });
             } else {
                 if (isset($request->fromDate) && isset($request->uptoDate)) {
@@ -3510,7 +3512,7 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->fromDate) && isset($request->uptoDate)) {
                 $records = $records->whereBetween('complain_date', [$request->fromDate, $request->uptoDate]);
             }
-    
+
             if (isset($request->wardNo) && $request->wardNo !== '') {
                 $records = $records->where('ward_no', $request->wardNo);
             }
