@@ -2438,7 +2438,7 @@ class ConsumerRepository implements iConsumerRepository
                 $transactionNo = $request->transactionNo;
 
                 $sql = "SELECT t.transaction_no,t.transaction_date,c.ward_no,c.name,c.address,a.apt_name, a.apt_code, c.consumer_no, a.apt_address, a.ward_no as apt_ward, 
-                t.total_payable_amt, cl.payment_from, cl.payment_to, t.payment_mode,td.bank_name, td.branch_name, td.cheque_dd_no, td.cheque_dd_date, 
+                t.total_payable_amt, cl.payment_from, cl.payment_to, t.payment_mode,td.bank_name as b_name, td.branch_name, td.cheque_dd_no, td.cheque_dd_date, 
                 t.total_demand_amt, t.total_remaining_amt, t.stampdate, t.apartment_id, ct.rate,cc.name as consumer_category,t.user_id, c.holding_no,c.mobile_no,ct.name as consumer_type,c.license_no
                 FROM swm_transactions t
                 JOIN swm_consumers c on t.consumer_id=c.id
@@ -2451,7 +2451,7 @@ class ConsumerRepository implements iConsumerRepository
                     FROM swm_collections 
                     GROUP BY transaction_id
                 ) cl on cl.transaction_id=t.id 
-                LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
+                JOIN swm_transaction_details td on td.transaction_id=t.id
                 WHERE t.transaction_no='" . $transactionNo . "'";
 
                 $transaction = DB::connection($this->dbConn)->select($sql);
@@ -2487,7 +2487,7 @@ class ConsumerRepository implements iConsumerRepository
                     $response['paidFrom'] = $transaction->payment_from;
                     $response['paidUpto'] = $transaction->payment_to;
                     $response['paymentMode'] = $transaction->payment_mode;
-                    $response['bankName'] = $transaction->bank_name;
+                    $response['bankNameReceipt'] = $transaction->b_name;
                     $response['branchName'] = $transaction->branch_name;
                     $response['chequeNo'] = $transaction->cheque_dd_no;
                     $response['chequeDate'] = $transaction->cheque_dd_date;

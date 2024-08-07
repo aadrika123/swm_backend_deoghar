@@ -112,6 +112,8 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('paymentAdjustment', 'PaymentAdjustment');
         Route::get('getPaymentAdjustmentList', 'PaymentAdjustmentList');
 
+        Route::post('getPaymentAdjustmentListV1', 'PaymentAdjustmentList');
+
 
         Route::post('consumerListByWardNo', 'ConsumerOrApartmentList');
         Route::post('getReminderList', 'GetReminderList');
