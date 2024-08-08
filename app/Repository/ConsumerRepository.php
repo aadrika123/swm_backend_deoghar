@@ -2189,16 +2189,18 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->paymentMode) && $request->paymentMode <> 'all')
                 $whereparam .= "and t.payment_mode='" . ucfirst($request->paymentMode) . "'";
 
-            if (isset($request->verificationType) && $request->verificationType != 'all') {
-                if ($request->verificationType == 'pending')
-                    $whereparam .= ' and reconcilition_date is null';
+            // if (isset($request->verificationType) && $request->verificationType != 'all') {
+            //     if ($request->verificationType == 'pending')
+            //         $whereparam .= ' and reconcilition_date is null';
 
-                if ($request->verificationType == 'clear')
-                    $whereparam .= ' and reconcile_id is null';
+            //     if ($request->verificationType == 'clear')
+            //         $whereparam .= ' and reconcile_id is null';
 
-                if ($request->verificationType == 'bounce')
-                    $whereparam .= ' and reconcile_id is not null';
-            }
+            //     if ($request->verificationType == 'bounce')
+            //         $whereparam .= ' and reconcile_id is not null';
+            // }
+
+
 
             if (isset($request->chequeNo))
                 $whereparam .= "and cheque_dd_no='" . $request->chequeNo . "'";
@@ -2218,6 +2220,15 @@ class ConsumerRepository implements iConsumerRepository
             LEFT JOIN swm_apartments a on t.apartment_id=a.id
             WHERE (transaction_date BETWEEN '$From' and '$Upto') and t.paid_status>0 and t.ulb_id=" . $ulbId . " " . $whereparam . " order by t.id desc";
 
+            if (isset($request->verificationType) && $request->verificationType != 'all') {
+                if ($request->verificationType == 'pending') {
+                    $sql .= " AND bc.reconcilition_date IS NULL AND bc.reconcile_id IS NULL";
+                } elseif ($request->verificationType == 'clear') {
+                    $sql .= " AND bc.reconcile_id IS NOT NULL AND bc.reconcilition_date IS NULL";
+                } elseif ($request->verificationType == 'bounce') {
+                    $sql .= " AND bc.reconcile_id IS NOT NULL AND bc.reconcilition_date IS NOT NULL";
+                }
+            }
             $transactions = DB::connection($this->dbConn)->select($sql);
 
             foreach ($transactions as $transaction) {
@@ -2225,7 +2236,14 @@ class ConsumerRepository implements iConsumerRepository
                 $firstrecord = collect($collection)->first();
                 $lastrecord  = collect($collection)->last();
 
-                $verificationType = ($transaction->reconcile_id) ? 'Bounce' : 'Clear';
+                //$verificationType = ($transaction->reconcile_id) ? 'Bounce' : 'Clear';
+                if ($transaction->reconcile_id && $transaction->reconcilition_date) {
+                    $verificationType = 'Bounce';
+                } elseif ($transaction->reconcile_id) {
+                    $verificationType = 'Clear';
+                } else {
+                    $verificationType = 'Pending';
+                }
                 if ($transaction->consumer_id)
                     $refdata = $this->Consumer->find($transaction->consumer_id);
                 else
@@ -2244,8 +2262,8 @@ class ConsumerRepository implements iConsumerRepository
                 $val['clearanceDate'] = ($transaction->reconcilition_date) ? Carbon::create($transaction->reconcilition_date)->format('d-m-Y') : '';
                 $val['remarks'] = $transaction->remarks;
                 $val['tcName'] = ($transaction->user_id) ? $this->GetUserDetails($transaction->user_id)->name : '';
-                // $val['verificationType'] = ($transaction->reconcilition_date) ? $verificationType : 'Pending';
-                $val['verificationType'] = ($transaction->reconcilition_date) ? $verificationType : 'Pending';
+                 $val['verificationType'] = $verificationType;
+                //$val['verificationType'] = ($transaction->reconcilition_date) ? $verificationType : 'Pending';
                 $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
                 $val['demandUpto'] = ($firstrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
                 $response[] = $val;
