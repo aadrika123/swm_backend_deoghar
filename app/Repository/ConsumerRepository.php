@@ -2244,7 +2244,7 @@ class ConsumerRepository implements iConsumerRepository
                 $val['clearanceDate'] = ($transaction->reconcilition_date) ? Carbon::create($transaction->reconcilition_date)->format('d-m-Y') : '';
                 $val['remarks'] = $transaction->remarks;
                 $val['tcName'] = ($transaction->user_id) ? $this->GetUserDetails($transaction->user_id)->name : '';
-                $val['verificationType'] = ($transaction->reconcilition_date) ? $verificationType : 'Pending';
+                $val['verificationType'] = ($transaction->reconcile_id) ? $verificationType : 'Pending';
                 $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
                 $val['demandUpto'] = ($firstrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
                 $response[] = $val;
