@@ -2194,10 +2194,10 @@ class ConsumerRepository implements iConsumerRepository
                     $whereparam .= ' and reconcilition_date is null AND reconcile_id IS NULL';
 
                 if ($request->verificationType == 'clear')
-                    $whereparam .= ' and reconcile_id is null ';
+                    $whereparam .= ' and reconcile_id is null and reconcilition_date is not null';
 
                 if ($request->verificationType == 'bounce')
-                    $whereparam .= ' and reconcile_id is not null';
+                    $whereparam .= ' and reconcile_id is not null and reconcilition_date is not null';
             }
             
 
