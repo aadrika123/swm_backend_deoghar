@@ -2189,15 +2189,24 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->paymentMode) && $request->paymentMode <> 'all')
                 $whereparam .= "and t.payment_mode='" . ucfirst($request->paymentMode) . "'";
 
+            // if (isset($request->verificationType) && $request->verificationType != 'all') {
+            //     if ($request->verificationType == 'pending')
+            //         $whereparam .= ' and reconcilition_date is null';
+
+            //     if ($request->verificationType == 'clear')
+            //         $whereparam .= ' and reconcile_id is null';
+
+            //     if ($request->verificationType == 'bounce')
+            //         $whereparam .= ' and reconcile_id is not null';
+            // }
             if (isset($request->verificationType) && $request->verificationType != 'all') {
-                if ($request->verificationType == 'pending')
-                    $whereparam .= ' and reconcilition_date is null';
-
-                if ($request->verificationType == 'clear')
-                    $whereparam .= ' and reconcile_id is null';
-
-                if ($request->verificationType == 'bounce')
-                    $whereparam .= ' and reconcile_id is not null';
+                if ($request->verificationType == 'pending') {
+                    $whereparam .= " AND bc.reconcilition_date IS NULL";
+                } elseif ($request->verificationType == 'clear') {
+                    $whereparam .= " AND bc.reconcile_id IS NULL";
+                } elseif ($request->verificationType == 'bounce') {
+                    $whereparam .= " AND bc.reconcile_id IS NOT NULL";
+                }
             }
 
 
