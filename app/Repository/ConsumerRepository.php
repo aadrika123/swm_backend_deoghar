@@ -2761,10 +2761,10 @@ class ConsumerRepository implements iConsumerRepository
                 ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
                 ->where('swm_demand_adjustments.ulb_id', $ulbId)
                 ->where('swm_demand_adjustments.is_deactivate', 0)
+                ->when(isset($request->wardNo), function ($query) use ($request) {
+                    return $query->where('c.ward_no', $request->wardNo);
+                })
                 ->get();
-            if (isset($request->wardNo))
-                $paymentAdjustment = $$paymentAdjustment->where('ward_no', $request->wardNo);
-
             foreach ($paymentAdjustment as $adj) {
                 $val['consumerName'] = $adj->name;
                 $val['consumerNo'] = $adj->consumer_no;
