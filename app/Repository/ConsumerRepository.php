@@ -2755,12 +2755,19 @@ class ConsumerRepository implements iConsumerRepository
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $response = array();
-
+            $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
             $paymentAdjustment = $this->DemandAdjustment->select(DB::raw('swm_demand_adjustments.*, name,consumer_no,address,c.ward_no,apt_name,apt_code,apt_address,a.ward_no as apt_ward'))
                 ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
                 ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
                 ->where('swm_demand_adjustments.ulb_id', $ulbId)
                 ->where('swm_demand_adjustments.is_deactivate', 0)
+                ->whereBetween(DB::raw('DATE(swm_demand_adjustments.stampdate)'), [$fromDate, $uptoDate])
                 ->when(isset($request->wardNo), function ($query) use ($request) {
                     return $query->where('c.ward_no', $request->wardNo);
                 })
