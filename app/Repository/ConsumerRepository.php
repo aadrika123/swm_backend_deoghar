@@ -2459,7 +2459,7 @@ class ConsumerRepository implements iConsumerRepository
                     FROM swm_collections 
                     GROUP BY transaction_id
                 ) cl on cl.transaction_id=t.id 
-                JOIN swm_transaction_details td on td.transaction_id=t.id
+                LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
                 WHERE t.transaction_no='" . $transactionNo . "'";
 
                 $transaction = DB::connection($this->dbConn)->select($sql);
