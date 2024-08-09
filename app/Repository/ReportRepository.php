@@ -60,6 +60,7 @@ class ReportRepository implements iReportRepository
         $this->mDemand = new Demand($this->dbConn);
     }
     #Arshad  
+    #modified by prity pandey 08-08-24
     public function ReportData(Request $request)
     {
         $userId = $request->user()->id;
