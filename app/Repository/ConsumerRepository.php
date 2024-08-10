@@ -3077,7 +3077,7 @@ class ConsumerRepository implements iConsumerRepository
                     $val['consumerName'] = $trans->name;
                     $val['apartmentCode'] = $trans->apt_code;
                     $val['apartmentName'] = $trans->apt_name;
-                    $val['transactionNo'] = $trans->transaction_no;
+                    $val['transactionNo'] = (string)$trans->transaction_no;
                     $val['mode'] = $trans->payment_mode;
                     $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
                     $val['amount'] = $trans->total_payable_amt;
