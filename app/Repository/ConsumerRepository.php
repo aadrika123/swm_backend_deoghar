@@ -2450,6 +2450,7 @@ class ConsumerRepository implements iConsumerRepository
                 t.total_demand_amt, t.total_remaining_amt, t.stampdate, t.apartment_id, ct.rate,cc.name as consumer_category,t.user_id, c.holding_no,c.mobile_no,ct.name as consumer_type,c.license_no
                 FROM swm_transactions t
                 JOIN swm_consumers c on t.consumer_id=c.id
+                JOIN swm_apartments apt on t.apartment_id=apt.id
                 LEFT JOIN swm_consumer_types ct on c.consumer_type_id=ct.id
                 LEFT JOIN swm_consumer_categories cc on c.consumer_category_id=cc.id
                 LEFT JOIN swm_apartments a on t.apartment_id=a.id
@@ -2469,7 +2470,7 @@ class ConsumerRepository implements iConsumerRepository
                     $consumerCount = 0;
                     $monthlyRate = $transaction->rate;
                     if ($transaction->apartment_id) {
-                        $consumer = $this->Consumer->leftjoin('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
+                        $consumer = $this->Consumer->join('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
                             ->where('apartment_id', $transaction->apartment_id)
                             ->where('ulb_id', $ulbId)
                             ->where('is_deactivate', 0);
