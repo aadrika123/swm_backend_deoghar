@@ -2469,7 +2469,7 @@ class ConsumerRepository implements iConsumerRepository
                     $consumerCount = 0;
                     $monthlyRate = $transaction->rate;
                     if ($transaction->apartment_id) {
-                        $consumer = $this->Consumer->join('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
+                        $consumer = $this->Consumer->leftjoin('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
                             ->where('apartment_id', $transaction->apartment_id)
                             ->where('ulb_id', $ulbId)
                             ->where('is_deactivate', 0);
