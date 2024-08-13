@@ -2199,7 +2199,7 @@ class ConsumerRepository implements iConsumerRepository
                 if ($request->verificationType == 'bounce')
                     $whereparam .= ' and reconcile_id is not null and reconcilition_date is not null';
             }
-            
+
 
 
             if (isset($request->chequeNo))
@@ -2260,7 +2260,7 @@ class ConsumerRepository implements iConsumerRepository
         }
     }
 
-    
+
 
 
 
@@ -2924,8 +2924,18 @@ class ConsumerRepository implements iConsumerRepository
             //     ->orWhere('a.ward_no', $wardNo); //<-----------here
             $reminders = $reminders->orderBy('swm_consumer_reminders.id', 'desc')
                 ->groupBy([
-                    'name', 'c.consumer_type_id', 'c.consumer_category_id',
-                    'apt_name', 'apt_code', 'consumer_no', 'c.ward_no', 'a.ward_no', 'address', 'apt_address', 'reference_type', 'swm_consumer_reminders.id'
+                    'name',
+                    'c.consumer_type_id',
+                    'c.consumer_category_id',
+                    'apt_name',
+                    'apt_code',
+                    'consumer_no',
+                    'c.ward_no',
+                    'a.ward_no',
+                    'address',
+                    'apt_address',
+                    'reference_type',
+                    'swm_consumer_reminders.id'
                 ])
                 ->get();
 
@@ -3050,10 +3060,12 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->consumerId) || isset($request->apartmentId)) {
                 $allTrans = $this->Transaction->select('swm_transactions.*', 'swm_consumers.ward_no', 'consumer_no', 'name', 'a.apt_code', 'a.apt_name', 'a.ward_no as apt_ward')
                     ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
+                    ->leftjoin('swm_transaction_deactivates', 'swm_transaction_deactivates.transaction_id', '=', 'swm_transactions.id')
                     ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
                     ->where('swm_transactions.ulb_id', $ulbId)
-                    ->where('swm_transactions.status', 1);
-
+                    ->whereNotIn('swm_transactions.id', function ($query) {
+                        $query->select('transaction_id')->from('swm_transaction_deactivates');
+                    });
                 if (isset($request->consumerId))
                     $allTrans = $allTrans->where('swm_transactions.consumer_id', $request->consumerId);
 
