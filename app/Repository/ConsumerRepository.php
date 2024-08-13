@@ -285,7 +285,7 @@ class ConsumerRepository implements iConsumerRepository
 
                     $demand = $this->Demand->where('consumer_id', $apartment->consumer_id)
                         ->where('paid_status', 0)
-                        ->where('is_deactivate', 0)
+                        //->where('is_deactivate', 0)
                         ->where('ulb_id', $ulbId)
                         ->get();
 
