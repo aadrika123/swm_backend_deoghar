@@ -3051,7 +3051,8 @@ class ConsumerRepository implements iConsumerRepository
                 $allTrans = $this->Transaction->select('swm_transactions.*', 'swm_consumers.ward_no', 'consumer_no', 'name', 'a.apt_code', 'a.apt_name', 'a.ward_no as apt_ward')
                     ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
                     ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
-                    ->where('swm_transactions.ulb_id', $ulbId);
+                    ->where('swm_transactions.ulb_id', $ulbId)
+                    ->where('swm_transactions.status', 1);
 
                 if (isset($request->consumerId))
                     $allTrans = $allTrans->where('swm_transactions.consumer_id', $request->consumerId);
