@@ -769,7 +769,7 @@ class ConsumerRepository implements iConsumerRepository
                 $sql = "SELECT t.*,c.name as consumer_name,consumer_no,a.apt_code,a.apt_name,
                                 c.ward_no, a.ward_no as apt_ward, c.holding_no, c.address, a.apt_address,c.apartment_id,a.id as apt_id,demand_from,demand_upto
                         FROM swm_transactions t
-                            JOIN swm_consumers c on t.consumer_id=c.id
+                            left JOIN swm_consumers c on t.consumer_id=c.id
                             LEFT JOIN swm_apartments a on t.apartment_id=a.id
                             LEFT JOIN swm_transaction_deactivates td on td.transaction_id=t.id
                             LEFT JOIN (select min(payment_from) as demand_from, max(payment_to) as demand_upto,transaction_id FROM swm_collections group by transaction_id) cl on cl.transaction_id=t.id
