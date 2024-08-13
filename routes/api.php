@@ -71,7 +71,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::get('getEditConsumerDetailsbyId/{id}', 'getEditConsumerDetailsById');
         Route::post('postDeactivateConsumer', 'postDeactivateConsumer');
         Route::post('getPaymentData', 'getPaymentData');
-        Route::post('postPayment', 'MakePayment');
+       // Route::post('postPayment', 'MakePayment');
         Route::post('getCalculatedAmount', 'getCalculatedAmount');
         Route::post('getDashboardData', 'getDashboardData');
         Route::get('searchTransaction/{transactionNo}', 'searchTransaction');
@@ -212,4 +212,8 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('verify-otp', 'verifyOtp');
 
     Route::post('sale-transaction', 'saleTransaction');
+});
+
+Route::controller(ConsumerController::class)->group(function () {
+    Route::post('postPayment', 'MakePayment');
 });
