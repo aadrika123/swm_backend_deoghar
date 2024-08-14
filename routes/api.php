@@ -103,7 +103,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('postPaymentDeny', 'PaymentDeny');
         Route::post('getPaymentDenyList', 'PaymentDenyList');
 
-        // Route::post('getReprintData', 'getReprintData');
+        Route::post('getReprintData', 'getReprintData');
         Route::post('getDemandReceipt', 'GetDemandReceipt');
         Route::post('getdenialNotification', 'DenialNotificationList');
         Route::post('getAnalyticDashboardData', 'getAnalyticDashboardData');
@@ -212,10 +212,9 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('verify-otp', 'verifyOtp');
 
     Route::post('sale-transaction', 'saleTransaction');
-    
 });
 
 Route::controller(ConsumerController::class)->group(function () {
     Route::post('postPayment', 'MakePayment');
-    Route::post('getReprintData', 'getReprintData');
+    Route::post('getReprintData-v2', 'getReprintDatav2');
 });
