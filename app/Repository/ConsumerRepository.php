@@ -2461,7 +2461,7 @@ class ConsumerRepository implements iConsumerRepository
                 ) cl on cl.transaction_id=t.id 
                 LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
                 WHERE t.transaction_no='" . $transactionNo . "'";
-
+                DB::connection($this->dbConn)->enableQueryLog();
                 $transaction = DB::connection($this->dbConn)->select($sql);
 
                 if ($transaction) {
@@ -2520,9 +2520,10 @@ class ConsumerRepository implements iConsumerRepository
     public function GetReprintDatav2(Request $request)
     {
         try {
-            // $ulbId = $this->GetUlbId($request->user()->id);
-            $ulbId = $request->ulbId;
 
+            // $ulbId = $this->GetUlbIds($request->userId);
+            $ulbId = $request->ulbId ?? 11;
+            $dbReceipt="db_swm";
             $response = array();
             if (isset($request->transactionNo)) {
                 $transactionNo = $request->transactionNo;
@@ -2543,8 +2544,8 @@ class ConsumerRepository implements iConsumerRepository
                 ) cl on cl.transaction_id=t.id 
                 LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
                 WHERE t.transaction_no='" . $transactionNo . "'";
-
-                $transaction = DB::connection($this->dbConn)->select($sql);
+                DB::connection($dbReceipt)->enableQueryLog();
+                $transaction = DB::connection($dbReceipt)->select($sql);
 
                 if ($transaction) {
                     $transaction = $transaction[0];
