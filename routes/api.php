@@ -212,9 +212,10 @@ Route::controller(CitizenController::class)->group(function () {
     Route::post('verify-otp', 'verifyOtp');
 
     Route::post('sale-transaction', 'saleTransaction');
-    Route::post('getReprintData', 'getReprintData');
+    
 });
 
 Route::controller(ConsumerController::class)->group(function () {
     Route::post('postPayment', 'MakePayment');
+    Route::post('getReprintData', 'getReprintData');
 });
