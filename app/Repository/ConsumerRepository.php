@@ -2464,8 +2464,91 @@ class ConsumerRepository implements iConsumerRepository
                 ) cl on cl.transaction_id=t.id 
                 LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
                 WHERE t.transaction_no='" . $transactionNo . "'";
-
+                DB::connection($this->dbConn)->enableQueryLog();
                 $transaction = DB::connection($this->dbConn)->select($sql);
+
+                if ($transaction) {
+                    $transaction = $transaction[0];
+                    $consumerCount = 0;
+                    $monthlyRate = $transaction->rate;
+                    if ($transaction->apartment_id) {
+                        $consumer = $this->Consumer->join('swm_consumer_types as ct', 'ct.id', '=', 'swm_consumers.consumer_type_id')
+                            ->where('apartment_id', $transaction->apartment_id)
+                            ->where('ulb_id', $ulbId)
+                            ->where('is_deactivate', 0);
+                        $consumerCount = $consumer->count();
+                        $monthlyRate = $consumer->sum('rate');
+                    }
+                    $getTc = $this->GetUserDetails($transaction->user_id);
+
+                    $response['transactionDate'] = Carbon::create($transaction->transaction_date)->format('Y-m-d');
+                    $response['transactionTime'] = Carbon::create($transaction->stampdate)->format('h:i A');
+                    $response['transactionNo'] = $transaction->transaction_no;
+                    $response['consumerName'] = $transaction->name;
+                    $response['consumerNo'] = $transaction->consumer_no;
+                    $response['mobileNo'] = $transaction->mobile_no;
+                    $response['consumerCategory'] = ($transaction->consumer_category) ? $transaction->consumer_category : 'RESIDENTIAL';
+                    $response['consumerType'] = $transaction->consumer_type;
+                    $response['licenseNo'] = isset($transaction->license_no) ? $transaction->license_no : '';
+                    $response['apartmentName'] = $transaction->apt_name;
+                    $response['apartmentCode'] = $transaction->apt_code;
+                    $response['ReceiptWard'] = ($transaction->apt_ward) ? $transaction->apt_ward : $transaction->ward_no;
+                    $response['holdingNo'] = $transaction->holding_no;
+                    $response['address'] = ($transaction->apt_address) ? $transaction->apt_address : $transaction->address;
+                    $response['paidFrom'] = $transaction->payment_from;
+                    $response['paidUpto'] = $transaction->payment_to;
+                    $response['paymentMode'] = $transaction->payment_mode;
+                    $response['bankNameReceipt'] = $transaction->b_name;
+                    $response['branchName'] = $transaction->branch_name;
+                    $response['chequeNo'] = $transaction->cheque_dd_no;
+                    $response['chequeDate'] = $transaction->cheque_dd_date;
+                    $response['noOfFlats'] = $consumerCount;
+                    $response['monthlyRate'] = $monthlyRate;
+                    $response['demandAmount'] = ($transaction->total_demand_amt) ? $transaction->total_demand_amt : 0;
+                    $response['paidAmount'] = ($transaction->total_payable_amt) ? $transaction->total_payable_amt : 0;
+                    $response['remainingAmount'] = ($transaction->total_remaining_amt) ? $transaction->total_remaining_amt : 0;
+                    $response['tcName'] = $getTc->name ?? "";
+                    $response['tcMobile'] = $getTc->contactno ?? "";
+                }
+            }
+            $response = array_merge($response, $this->GetUlbData($ulbId));
+
+            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function GetReprintDatav2(Request $request)
+    {
+        try {
+
+            // $ulbId = $this->GetUlbIds($request->userId);
+            $ulbId = $request->ulbId ?? 11;
+            $dbReceipt="db_swm";
+            $response = array();
+            if (isset($request->transactionNo)) {
+                $transactionNo = $request->transactionNo;
+
+                $sql = "SELECT t.transaction_no,t.transaction_date,c.ward_no,c.name,c.address,a.apt_name, a.apt_code, c.consumer_no, a.apt_address, a.ward_no as apt_ward, 
+                t.total_payable_amt, cl.payment_from, cl.payment_to, t.payment_mode,td.bank_name as b_name, td.branch_name, td.cheque_dd_no, td.cheque_dd_date, 
+                t.total_demand_amt, t.total_remaining_amt, t.stampdate, t.apartment_id, ct.rate,cc.name as consumer_category,t.user_id, c.holding_no,c.mobile_no,ct.name as consumer_type,c.license_no
+                FROM swm_transactions t
+                left JOIN swm_consumers c on t.consumer_id=c.id
+                LEFT JOIN swm_consumer_types ct on c.consumer_type_id=ct.id
+                LEFT JOIN swm_consumer_categories cc on c.consumer_category_id=cc.id
+                LEFT JOIN swm_apartments a on t.apartment_id=a.id
+                JOIN (
+                    SELECT min(payment_from) as payment_from, max(payment_to) as payment_to,
+                    transaction_id 
+                    FROM swm_collections 
+                    GROUP BY transaction_id
+                ) cl on cl.transaction_id=t.id 
+                LEFT JOIN swm_transaction_details td on td.transaction_id=t.id
+                WHERE t.transaction_no='" . $transactionNo . "'";
+                DB::connection($dbReceipt)->enableQueryLog();
+                $transaction = DB::connection($dbReceipt)->select($sql);
 
                 if ($transaction) {
                     $transaction = $transaction[0];

@@ -216,4 +216,5 @@ Route::controller(CitizenController::class)->group(function () {
 
 Route::controller(ConsumerController::class)->group(function () {
     Route::post('postPayment', 'MakePayment');
+    Route::post('getReprintData-v2', 'getReprintDatav2');
 });
