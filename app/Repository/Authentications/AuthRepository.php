@@ -504,7 +504,7 @@ class AuthRepository implements iAuth
 
             $sql = "SELECT distinct name,uw.user_id,contactno,address FROM view_user_mstr um
             left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
-            where user_type='Tax Collector' " . $whereparam . " order by name asc";
+            WHERE user_type IN ('Tax Collector', 'Team Leader', 'Jsk')" . $whereparam . " order by name asc";
             $allUser = DB::select($sql);
 
 
