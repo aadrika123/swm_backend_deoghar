@@ -2298,6 +2298,9 @@ class ConsumerRepository implements iConsumerRepository
 
 
             $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
+            if ($consumerList->isEmpty()) {
+                 throw new Exception("No consumers found");
+            }
             //     $perPage = $request->perPage,
             //     $columns = ['*'],
             //     $pageName = 'consumers'
