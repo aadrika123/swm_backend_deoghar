@@ -76,6 +76,9 @@ class ReportRepository implements iReportRepository
                 //changed by talib
                 if ($request->reportType == 'dailyCollection')
                     $response = $this->DailyCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId);
+
+                if ($request->reportType == 'tcCollection')
+                    $response = $this->TcCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId);
                 // changed by talib
 
                 if ($request->reportType == 'conAdd')
@@ -126,6 +129,105 @@ class ReportRepository implements iReportRepository
             ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
             ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
             ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
+            ->whereBetween('transaction_date', [$From, $Upto])
+            ->where('swm_transactions.ulb_id', $ulbId)
+            ->whereNotIn('swm_transactions.paid_status', [0, 3])
+            ->whereNull('td.id');
+
+        //changed by talib
+        if (isset($tcId))
+            $allTrans = $allTrans->where('swm_transactions.user_id', $tcId);
+        //changed by talib   
+        if (isset($wardNo))
+            $allTrans = $allTrans->where('swm_consumers.ward_no', $wardNo);
+
+        if (isset($consumerCategory))
+            $allTrans = $allTrans->where('swm_consumers.consumer_category_id', $consumerCategory);
+
+        if (isset($consumertype))
+            $allTrans = $allTrans->where('swm_consumers.consumer_type_id', $consumertype);
+
+        if (isset($apartmentId))
+            $allTrans = $allTrans->where('swm_consumers.apartment_id', $apartmentId);
+
+        if (isset($mode))
+            $allTrans = $allTrans->where('swm_transactions.payment_mode', $mode);
+
+        $allTrans = $allTrans->orderBy('transaction_date', 'DESC')->get();
+
+        $totCollection = 0;
+        $totDemand = 0;
+        $totPending = 0;
+        $totCash = 0;
+        $totCheque = 0;
+        $totdd = 0;
+        $transaction = array();
+        foreach ($allTrans as $trans) {
+            //$collection = $this->Collections->where('transaction_id', $trans->id);
+            $firstrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'asc')->first();
+            $lastrecord = $this->Collections->where('transaction_id', $trans->id)->orderBy('id', 'desc')->first();
+            $getuserdata = $this->GetUserDetails($trans->user_id);
+            $val['tcName'] = $getuserdata->name ?? "";
+            $val['mobileNo'] = $getuserdata->contactno ?? "";
+            $val['designation'] = $getuserdata->user_type ?? "";
+            $val['wardNo'] = $trans->ward_no;
+            $val['consumerNo'] = $trans->consumer_no;
+            $val['consumerName'] = $trans->name;
+            $val['apartmentId'] = $trans->apartment_id;
+            $val['consumerId'] = $trans->consumer_id;
+            $val['apartmentCode'] = $trans->apt_code;
+            $val['apartmentName'] = $trans->apt_name;
+            $val['transactionNo'] = (string)$trans->transaction_no;
+            $val['transactionMode'] = $trans->payment_mode;
+            $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
+            $val['transactionTime'] = Carbon::create($trans->stampdate)->format('h:i A');
+            $val['amount'] = $trans->total_payable_amt;
+            $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
+            $val['demandUpto'] = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
+            $transaction[] = $val;
+
+            $totCollection += $trans->total_payable_amt;
+            $totDemand += $trans->total_demand_amt;
+            $totPending += $trans->total_remaining_amt;
+
+
+            if ($trans->payment_mode == 'Cash')
+                $totCash += $trans->total_payable_amt;
+
+            if ($trans->payment_mode == 'Cheque')
+                $totCheque += $trans->total_payable_amt;
+
+            if ($trans->payment_mode == 'DD')
+                $totdd += $trans->total_payable_amt;
+        }
+
+        $response['transactions'] = $transaction;
+        $response['totalCollection'] = $totCollection;
+        $response['totalDemand'] = $totDemand;
+        $response['totalPending'] = $totPending;
+        $response['totalCash'] = $totCash;
+        $response['totalCheque'] = $totCheque;
+        $response['totalDD'] = $totdd;
+
+        return $response;
+    }
+
+    public function TcCollection($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId)
+    {
+
+        $From = Carbon::create($From)->format('Y-m-d');
+        $Upto = Carbon::create($Upto)->format('Y-m-d');
+
+        $allTrans = $this->Transaction->select('swm_transactions.*', 'swm_consumers.ward_no', 'consumer_no', 'name', 'a.apt_code', 'a.apt_name')
+            ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
+            ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
+            ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
+            ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
+            ->leftJoin('tbl_user_ward as uw', 'uw.user_id', '=', 'swm_transactions.user_id')
+            ->leftJoin('view_user_mstr as um', function($join) {
+                $join->on('um.id', '=', 'uw.user_id')
+                     ->where('um.user_type','Tax Collector');
+            })
             ->whereBetween('transaction_date', [$From, $Upto])
             ->where('swm_transactions.ulb_id', $ulbId)
             ->whereNotIn('swm_transactions.paid_status', [0, 3])
@@ -579,7 +681,7 @@ class ReportRepository implements iReportRepository
         if (isset($tcId))
             $mchange = $mchange->where('swm_log_consumers.user_id', $tcId);
         if (isset($wardNo))
-        $mchange = $mchange->where('swm_consumers.ward_no', $wardNo);
+            $mchange = $mchange->where('swm_consumers.ward_no', $wardNo);
 
         $mchange = $mchange->get();
 

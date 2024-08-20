@@ -521,6 +521,35 @@ class AuthRepository implements iAuth
         }
     }
 
+    public function getOnlyTcList(Request $req)
+    {
+        try {
+            $response = array();
+            $whereparam = '';
+
+            if (isset($req->ulbId)) {
+                $whereparam = ' and uw.ulb_id=' . $req->ulbId;
+            }
+
+            $sql = "SELECT distinct name,uw.user_id,contactno,address FROM view_user_mstr um
+            left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
+             where user_type='Tax Collector' " . $whereparam . " order by name asc";
+            $allUser = DB::select($sql);
+
+
+            foreach ($allUser as $user) {
+                $val['tcId'] = $user->user_id;
+                $val['tcName'] = $user->name;
+                $val['mobileNo'] = $user->contactno;
+                $val['address'] = $user->address;
+                $response[] = $val;
+            }
+            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+
 
     public function ulbSwitch(Request $req)
     {

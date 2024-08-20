@@ -71,6 +71,11 @@ class AuthController extends Controller
         return $this->Repository->getTcList($req);
     }
 
+    public function getOnlyTcList(Request $req)
+    {
+        return $this->Repository->getOnlyTcList($req);
+    }
+
     public function ulbSwitch(Request $req)
     {
         return $this->Repository->ulbSwitch($req);

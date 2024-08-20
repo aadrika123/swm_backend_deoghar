@@ -29,6 +29,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('userActiveDeactive', 'userActiveDeactive');    // Route for user activate and deactivate
     // Route::post('getUserFormDate', 'getUserFormDate');          // Route for user form data
     Route::post('getTcList', 'getTcList');                      // Route for get tc list ulb wise
+    Route::post('getTcListOnly', 'getOnlyTcList');
     Route::post('ulbSwitch', 'ulbSwitch');                      // Route for ulb switching
 });
 
