@@ -222,7 +222,6 @@ class ReportRepository implements iReportRepository
             ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
             ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
             ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
-            ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
             ->leftJoin('tbl_user_ward as uw', 'uw.user_id', '=', 'swm_transactions.user_id')
             ->leftJoin('view_user_mstr as um', function($join) {
                 $join->on('um.id', '=', 'uw.user_id')
