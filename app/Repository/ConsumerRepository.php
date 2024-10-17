@@ -1835,6 +1835,7 @@ class ConsumerRepository implements iConsumerRepository
     public function GetCaseVerificationList(Request $request)
     {
         try {
+
             $ulbId = $this->GetUlbId($request->user()->id);
             $response = array();
             if (isset($request->fromDate) && isset($request->toDate)) {
@@ -1863,6 +1864,7 @@ class ConsumerRepository implements iConsumerRepository
                             FROM swm_transactions AS t
                             LEFT JOIN swm_transaction_verifications tv ON tv.transaction_id = t.id 
                             WHERE (t.transaction_date BETWEEN '$fromDate' AND '$toDate') 
+                            AND t.user_id <> 0
                             AND t.ulb_id = $ulbId
                             AND t.paid_status != 0  
                             AND t.payment_mode != 'ONLINE'  
@@ -1871,8 +1873,8 @@ class ConsumerRepository implements iConsumerRepository
                             t.user_id, 
                             t.transaction_date";
 
-                $collections = DB::connection($this->dbConn)->select($sql);
-                foreach ($collections as $collection) {
+                 $collections = DB::connection($this->dbConn)->select($sql);
+                 foreach ($collections as $collection) {
 
                     # New Query
                     $userDtls = DB::table('tbl_user_mstr')
