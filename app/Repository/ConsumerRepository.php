@@ -2223,7 +2223,7 @@ class ConsumerRepository implements iConsumerRepository
             WHERE (transaction_date BETWEEN '$From' and '$Upto') and t.paid_status>0 and t.ulb_id=" . $ulbId . " " . $whereparam . " order by t.id desc";
 
 
-            $transactions = DB::connection($this->dbConn)->select($sql);
+           return $transactions = DB::connection($this->dbConn)->select($sql);
 
             foreach ($transactions as $transaction) {
                 $collection  = $this->Collections->where('transaction_id', $transaction->trans_id)->where('ulb_id', $ulbId)->orderBy('id')->get();

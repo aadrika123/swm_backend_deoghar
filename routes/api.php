@@ -72,7 +72,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::get('getEditConsumerDetailsbyId/{id}', 'getEditConsumerDetailsById');
         Route::post('postDeactivateConsumer', 'postDeactivateConsumer');
         Route::post('getPaymentData', 'getPaymentData');
-       // Route::post('postPayment', 'MakePayment');
+        // Route::post('postPayment', 'MakePayment');
         Route::post('getCalculatedAmount', 'getCalculatedAmount');
         Route::post('getDashboardData', 'getDashboardData');
         Route::get('searchTransaction/{transactionNo}', 'searchTransaction');
@@ -120,7 +120,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('getReminderList', 'GetReminderList');
         Route::post('tcReminderList', 'tcReminderList');
         Route::post('getConsumerPastTransactions', 'ConsumerPastTransactions');
-        
+
         # Online Payment        
         Route::post('generate-order-id', 'generateOrderId');
         Route::post('save-order-response', 'saveOrderResponse');
@@ -141,6 +141,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('deleteRoute', 'DeleteRoute');
 
         Route::post('createDefaultConsumerApartment', 'DefaultConsumerApartment');
+        Route::post('postPayment', 'MakePayment');
     });
 
     Route::controller(MasterController::class)->group(function () {
@@ -184,7 +185,7 @@ Route::group(['middleware' => ['json.response', 'apiauth:sanctum']], function ()
         Route::post('create-tc-geolocation', 'addTcGeoLocation');
         Route::post('list-tc-geolocation', 'tcGeolocationList');
         Route::post('get-tc-geolocation', 'getTcGeolocation');
-        Route::post('getDemandReceiptData', 'GetDemandReceiptData'); 
+        Route::post('getDemandReceiptData', 'GetDemandReceiptData');
     });
 });
 
@@ -216,6 +217,6 @@ Route::controller(CitizenController::class)->group(function () {
 });
 
 Route::controller(ConsumerController::class)->group(function () {
-    Route::post('postPayment', 'MakePayment');
+    // Route::post('postPayment', 'MakePayment');
     Route::post('getReprintData-v2', 'getReprintDatav2');
 });
