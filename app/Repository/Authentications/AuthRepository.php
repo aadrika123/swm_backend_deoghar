@@ -68,7 +68,7 @@ class AuthRepository implements iAuth
                         $getdefault = UserWardPermission::select('ulb_id', 'tbl_ulb_list.ulb_name')
                             ->join('tbl_ulb_list', 'tbl_ulb_list.id', '=', 'tbl_user_ward.ulb_id')
                             ->where('user_id', $refUserName->id)
-                            ->where('stts', 0)
+                            ->where('stts', 1)
                             ->groupby('ulb_id', 'ulb_name')
                             ->first();
                         # the end of the edited code by sam
