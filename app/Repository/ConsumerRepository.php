@@ -2213,7 +2213,7 @@ class ConsumerRepository implements iConsumerRepository
             if (isset($request->wardNo))
                 $whereparam .= " and (a.ward_no='" . $request->wardNo . "' or c.ward_no='" . $request->wardNo . "') ";
 
-            $sql = "SELECT t.consumer_id,t.id as trans_id, t.apartment_id,reconcile_id,reconcilition_date,transaction_no,transaction_date,payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id 
+            $sql = "SELECT DISTINCT t.consumer_id,t.id as trans_id, t.apartment_id,reconcile_id,reconcilition_date,transaction_no,transaction_date,payment_mode,cheque_dd_no, cheque_dd_date, bank_name,branch_name, total_payable_amt,bc.remarks,t.user_id 
             FROM  swm_transactions t
             LEFT JOIN swm_bank_reconcile bc on bc.transaction_id=t.id
             LEFT JOIN swm_bank_reconcile_details bd on bd.reconcile_id=bc.id
