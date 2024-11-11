@@ -2273,7 +2273,7 @@ class ConsumerRepository implements iConsumerRepository
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
 
-            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype)) {
+            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype) || isset($request->mobileNo) || isset($request->consumerName)) {
 
                 $consumerList = $this->Consumer
                     ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
@@ -2289,6 +2289,12 @@ class ConsumerRepository implements iConsumerRepository
 
                 if (isset($request->consumertype))
                     $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
+
+                if (isset($request->mobileNo))
+                    $consumerList = $consumerList->where('swm_consumers.mobile_no', $request->mobileNo);
+
+                if (isset($request->consumerName))
+                    $consumerList = $consumerList->where('swm_consumers.name', 'like', '%' . $request->consumerName . '%');
             }
 
             if (isset($request->consumerNo))
