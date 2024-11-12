@@ -2294,7 +2294,7 @@ class ConsumerRepository implements iConsumerRepository
                     $consumerList = $consumerList->where('swm_consumers.mobile_no', $request->mobileNo);
 
                 if (isset($request->consumerName))
-                    $consumerList = $consumerList->where('swm_consumers.name', 'like', '%' . $request->consumerName . '%');
+                    $consumerList = $consumerList->where('swm_consumers.name', 'ILIKE', "%$request->consumerName%");
             }
 
             if (isset($request->consumerNo))
