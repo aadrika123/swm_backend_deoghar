@@ -500,7 +500,7 @@ class AuthRepository implements iAuth
             $whereparam = '';
             $ulbId = 11;
 
-            if (isset($req->ulbId)) {
+            if (isset($ulbId)) {
                 $whereparam = ' and uw.ulb_id=' . $ulbId;
             }
 
