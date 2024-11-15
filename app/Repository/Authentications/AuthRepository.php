@@ -498,9 +498,10 @@ class AuthRepository implements iAuth
         try {
             $response = array();
             $whereparam = '';
+            $ulbId = 11;
 
             if (isset($req->ulbId)) {
-                $whereparam = ' and uw.ulb_id=' . $req->ulbId;
+                $whereparam = ' and uw.ulb_id=' . $ulbId;
             }
 
             $sql = "SELECT distinct name,uw.user_id,contactno,address FROM view_user_mstr um
