@@ -1101,9 +1101,8 @@ class ConsumerRepository implements iConsumerRepository
 
         try {
             if (isset($request->consumerId)) {
-
                 $user   = $request->user();
-                $userId = $user->id ?? '';
+                $userId = $request->userId ?? $user->id;
                 $ulbId = $this->GetUlbId($userId);
                 $consumerId = $request->consumerId;
                 $totalPayableAmt = $request->paidAmount;
@@ -3340,6 +3339,7 @@ class ConsumerRepository implements iConsumerRepository
                         'paidUpto'    => $req->payUpto,
                         'paidAmount'  => $req->amount,
                         'paymentMode' => 'ONLINE',
+                        'userId'=> $req->userId
                     ]);
                     $responseData = $consumerRepo->makePayment($newReqs);
                 }
