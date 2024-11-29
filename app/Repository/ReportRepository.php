@@ -327,7 +327,7 @@ class ReportRepository implements iReportRepository
             $consumers = $consumers->where('ward_no', $wardNo);
         }
         if (isset($consumerCategory)) {
-            $consumers = $consumers->where('consumer_category_id', $wardNo);
+            $consumers = $consumers->where('consumer_category_id', $consumerCategory);
         }
 
         foreach ($consumers as $consumer) {
