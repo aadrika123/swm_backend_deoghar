@@ -82,31 +82,31 @@ class ReportRepository implements iReportRepository
                 // changed by talib
 
                 if ($request->reportType == 'conAdd')
-                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo);
+                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'conDect')
-                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo);
+                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'tranDect')
-                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo);
+                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'cashVeri')
-                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo);
+                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'bankRec')
-                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request);
+                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory);
 
                 if ($request->reportType == 'tcDaily')
-                    $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId);
+                    $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->consumerCategory);
 
                 if ($request->reportType == 'tranModeChange')
-                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo);
+                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'consumereditlog')
-                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo);
+                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'monthlyComparison')
-                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo);
+                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory);
 
                 return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
             } else {
@@ -223,9 +223,9 @@ class ReportRepository implements iReportRepository
             ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
             ->leftjoin('swm_transaction_deactivates as td', 'td.transaction_id', '=', 'swm_transactions.id')
             ->leftJoin('tbl_user_ward as uw', 'uw.user_id', '=', 'swm_transactions.user_id')
-            ->leftJoin('view_user_mstr as um', function($join) {
+            ->leftJoin('view_user_mstr as um', function ($join) {
                 $join->on('um.id', '=', 'uw.user_id')
-                     ->where('um.user_type','Tax Collector');
+                    ->where('um.user_type', 'Tax Collector');
             })
             ->whereBetween('transaction_date', [$From, $Upto])
             ->where('swm_transactions.ulb_id', $ulbId)
@@ -310,7 +310,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo)
+    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -326,6 +326,9 @@ class ReportRepository implements iReportRepository
         if (isset($wardNo)) {
             $consumers = $consumers->where('ward_no', $wardNo);
         }
+        if (isset($consumerCategory)) {
+            $consumers = $consumers->where('consumer_category_id', $wardNo);
+        }
 
         foreach ($consumers as $consumer) {
             $user = $this->GetUserDetails($consumer->user_id);
@@ -340,7 +343,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function ConsumerDect($From, $Upto, $ulbId, $wardNo)
+    public function ConsumerDect($From, $Upto, $ulbId, $wardNo, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -356,6 +359,9 @@ class ReportRepository implements iReportRepository
         if (isset($wardNo)) {
             $consumers = $consumers->where('ward_no', $wardNo);
         }
+        if (isset($consumerCategory)) {
+            $consumers = $consumers->where('consumer_category_id', $consumerCategory);
+        }
         foreach ($consumers as $consumer) {
             $user = $this->GetUserDetails($consumer->deactivated_by);
             $val['deactivateDate'] = Carbon::create($consumer->deactivation_date)->format('d-m-Y');
@@ -370,7 +376,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo)
+    public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -387,6 +393,8 @@ class ReportRepository implements iReportRepository
             $transaction = $transaction->where('swm_transactions.user_id', $tcId);
         if (isset($wardNo))
             $transaction = $transaction->where('swm_consumers.ward_no', $wardNo);
+        if (isset($consumerCategory))
+            $transaction = $transaction->where('swm_consumers.consumer_category_id', $consumerCategory);
 
         $transaction = $transaction->whereBetween('date', [$From, $Upto])
             ->paginate(1000);
@@ -409,7 +417,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function CashVerification($From, $Upto, $tcId = null, $ulbId, $wardNo)
+    public function CashVerification($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -426,6 +434,8 @@ class ReportRepository implements iReportRepository
             $transaction = $transaction->where('swm_transactions.user_id', $tcId);
         if (isset($wardNo))
             $transaction = $transaction->where('swm_consumers.ward_no', $wardNo);
+        if (isset($consumerCategory))
+            $transaction = $transaction->where('swm_consumers.consumer_category_id', $consumerCategory);
 
         $transaction = $transaction->whereBetween('verify_date', [$From, $Upto])
             ->paginate(1000);
@@ -487,7 +497,7 @@ class ReportRepository implements iReportRepository
     //     return $response;
     // }
 
-    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId, $request)
+    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId, $request, $consumerCategory)
     {
         $response = [];
         $From = Carbon::create($From)->format('Y-m-d');
@@ -526,9 +536,9 @@ class ReportRepository implements iReportRepository
     ";
 
         $parameters = [$From, $Upto, $ulbId];
-        if ($request->consumerCategory) {
+        if ($consumerCategory) {
             $sql .= " AND c.consumer_category_id = ?";
-            $parameters[] = $request->consumerCategory;
+            $parameters[] = $consumerCategory;
         }
         if (isset($request->wardNo)) {
             $sql .= " AND c.ward_no = ?";
@@ -562,7 +572,7 @@ class ReportRepository implements iReportRepository
     }
 
 
-    public function TcDailyActivity($From, $Upto, $tcId, $ulbId)
+    public function TcDailyActivity($From, $Upto, $tcId, $ulbId, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From);
@@ -597,6 +607,9 @@ class ReportRepository implements iReportRepository
                 ->whereDate('entry_date', $date)
                 ->where('ulb_id', $ulbId)
                 ->count();
+            if (isset($consumer)) {
+                $consumer_count->where('swm_consumer.consumer_category_id', $consumerCategory);
+            }
 
 
             $trans = $this->Transaction->where('user_id', $tcId)
@@ -633,7 +646,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId)
+    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From);
@@ -648,6 +661,7 @@ class ReportRepository implements iReportRepository
             ->where('t.ulb_id', $ulbId);
         if (isset($tcId))
             $mchange = $mchange->where('swm_log_transaction_mode.user_id', $tcId);
+        $mchange = $mchange->where('swm_consumers.consumer_category_id', $consumerCategory);
         $mchange = $mchange->latest('swm_log_transaction_mode.id')->get();
 
         foreach ($mchange as $trans) {
@@ -668,7 +682,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId)
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $consumerCategory)
     {
         $response = array();
         $mchange = $this->mConsumerEditLog
@@ -681,6 +695,8 @@ class ReportRepository implements iReportRepository
             $mchange = $mchange->where('swm_log_consumers.user_id', $tcId);
         if (isset($wardNo))
             $mchange = $mchange->where('swm_consumers.ward_no', $wardNo);
+        if (isset($consumerCategory))
+            $mchange = $mchange->where('swm_consumers.consumer_category_id', $consumerCategory);
 
         $mchange = $mchange->get();
 
@@ -699,7 +715,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function monthlyComparison($request)
+    public function monthlyComparison($request, $consumerCategory)
     {
         $perPage = $request->perPage ?? 10;
         $wardNo  = $request->wardNo ?? 1;
@@ -714,10 +730,15 @@ class ReportRepository implements iReportRepository
                 'ward_no',
                 'consumer_no',
                 'mobile_no',
-                'name',
+                'name'
             )
-            ->where('swm_consumers.ward_no', $wardNo)
-            ->paginate($perPage);
+            ->where('swm_consumers.ward_no', $wardNo);
+
+        if (isset($consumerCategory)) {
+            $consumerDtls->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+
+        $consumerDtls = $consumerDtls->paginate($perPage);
 
         foreach ($consumerDtls as $consumer) {
 
