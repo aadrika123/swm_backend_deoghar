@@ -82,10 +82,10 @@ class ReportRepository implements iReportRepository
                 // changed by talib
 
                 if ($request->reportType == 'conAdd')
-                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory);
+                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId);
 
                 if ($request->reportType == 'conDect')
-                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory);
+                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId);
 
                 if ($request->reportType == 'tranDect')
                     $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
@@ -106,7 +106,7 @@ class ReportRepository implements iReportRepository
                     $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'monthlyComparison')
-                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory);
+                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
 
                 return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
             } else {
@@ -310,7 +310,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo, $consumerCategory)
+    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo, $consumerCategory, $tcId)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -329,6 +329,9 @@ class ReportRepository implements iReportRepository
         if (isset($consumerCategory)) {
             $consumers = $consumers->where('consumer_category_id', $consumerCategory);
         }
+        if (isset($tcId)) {
+            $consumers = $consumers->where('user_id', $tcId);
+        }
 
         foreach ($consumers as $consumer) {
             $user = $this->GetUserDetails($consumer->user_id);
@@ -337,13 +340,13 @@ class ReportRepository implements iReportRepository
             $val['wardNo'] = $consumer->ward_no;
             $val['consumerName'] = $consumer->name;
             $val['consumerMobile'] = $consumer->mobile_no;
-            $val['entryBy'] = ($user) ? $user->name : "";;
+            $val['entryBy'] = ($user) ? $user->name : "";
             $response[] = $val;
         }
         return $response;
     }
 
-    public function ConsumerDect($From, $Upto, $ulbId, $wardNo, $consumerCategory)
+    public function ConsumerDect($From, $Upto, $ulbId, $wardNo, $consumerCategory, $tcId)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -361,6 +364,9 @@ class ReportRepository implements iReportRepository
         }
         if (isset($consumerCategory)) {
             $consumers = $consumers->where('consumer_category_id', $consumerCategory);
+        }
+        if (isset($tcId)) {
+            $consumers = $consumers->where('user_id', $tcId);
         }
         foreach ($consumers as $consumer) {
             $user = $this->GetUserDetails($consumer->deactivated_by);
@@ -715,7 +721,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function monthlyComparison($request, $consumerCategory)
+    public function monthlyComparison($request, $consumerCategory, $tcId)
     {
         $perPage = $request->perPage ?? 10;
         $wardNo  = $request->wardNo ?? 1;
@@ -736,6 +742,9 @@ class ReportRepository implements iReportRepository
 
         if (isset($consumerCategory)) {
             $consumerDtls->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+        if (isset($tcId)) {
+            $consumerDtls->where('swm_consumers.user_id', $tcId);
         }
 
         $consumerDtls = $consumerDtls->paginate($perPage);
