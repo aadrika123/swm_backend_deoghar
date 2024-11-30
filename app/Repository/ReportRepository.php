@@ -688,12 +688,13 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $consumerCategory)
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory)
     {
         $response = array();
         $mchange = $this->mConsumerEditLog
-            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode', 'swm_log_consumers.stampdate', 'swm_log_consumers.user_id')
+            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode', 'swm_log_consumers.stampdate', 'swm_log_consumers.user_id','swm_consumer_categories.name')
             ->join('swm_consumers', 'swm_consumers.id', 'swm_log_consumers.consumer_id')
+            ->join('swm_consumer_categories','swm_consumer_categories.id','swm_consumers.consumer_category_id')
             ->whereBetween('swm_log_consumers.stampdate', [$From . " 00:00:01", $Upto . " 23:59:59"]);
 
 
@@ -713,6 +714,7 @@ class ReportRepository implements iReportRepository
             $val['mobile_no']   = $detail->mobile_no;
             $val['address']     = $detail->address;
             $val['pincode']     = $detail->pincode;
+            $val['consumerCategory']     = $detail->name;
             $val['changeBy']    = $this->GetUserDetails($detail->user_id)->name;
             $val['changedDate'] = Carbon::create($detail->stampdate)->format('d-m-Y h:i A');
             $response[] = $val;
