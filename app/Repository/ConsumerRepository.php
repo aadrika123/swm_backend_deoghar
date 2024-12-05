@@ -1834,7 +1834,6 @@ class ConsumerRepository implements iConsumerRepository
     public function GetCaseVerificationList(Request $request)
     {
         try {
-
             $ulbId = $this->GetUlbId($request->user()->id);
             $response = array();
             if (isset($request->fromDate) && isset($request->toDate)) {
@@ -1859,14 +1858,15 @@ class ConsumerRepository implements iConsumerRepository
                 t.transaction_date,
                                     SUM(CASE WHEN payment_mode = 'Cash' THEN total_payable_amt ELSE 0 END) AS cash_amount,
                                     SUM(CASE WHEN payment_mode = 'Cheque' THEN total_payable_amt ELSE 0 END) AS cheque_amount,
-                                    SUM(CASE WHEN payment_mode = 'Dd' THEN total_payable_amt ELSE 0 END) AS dd_amount
+                                    SUM(CASE WHEN payment_mode = 'Dd' THEN total_payable_amt ELSE 0 END) AS dd_amount,
+                                    SUM(CASE WHEN payment_mode = 'ONLINE' THEN total_payable_amt ELSE 0 END) AS online_amount
                             FROM swm_transactions AS t
                             LEFT JOIN swm_transaction_verifications tv ON tv.transaction_id = t.id 
                             WHERE (t.transaction_date BETWEEN '$fromDate' AND '$toDate') 
                             AND t.user_id <> 0
                             AND t.ulb_id = $ulbId
                             AND t.paid_status != 0  
-                            AND t.payment_mode != 'ONLINE'  
+                            -- AND t.payment_mode != 'ONLINE'  
                             " . $checkTc . "
                             GROUP BY 
                             t.user_id, 
@@ -1882,7 +1882,7 @@ class ConsumerRepository implements iConsumerRepository
                         ->where('tbl_user_mstr.id', $collection->user_id)
                         ->first();
 
-                    $total_amt = $collection->cash_amount + $collection->cheque_amount + $collection->dd_amount;
+                    $total_amt = $collection->cash_amount + $collection->cheque_amount + $collection->dd_amount + $collection->online_amount;
                     $val['tcId'] = $collection->user_id;
                     $val['tcName'] = $userDtls->name;
                     $val['designation'] = $userDtls->user_type;
@@ -1891,6 +1891,7 @@ class ConsumerRepository implements iConsumerRepository
                     $val['cashAmount'] = $collection->cash_amount;
                     $val['chequeAmount'] = $collection->cheque_amount;
                     $val['ddAmount'] = $collection->dd_amount;
+                    $val['onlineAmount'] = $collection->online_amount; //added 
                     $val['transactionDate'] = ($collection->transaction_date) ? date('d-m-Y', strtotime($collection->transaction_date)) : '0';
                     $response[] = $val;
                 }
@@ -1907,6 +1908,7 @@ class ConsumerRepository implements iConsumerRepository
     public function getCashVerificationFullDetails(Request $request)
     {
         try {
+            
             $response = array();
             $ulbId = $this->GetUlbId($request->user()->id);
             if (isset($request->tcId) and isset($request->date)) {
@@ -1936,6 +1938,7 @@ class ConsumerRepository implements iConsumerRepository
                 $totalCash = 0;
                 $totalCheque = 0;
                 $totaldd = 0;
+                $totalOnline = 0; //added
                 $transaction = array();
                 foreach ($collections as $collection) {
 
@@ -1957,6 +1960,9 @@ class ConsumerRepository implements iConsumerRepository
 
                     if ($collection->payment_mode == 'DD')
                         $totalCheque += $collection->totaldd;
+
+                    if ($collection->payment_mode == 'online') //added
+                        $totalOnline += $collection->total_payable_amt;    
 
                     $val['transactionId'] = $collection->trans_id;
                     $val['transactionNo'] = $collection->transaction_no;
@@ -1981,7 +1987,8 @@ class ConsumerRepository implements iConsumerRepository
                 $response['cashAmount'] = $totalCash;
                 $response['chequeAmount'] = $totalCheque;
                 $response['ddAmount'] = $totaldd;
-                $response['totalAmount'] = $totalCash + $totalCheque + $totaldd;
+                $response['onlineAmount'] = $totalOnline; //added
+                $response['totalAmount'] = $totalCash + $totalCheque + $totaldd + $totalOnline; // added $totalOnline
 
                 return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
             } else {
