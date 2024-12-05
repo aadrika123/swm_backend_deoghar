@@ -1870,7 +1870,7 @@ class ConsumerRepository implements iConsumerRepository
                             " . $checkTc . "
                             GROUP BY 
                             t.user_id, 
-                            t.transaction_date";
+                            t.transaction_date"; 
 
                  $collections = DB::connection($this->dbConn)->select($sql);
                  foreach ($collections as $collection) {
@@ -1891,7 +1891,7 @@ class ConsumerRepository implements iConsumerRepository
                     $val['cashAmount'] = $collection->cash_amount;
                     $val['chequeAmount'] = $collection->cheque_amount;
                     $val['ddAmount'] = $collection->dd_amount;
-                    $val['onlineAmount'] = $collection->online_amount; //added 
+                    $val['onlineAmount'] = $collection->online_amount; //added by al
                     $val['transactionDate'] = ($collection->transaction_date) ? date('d-m-Y', strtotime($collection->transaction_date)) : '0';
                     $response[] = $val;
                 }
