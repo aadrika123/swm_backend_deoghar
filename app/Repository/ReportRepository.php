@@ -103,7 +103,7 @@ class ReportRepository implements iReportRepository
                     $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
 
                 if ($request->reportType == 'consumereditlog')
-                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
+                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType);
 
                 if ($request->reportType == 'monthlyComparison')
                     $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
@@ -181,6 +181,7 @@ class ReportRepository implements iReportRepository
             $val['transactionMode'] = $trans->payment_mode;
             $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
             $val['transactionTime'] = Carbon::create($trans->stampdate)->format('h:i A');
+            $val['consumerCategory'] = $trans->name;
             $val['amount'] = $trans->total_payable_amt;
             $val['demandFrom'] = ($firstrecord) ? Carbon::create($firstrecord->payment_from)->format('d-m-Y') : '';
             $val['demandUpto'] = ($lastrecord) ? Carbon::create($lastrecord->payment_to)->format('d-m-Y') : '';
@@ -688,33 +689,47 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory)
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory, $consumertype)
     {
         $response = array();
         $mchange = $this->mConsumerEditLog
-            ->select('swm_log_consumers.id', 'swm_consumers.consumer_no', 'swm_consumers.ward_no', 'swm_consumers.name', 'swm_consumers.mobile_no', 'swm_consumers.address', 'swm_consumers.pincode', 'swm_log_consumers.stampdate', 'swm_log_consumers.user_id','swm_consumer_categories.name')
+            ->select(
+                'swm_log_consumers.id',
+                'swm_consumers.consumer_no',
+                'swm_consumers.ward_no',
+                'swm_consumers.name',
+                'swm_consumers.mobile_no',
+                'swm_consumers.address',
+                'swm_consumers.pincode',
+                'swm_log_consumers.stampdate',
+                'swm_log_consumers.user_id',
+                'swm_consumer_categories.name',
+                'swm_consumer_types.name as consumerType'
+            )
             ->join('swm_consumers', 'swm_consumers.id', 'swm_log_consumers.consumer_id')
-            ->join('swm_consumer_categories','swm_consumer_categories.id','swm_consumers.consumer_category_id')
+            ->join('swm_consumer_categories', 'swm_consumer_categories.id', 'swm_consumers.consumer_category_id')
+            ->join('swm_consumer_types', 'swm_consumer_types.id', 'swm_consumers.consumer_type_id')
             ->whereBetween('swm_log_consumers.stampdate', [$From . " 00:00:01", $Upto . " 23:59:59"]);
-
-
         if (isset($tcId))
             $mchange = $mchange->where('swm_log_consumers.user_id', $tcId);
         if (isset($wardNo))
             $mchange = $mchange->where('swm_consumers.ward_no', $wardNo);
         if (isset($consumerCategory))
             $mchange = $mchange->where('swm_consumers.consumer_category_id', $consumerCategory);
+        if (isset($consumertype))
+            $mchange = $mchange->where('swm_consumers.consumer_type_id', $consumertype);
 
         $mchange = $mchange->get();
 
         foreach ($mchange as $detail) {
-            $val['id']          = $detail->id;
-            $val['consumer_no'] = $detail->consumer_no;
-            $val['ward_no']     = $detail->ward_no;
-            $val['mobile_no']   = $detail->mobile_no;
-            $val['address']     = $detail->address;
-            $val['pincode']     = $detail->pincode;
+            $val['id']                   = $detail->id;
+            $val['consumer_no']          = $detail->consumer_no;
+            $val['ward_no']              = $detail->ward_no;
+            $val['mobile_no']            = $detail->mobile_no;
+            $val['address']              = $detail->address;
+            $val['pincode']              = $detail->pincode;
             $val['consumerCategory']     = $detail->name;
+            $val['consumerType']         = $detail->consumerType;
             $val['changeBy']    = $this->GetUserDetails($detail->user_id)->name;
             $val['changedDate'] = Carbon::create($detail->stampdate)->format('d-m-Y h:i A');
             $response[] = $val;
