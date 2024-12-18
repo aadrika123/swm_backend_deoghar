@@ -105,8 +105,8 @@ class ReportRepository implements iReportRepository
                 if ($request->reportType == 'consumereditlog')
                     $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType);
 
-                if ($request->reportType == 'monthlyComparison')
-                    $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
+                // if ($request->reportType == 'monthlyComparison')
+                //     $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
 
                 return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
             } else {
@@ -738,7 +738,77 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function monthlyComparison($request, $consumerCategory, $tcId)
+    // public function monthlyComparison($request, $consumerCategory, $tcId)
+    // {
+    //     $perPage = $request->perPage ?? 10;
+    //     $wardNo  = $request->wardNo ?? 1;
+    //     $toDate  = isset($request->toDate) ? $request->toDate . '-01' : Carbon::now()->startOfMonth()->format('Y-m-d');
+
+    //     $currentMonth = Carbon::parse($toDate)->subMonths(2)->format('m');
+    //     $currentYear  = Carbon::parse($toDate)->format('Y');
+
+    //     $consumerDtls = $this->Consumer
+    //         ->select(
+    //             'id',
+    //             'ward_no',
+    //             'consumer_no',
+    //             'mobile_no',
+    //             'name'
+    //         )
+    //         ->where('swm_consumers.ward_no', $wardNo);
+
+    //     if (isset($consumerCategory)) {
+    //         $consumerDtls->where('swm_consumers.consumer_category_id', $consumerCategory);
+    //     }
+    //     if (isset($tcId)) {
+    //         $consumerDtls->where('swm_consumers.user_id', $tcId);
+    //     }
+
+    //     $consumerDtls = $consumerDtls->paginate($perPage);
+
+    //     foreach ($consumerDtls as $consumer) {
+
+    //         $demandDtls = $this->mDemand
+    //             ->select(
+    //                 'swm_demands.id as demand_id',
+    //                 'consumer_id',
+    //                 'total_tax',
+    //                 'payment_from',
+    //                 'paid_status',
+    //                 (DB::raw("TO_CHAR(payment_from, 'Month') || ' ' || TO_CHAR(payment_from, 'YYYY') as month_year")),
+    //                 // DB::raw('TO_CHAR(payment_from, \'Month\') as month'),
+    //                 // DB::raw('EXTRACT(MONTH from payment_from) as month'),
+    //             )
+    //             ->where('swm_demands.consumer_id', $consumer->id)
+    //             ->where('swm_demands.is_deactivate', 0)
+    //             // ->whereDate('payment_from', '>=', Carbon::now()->subMonths(3)->startOfMonth())
+    //             ->whereMonth('payment_from', '>=',  $currentMonth)
+    //             ->whereYear('payment_from', $currentYear)
+    //             ->orderByDesc('swm_demands.id')
+    //             ->take(3)
+    //             ->get();
+
+    //         if (collect($demandDtls)->isEmpty())
+    //             continue;
+
+    //         $val['consumer_id']           = $consumer->id;
+    //         $val['consumer_ward_no']      = $consumer->ward_no;
+    //         $val['consumer_consumer_no']  = $consumer->consumer_no;
+    //         $val['consumer_mobile_no']    = $consumer->mobile_no;
+    //         $val['consumer_name']         = $consumer->name;
+    //         $val['demandDtls']            = $demandDtls;
+    //         $transactions[]               = $val;
+    //     }
+
+    //     $data['data']         = $transactions;
+    //     $data['current_page'] = $consumerDtls->currentPage();
+    //     $data['last_page']    = $consumerDtls->lastPage();
+    //     $data['total']        = $consumerDtls->total();
+    //     $data['per_page']     = $perPage;
+
+    //     return $this->responseMsgs(true, "Data Fetched", $data);
+    // }
+     public function monthlyComparison($request)
     {
         $perPage = $request->perPage ?? 10;
         $wardNo  = $request->wardNo ?? 1;
