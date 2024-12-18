@@ -14,5 +14,6 @@ interface iReportRepository
 
     public function ReportData(Request $request);
     public function DemandReceipt(Request $request);
+    public function monthlyComparison(Request $request);
 
 }
