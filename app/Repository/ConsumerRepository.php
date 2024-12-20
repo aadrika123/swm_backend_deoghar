@@ -2858,48 +2858,78 @@ class ConsumerRepository implements iConsumerRepository
     }
 
 
+    //added searching parameter BY alok
     public function PaymentAdjustmentList(Request $request)
     {
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
-            $response = array();
-            $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
-            if ($request->fromDate) {
-                $fromDate = $request->fromDate;
+            $response = [];
+            $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
+            $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
+    
+            $query = $this->DemandAdjustment->select(
+                DB::raw('swm_demand_adjustments.*, c.name, consumer_no, address, c.ward_no, apt_name, apt_code, apt_address, a.ward_no as apt_ward, c.consumer_type_id, c.consumer_category_id') 
+            )
+            ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
+            ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
+
+            ->leftjoin('swm_consumer_types as ct', 'ct.id', 'c.consumer_type_id') //added
+            ->leftjoin('swm_consumer_categories as cc', 'cc.id', 'c.consumer_category_id') //added
+
+            ->where('swm_demand_adjustments.ulb_id', $ulbId)
+            ->where('swm_demand_adjustments.is_deactivate', 0)
+            ->whereBetween(DB::raw('DATE(swm_demand_adjustments.stampdate)'), [$fromDate, $uptoDate]);
+    
+            // ADDED: Apply filters dynamically based on input values
+            if (isset($request->wardNo) && $request->wardNo !== '') {
+                $query->where('c.ward_no', $request->wardNo);
             }
-            if ($request->uptoDate) {
-                $uptoDate = $request->uptoDate;
+            
+            if (isset($request->consumerType) && $request->consumerType !== '') {
+                $query->where('c.consumer_type_id', $request->consumerType);
             }
-            $paymentAdjustment = $this->DemandAdjustment->select(DB::raw('swm_demand_adjustments.*, name,consumer_no,address,c.ward_no,apt_name,apt_code,apt_address,a.ward_no as apt_ward'))
-                ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
-                ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
-                ->where('swm_demand_adjustments.ulb_id', $ulbId)
-                ->where('swm_demand_adjustments.is_deactivate', 0)
-                ->whereBetween(DB::raw('DATE(swm_demand_adjustments.stampdate)'), [$fromDate, $uptoDate])
-                ->when(isset($request->wardNo), function ($query) use ($request) {
-                    return $query->where('c.ward_no', $request->wardNo);
-                })
-                ->get();
+            
+            if (isset($request->consumerCategory) && $request->consumerCategory !== '') {
+                $query->where('c.consumer_category_id', $request->consumerCategory);
+            }
+            
+            if (isset($request->tcId) && $request->tcId !== '') {
+                $query->where('swm_demand_adjustments.user_id', $request->tcId);
+            }
+
+            
+            $paymentAdjustment = $query->get();
+            
+            if ($paymentAdjustment->isEmpty()) {
+                return response()->json(['status' => true, 'data' => [], 'msg' => 'No data found for the given filters.'], 200);
+            }
+            
             foreach ($paymentAdjustment as $adj) {
+                $val = [];
                 $val['consumerName'] = $adj->name;
                 $val['consumerNo'] = $adj->consumer_no;
                 $val['apartmentName'] = $adj->apt_name;
                 $val['apartmentCode'] = $adj->apt_code;
-                $val['wardNo'] = ($adj->ward_no) ? $adj->ward_no : $adj->apt_ward;
-                $val['address'] = ($adj->address) ? $adj->address : $adj->apt_address;
+                $val['wardNo'] = $adj->ward_no ?: $adj->apt_ward;
+                $val['address'] = $adj->address ?: $adj->apt_address;
                 $val['adjustFrom'] = Carbon::create($adj->adjust_from)->format('d-m-Y');
                 $val['adjustUpto'] = Carbon::create($adj->adjust_upto)->format('d-m-Y');
                 $val['adjustAmount'] = $adj->adjust_amount;
-                $val['billFile'] = public_path('uploads\\payment_adjustment') . "\\" . $adj->bill_file;
+                $val['billFile'] = public_path('uploads/payment_adjustment') . "/" . $adj->bill_file;
                 $val['remarks'] = $adj->remarks;
                 $val['adjustBy'] = $this->GetUserDetails($adj->user_id)->name;
+                $val['consumerType'] = $adj->consumer_type_name; // Added consumer type to response
                 $response[] = $val;
             }
-            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+    
+            return response()->json(['status' => true, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+            return response()->json(['status' => false, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
+
+ 
+    
 
     public function ConsumerOrApartmentList(Request $request)
     {
