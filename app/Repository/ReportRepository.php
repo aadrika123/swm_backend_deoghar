@@ -416,7 +416,7 @@ class ReportRepository implements iReportRepository
 
         // Apply filters
         if (!empty($tcId)) {
-            $query->where('swm_consumers.user_id', $tcId);
+            $query->where('swm_consumer_deactivates.deactivated_by', $tcId);
         }
         if (!empty($wardNo)) {
             $query->where('swm_consumers.ward_no', $wardNo);
