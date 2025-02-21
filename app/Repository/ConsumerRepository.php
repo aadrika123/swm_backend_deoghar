@@ -4547,8 +4547,8 @@ class ConsumerRepository implements iConsumerRepository
     {
         try {
             $ulbDetails = DB::table('tbl_ulb_list')
-                ->select('id', 'ulb_name', 'ulb', 'db_name', 
-                DB::raw("CASE WHEN status = 1 THEN true ELSE false END as status"))        
+                ->select('id', 'ulb_name', 'ulb', 
+                DB::raw("CASE WHEN status = 1 THEN true ELSE false END as Is_active"))        
                 ->where('id', 11)
                 ->first();
 
