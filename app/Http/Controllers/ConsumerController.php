@@ -692,4 +692,15 @@ class ConsumerController extends Controller
     {
         return $this->ConResp->DefaultConsumerAdd($req);
     }
+
+      /**
+     * Get Cheque dd details.
+     *
+     * @param  $request
+     * @return isActiveModel->getChequeDdDetails
+     */
+    public function isActiveModel(Request $req)
+    {
+        return $this->ConResp->isActiveModel($req);
+    }
 }
