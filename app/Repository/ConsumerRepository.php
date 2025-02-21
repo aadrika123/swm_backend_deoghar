@@ -4552,14 +4552,15 @@ class ConsumerRepository implements iConsumerRepository
                 ->where('id', 11)
                 ->first();
 
-                if (!$ulbDetails) {               
-                    return response()->json(['status' => false, 'message' => 'No record found'], 200);
-                }
-                
-                return response()->json(['status' => true, 'message' => "Detail Retrieved", 'data' => $ulbDetails], 200);
-                } catch (Exception $e) {
-                    return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null ], 500);
-                }
+            if (!$ulbDetails) {               
+                return response()->json(['status' => false, 'message' => 'No record found'], 200);
+            }
+            
+            return response()->json(['status' => true, 'message' => "Detail Retrieved", 'data' => $ulbDetails], 200);
+
+        } catch (Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null ], 500);
+        }
                 
     }
 

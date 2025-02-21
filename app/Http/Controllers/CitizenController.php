@@ -175,11 +175,11 @@ class CitizenController extends Controller
                 ->get();
             $total_tax = 0.00;
             $demand_upto = '';
-            $paid_status = 'true';
+            $paid_status = true;
             foreach ($demand as $dmd) {
                 $total_tax += $dmd->total_tax;
                 $demand_upto = $dmd->demand_date;
-                $paid_status = 'false';
+                $paid_status = false;
             }
 
             $con['id'] = $consumer->id;
