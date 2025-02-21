@@ -4535,4 +4535,32 @@ class ConsumerRepository implements iConsumerRepository
 
         return $consumer->id;
     }
+
+    /* 
+    * | This will return the DEOGHAR NAGAR NIGAM ULB Details 
+    * | From `tbl_ulb_list` table
+    * | 
+    * | Created Date : 21-02-2025
+    * | Created By : Alok    
+    */
+    public function isActiveModel(Request $request)
+    {
+        try {
+            $ulbDetails = DB::table('tbl_ulb_list')
+                ->select('id', 'ulb_name', 'ulb', 'db_name', 
+                DB::raw("CASE WHEN status = 1 THEN true ELSE false END as status"))        
+                ->where('id', 11)
+                ->first();
+
+                if (!$ulbDetails) {               
+                    return response()->json(['status' => false, 'message' => 'No record found'], 200);
+                }
+                
+                return response()->json(['status' => true, 'message' => "Detail Retrieved", 'data' => $ulbDetails], 200);
+                } catch (Exception $e) {
+                    return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null ], 500);
+                }
+                
+    }
+
 }
