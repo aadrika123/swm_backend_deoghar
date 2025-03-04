@@ -1196,18 +1196,16 @@ class ReportRepository implements iReportRepository
         $From = Carbon::create($From);
         $Upto = Carbon::create($Upto);
         $tc_details = $this->GetUserDetailsNew($tcId);
-        // foreach($tc_details as $details){
-        //     $val=[
-        //         "tcName"=>$details['name'],
-        //         "mobileNo" => $details['contactno'],
-        //         "userType" => $details['user_type'],
-        //     ];
-        //     $response[] = $val;
-        // }
-        // return $response;
-        $response['tcName'] = ($tc_details) ? $tc_details['name'] : "";
-        $response['mobileNo'] = ($tc_details) ? $tc_details['contactno'] : "";
-        $response['userType'] = ($tc_details) ? $tc_details['user_type'] : "";
+        foreach($tc_details as $details){
+            $vals=[
+                "tcName" => $details->name,
+                "mobileNo" => $details->contactno,
+                "userType" => $details->user_type,
+                "tcid" => $details->id,
+            ];
+             $response[] = $vals;
+        }
+        //return $response;
         $maindata = array();
 
 

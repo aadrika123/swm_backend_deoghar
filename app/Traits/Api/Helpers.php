@@ -63,7 +63,7 @@ trait Helpers
     {
         $user = "";
         if ($user_id)
-            $user = ViewUser::where('id', $user_id)->first();
+            $user = ViewUser::where('id', $user_id)->get();
         else
         $user = ViewUser::where('status',1)->get();
         return $user;
