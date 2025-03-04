@@ -205,7 +205,7 @@ class ReportRepository implements iReportRepository
         return $list;
     }
 
-
+    // jawd
     // public function DailyCollection($From, $Upto, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null)
     // {
     public function DailyCollectionv1($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId)
