@@ -59,6 +59,15 @@ trait Helpers
         return $user;
     }
 
+    static function GetUserDetailsNew($user_id)
+    {
+        $user = "";
+        if ($user_id)
+            $user = ViewUser::where('id', $user_id)->get();
+        else
+        $user = ViewUser::where('status',1)->get();
+        return $user;
+    }
     static function GetMonthlyFee($dbConn, $responseId, $type, $ulbId)
     {
 
