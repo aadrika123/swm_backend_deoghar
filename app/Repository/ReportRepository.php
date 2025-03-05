@@ -82,34 +82,34 @@ class ReportRepository implements iReportRepository
                 // changed by talib
 
                 if ($request->reportType == 'conAdd')
-                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType);
+                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType , $request);
 
                 if ($request->reportType == 'conDect')
-                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType);
+                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType , $request);
 
                 if ($request->reportType == 'tranDect')
 
-                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->mode, $request->consumerType);
+                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->mode, $request->consumerType , $request);
 
                 if ($request->reportType == 'cashVeri')
-                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,  $request->mode, $request->consumerType);
+                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,  $request->mode, $request->consumerType , $request);
 
                 if ($request->reportType == 'bankRec')
-                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory, $request->consumerType, $request->mode);
+                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory, $request->consumerType, $request->mode, $request->page, $request->perpage);
 
                 if ($request->reportType == 'tcDaily')
                   return  $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->consumerCategory);
 
                 if ($request->reportType == 'tranModeChange')
-                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory);
+                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,$request);
 
                 if ($request->reportType == 'consumereditlog')
-                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType);
+                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType,$request);
 
                 // if ($request->reportType == 'monthlyComparison')
                 //     $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
 
-                return response()->json(['status' => True, 'data' => ["details" => $response], 'msg' => ''], 200);
+                return response()->json(['status' => True, 'data' =>  $response, 'msg' => ''], 200);
             } else {
                 return response()->json(['status' => False, 'data' => $response, 'msg' => 'Undefined parameter supply'], 200);
             }
@@ -120,7 +120,7 @@ class ReportRepository implements iReportRepository
 
     public function DailyCollection($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId, Request $request)
     {
-        // Default Pagination Size (10 per page)
+        // Default Pagination Size (50 per page)
         $perPage = $request->perPage ?? 50;
         // Convert Dates to Proper Format
         $From = Carbon::parse($From)->format('Y-m-d');
@@ -150,7 +150,7 @@ class ReportRepository implements iReportRepository
         if ($apartmentId) $query->where('swm_transactions.apartment_id', $apartmentId);
         if ($mode) $query->where('swm_transactions.payment_mode', $mode);
 
-        // ✅ Paginate the Query (Default: 10 records per page)
+        // ✅ Paginate the Query (Default: 50 records per page)
         $allTrans = $query->orderBy('swm_transactions.transaction_date', 'DESC')->paginate($perPage);
 
         // ✅ Transform Data Efficiently Using `map()`
@@ -188,7 +188,7 @@ class ReportRepository implements iReportRepository
         $totCheque = $allTrans->where('payment_mode', 'Cheque')->sum('total_payable_amt');
         $totdd = $allTrans->where('payment_mode', 'DD')->sum('total_payable_amt');
         $list = [
-            'transactions' => $transactions,
+            'data' => $transactions,
             'totalCollection' => $totCollection,
             'totalDemand' => $totDemand,
             'totalPending' => $totPending,
@@ -205,12 +205,9 @@ class ReportRepository implements iReportRepository
         return $list;
     }
 
-    // jawd
-    // public function DailyCollection($From, $Upto, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null)
-    // {
-    public function DailyCollectionv1($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId)
-    {
 
+    public function DailyCollectionv1($From, $Upto, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId)
+    {
         $From = Carbon::create($From)->format('Y-m-d');
         $Upto = Carbon::create($Upto)->format('Y-m-d');
         $allTrans = $this->Transaction->select('swm_transactions.*', 'swm_consumers.ward_no', 'consumer_no', 'name', 'a.apt_code', 'a.apt_name')
@@ -300,6 +297,9 @@ class ReportRepository implements iReportRepository
 
         return $response;
     }
+
+
+       
     public function DailyCollection_old($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId, $request)
     {
         $perPage = $request->perPage ? $request->perPage : 10;
@@ -613,7 +613,58 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo, $consumerCategory, $tcId, $consumerType)
+    public function ConsumerAdd($From, $Upto, $ulbId, $wardNo, $consumerCategory, $tcId, $consumerType, Request $request)
+    {
+        // Default Pagination Size (50 per page)
+        $perPage = $request->perPage ?? 50;
+        $response = array();
+        $From = Carbon::create($From)->format('Y-m-d');
+        $Upto = Carbon::create($Upto)->format('Y-m-d');
+
+
+        $consumers = $this->Consumer;
+        $consumers = $consumers->latest('id')
+            ->where('is_deactivate', 0)
+            ->where('ulb_id', $ulbId)
+            ->whereBetween('entry_date', [$From, $Upto]);
+        if (isset($wardNo)) {
+            $consumers = $consumers->where('ward_no', $wardNo);
+        }
+        if (isset($consumerCategory)) {
+            $consumers = $consumers->where('consumer_category_id', $consumerCategory);
+        }
+
+        if (isset($consumerType)) {
+            $consumers = $consumers->where('consumer_type_id', $consumerType);
+        }
+
+        if (isset($tcId)) {
+            $consumers = $consumers->where('user_id', $tcId);
+        }
+        $consumers = $consumers->paginate($perPage);
+        $consumerDetails = $consumers->map(function ($consumer) {
+            $user = $this->GetUserDetails($consumer->user_id);
+            return [
+                'entryDate' => Carbon::create($consumer->entry_date)->format('d-m-Y'),
+                'consumerNo' => $consumer->consumer_no,
+                'wardNo' => $consumer->ward_no,
+                'consumerName' => $consumer->name,
+                'consumerMobile' => $consumer->mobile_no,
+                'entryBy' => ($user) ? $user->name : "",
+            ];
+        });
+        $response = [
+        'data' => $consumerDetails,
+        'current_page' => $consumers->currentPage(),
+        'total' => $consumers->total(),
+        'per_page' => $consumers->perPage(),
+        'last_page' => $consumers->lastPage(),
+        'next_page_url' => $consumers->nextPageUrl(),
+        'prev_page_url' => $consumers->previousPageUrl(),
+        ];
+        return $response;
+    }
+    public function ConsumerAddOld($From, $Upto, $ulbId, $wardNo, $consumerCategory, $tcId, $consumerType)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -692,8 +743,68 @@ class ReportRepository implements iReportRepository
     //     return $response;
     // }
 
+    public function ConsumerDect($From, $Upto, $ulbId, $wardNo = null, $consumerCategory = null, $tcId = null, $consumerType = null, Request $request)
+    {
+        $response = [];
 
-    public function ConsumerDect($From, $Upto, $ulbId, $wardNo = null, $consumerCategory = null, $tcId = null, $consumerType = null)
+        // Format date inputs
+        $From = Carbon::parse($From)->format('Y-m-d');
+        $Upto = Carbon::parse($Upto)->format('Y-m-d');
+        $perPage = $request->perPage ?? 50;
+        // Build initial query
+        $query = $this->ConsumerDeactivateDeatils->latest('id')
+            ->select(
+                'swm_consumer_deactivates.*',
+                'swm_consumers.name',
+                'consumer_no',
+                'mobile_no',
+                'swm_consumers.ward_no'
+            )
+            ->join('swm_consumers', 'swm_consumer_deactivates.consumer_id', '=', 'swm_consumers.id')
+            ->where('swm_consumer_deactivates.ulb_id', $ulbId)
+            ->whereBetween('deactivation_date', [$From, $Upto])
+            ->orderBy('swm_consumer_deactivates.id', 'desc');
+
+        // Apply filters
+        if (!empty($tcId)) {
+            $query->where('swm_consumer_deactivates.deactivated_by', $tcId);
+        }
+        if (!empty($wardNo)) {
+            $query->where('swm_consumers.ward_no', $wardNo);
+        }
+        if (!empty($consumerCategory)) {
+            $query->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+        if (!empty($consumerType)) {
+            $query->where('swm_consumers.consumer_type_id', $consumerType);
+        }
+
+        // Paginate results
+        $consumers = $query->paginate($perPage);
+        $DeactConsumers = $consumers->map(function ($consumer) {
+            $user = $this->GetUserDetails($consumer->deactivated_by);
+            return [
+                    'deactivateDate' => Carbon::parse($consumer->deactivation_date)->format('d-m-Y'),
+                    'consumerNo' => $consumer->consumer_no,
+                    'consumerName' => $consumer->name,
+                    'wardNo' => $consumer->ward_no,
+                    'consumerMobile' => $consumer->mobile_no,
+                    'deactivateBy' => $user ? $user->name : "",
+                    'remarks' => $consumer->remarks,
+                ];
+        });
+        $response = [
+            'data' => $DeactConsumers,
+            'current_page' => $consumers->currentPage(),
+            'total' => $consumers->total(),
+            'per_page' => $consumers->perPage(),
+            'last_page' => $consumers->lastPage(),
+            'next_page_url' => $consumers->nextPageUrl(),
+            'prev_page_url' => $consumers->previousPageUrl(),
+        ];
+        return $response;
+    }
+    public function ConsumerDectOld($From, $Upto, $ulbId, $wardNo = null, $consumerCategory = null, $tcId = null, $consumerType = null)
     {
         $response = [];
 
@@ -791,9 +902,81 @@ class ReportRepository implements iReportRepository
         return $response;
     } */
 
+    public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null, Request $request)
+    {
+        $response = [];
+        $From = Carbon::create($From)->format('Y-m-d');
+        $Upto = Carbon::create($Upto)->format('Y-m-d');
+        $perPage = $request->perPage ?? 50;
+        // Build query
+        $transaction = $this->TransactionDeactivate->latest('id')
+            ->select(
+                'swm_transaction_deactivates.*',
+                'transaction_date',
+                'total_payable_amt',
+                'swm_transactions.user_id as transby',
+                'name',
+                'consumer_no',
+                'swm_transactions.payment_mode',
+                'a.apt_code',
+                'a.apt_name',
+                'swm_consumers.ward_no',
+                'swm_consumers.consumer_type_id'
+            )
+            ->join('swm_transactions', 'swm_transaction_deactivates.transaction_id', '=', 'swm_transactions.id')
+            ->leftJoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
+            ->leftJoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
+            ->where('swm_transactions.ulb_id', $ulbId)
+            ->whereBetween('date', [$From, $Upto]);
 
+        // Apply filters
+        if (!empty($tcId)) {
+            $transaction->where('swm_transactions.user_id', $tcId);
+        }
+        if (!empty($wardNo)) {
+            $transaction->where('swm_consumers.ward_no', $wardNo);
+        }
+        if (!empty($consumerCategory)) {
+            $transaction->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+        if (!empty($paymentMode)) {
+            $transaction->where('swm_transactions.payment_mode', $paymentMode);
+        }
+        if (!empty($consumerType)) {
+            $transaction->where('swm_consumers.consumer_type_id', $consumerType);
+        }
+
+        // Paginate results
+        $transactions = $transaction->paginate($perPage);
+        $DeacTransactions = $transactions->map(function ($trans) {
+            return [
+                'deactivateDate' => Carbon::create($trans->date)->format('d-m-Y'),
+                'transactionDate' => Carbon::create($trans->transaction_date)->format('d-m-Y'),
+                'amount' => $trans->total_payable_amt,
+                'transactionBy' => $this->GetUserDetails($trans->transby)->name ?? '',
+                'consumerName' => $trans->name,
+                'wardNo' => $trans->ward_no,
+                'consumerNo' => $trans->consumer_no,
+                'apartmentName' => $trans->apt_name,
+                'apartmentCode' => $trans->apt_code,
+                'transactionMode' => $trans->payment_mode,
+                'deactivateBy' => $this->GetUserDetails($trans->user_id)->name ?? '',
+                'remarks' => $trans->remarks,
+            ];
+        });
+        $response = [
+            'data' => $DeacTransactions,
+            'current_page' => $transactions->currentPage(),
+            'total' => $transactions->total(),
+            'per_page' => $transactions->perPage(),
+            'last_page' => $transactions->lastPage(),
+            'next_page_url' => $transactions->nextPageUrl(),
+            'prev_page_url' => $transactions->previousPageUrl(),
+        ];
+        return $response;
+    }
     # =============added and Updateed by alok ===============
-    public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null)
+    public function TransactionDeactivateOld($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null)
     {
         $response = [];
         $From = Carbon::create($From)->format('Y-m-d');
@@ -903,8 +1086,82 @@ class ReportRepository implements iReportRepository
         return $response;
     } */
 
+    public function CashVerification($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null, Request $request)
+    {
+        $response = array();
+        $From = Carbon::create($From)->format('Y-m-d');
+        $Upto = Carbon::create($Upto)->addHours(24)->format('Y-m-d');
+        $perPage = $request->perPage ?? 50;
+
+        $transaction = $this->TransactionVerification->latest('id')
+            ->select(
+                'swm_transaction_verifications.*',
+                'transaction_date',
+                'total_payable_amt',
+                'swm_transactions.user_id as transby',
+                'name',
+                'consumer_no',
+                'swm_transactions.payment_mode',
+                'a.apt_code',
+                'a.apt_name',
+                'swm_consumers.ward_no'
+            )
+
+            ->join('swm_transactions', 'swm_transaction_verifications.transaction_id', '=', 'swm_transactions.id')
+            ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
+            ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
+            ->where('swm_transactions.ulb_id', $ulbId);
+
+        // Apply filters
+        if (!empty($tcId)) {
+            $transaction = $transaction->where('swm_transactions.user_id', $tcId);
+        }
+        if (!empty($wardNo)) {
+            $transaction = $transaction->where('swm_consumers.ward_no', $wardNo);
+        }
+        if (!empty($consumerCategory)) {
+            $transaction = $transaction->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+        if (!empty($paymentMode)) {
+            $transaction->where('swm_transactions.payment_mode', $paymentMode);
+        }
+        if (!empty($consumerType)) {
+            $transaction->where('swm_consumers.consumer_type_id', $consumerType);
+        }
+
+        $transactions = $transaction->whereBetween('verify_date', [$From, $Upto])
+            ->paginate($perPage);
+        $CashVerify = $transactions->map(function ($trans) {
+            return [
+                'verifiedDate' => Carbon::create($trans->verify_date)->format('d-m-Y'),
+                'transactionDate' => Carbon::create($trans->transaction_date)->format('d-m-Y'),
+                'amount' => $trans->amount,
+                'transactionBy' => $this->GetUserDetails($trans->transby)->name,
+                'consumerName' => $trans->name,
+                'consumerNo' => $trans->consumer_no,
+                'wardNo' => $trans->ward_no,
+                'apartmentName' => $trans->apt_name,
+                'apartmentCode' => $trans->apt_code,
+                'transactionMode' => $trans->payment_mode,
+                'verifiedBy' => $this->GetUserDetails($trans->verify_by)->name,
+                'remarks' => $trans->remarks,
+            ];
+        });
+        $response = [
+            'data' => $CashVerify,
+            'current_page' => $transactions->currentPage(),
+            'total' => $transactions->total(),
+            'per_page' => $transactions->perPage(),
+            'last_page' => $transactions->lastPage(),
+            'next_page_url' => $transactions->nextPageUrl(),
+            'prev_page_url' => $transactions->previousPageUrl(),
+        ];
+        
+        return $response;
+    }
+
     # =============added and Updateed by alok =============== 
-    public function CashVerification($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null)
+    public function CashVerificationOld($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null)
     {
         $response = array();
         $From = Carbon::create($From)->format('Y-m-d');
@@ -1012,8 +1269,150 @@ class ReportRepository implements iReportRepository
     //     return $response;
     // }
 
+    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId, $request, $consumerCategory, $consumerType, $mode, $page, $perPage)
+    {
+        $response = [];
+        $From = Carbon::create($From)->format('Y-m-d');
+        $Upto = Carbon::create($Upto)->format('Y-m-d');
+        $offset = ($page - 1) * $perPage;
+
+        // Count total records for pagination
+        $countSql = "
+        SELECT COUNT(*) as total 
+        FROM swm_transactions t
+        JOIN swm_bank_reconcile bc ON bc.transaction_id = t.id
+        LEFT JOIN swm_consumers c ON t.consumer_id = c.id
+        LEFT JOIN swm_apartments a ON t.apartment_id = a.id
+        LEFT JOIN swm_bank_reconcile_details bd ON bd.reconcile_id = bc.id
+        LEFT JOIN swm_transaction_details td ON td.transaction_id = t.id
+        WHERE t.transaction_date BETWEEN ? AND ?
+          AND t.paid_status > 0
+          AND t.ulb_id = ?
+        ";
+
+        $parameters = [$From, $Upto, $ulbId];
+
+        // Apply filters to count query
+        if ($consumerCategory) {
+            $countSql .= " AND c.consumer_category_id = ?";
+            $parameters[] = $consumerCategory;
+        }
+        if ($consumerType) {
+            $countSql .= " AND c.consumer_type_id = ?";
+            $parameters[] = $consumerType;
+        }
+        if (isset($request->wardNo)) {
+            $countSql .= " AND c.ward_no = ?";
+            $parameters[] = $request->wardNo;
+        }
+        if (isset($request->mode)) {
+            $countSql .= " AND t.payment_mode = ?";
+            $parameters[] = $mode;
+        }
+        if (isset($request->tcId)) {
+            $countSql .= " AND t.user_id = ?";
+            $parameters[] = $tcId;
+        }
+
+        // Get total count
+        $totalRecords = DB::connection($this->dbConn)->select($countSql, $parameters)[0]->total;
+
+        // Main Query with Pagination
+        $sql = "
+        SELECT 
+            reconcile_id, 
+            reconcilition_date, 
+            t.transaction_no, 
+            transaction_date, 
+            t.payment_mode, 
+            cheque_dd_no, 
+            cheque_dd_date, 
+            bank_name, 
+            branch_name, 
+            total_payable_amt, 
+            bc.remarks, 
+            t.user_id as transby, 
+            c.name, 
+            c.consumer_no, 
+            c.ward_no, 
+            a.apt_code, 
+            a.apt_name, 
+            bc.user_id as verify_by
+        FROM swm_transactions t
+        JOIN swm_bank_reconcile bc ON bc.transaction_id = t.id
+        LEFT JOIN swm_consumers c ON t.consumer_id = c.id
+        LEFT JOIN swm_apartments a ON t.apartment_id = a.id
+        LEFT JOIN swm_bank_reconcile_details bd ON bd.reconcile_id = bc.id
+        LEFT JOIN swm_transaction_details td ON td.transaction_id = t.id
+        WHERE t.transaction_date BETWEEN ? AND ?
+          AND t.paid_status > 0
+          AND t.ulb_id = ?
+        ";
+
+        // Apply filters to main query
+        if ($consumerCategory) {
+            $sql .= " AND c.consumer_category_id = ?";
+        }
+        if ($consumerType) {
+            $sql .= " AND c.consumer_type_id = ?";
+        }
+        if (isset($request->wardNo)) {
+            $sql .= " AND c.ward_no = ?";
+        }
+        if (isset($request->mode)) {
+            $sql .= " AND t.payment_mode = ?";
+        }
+        if (isset($request->tcId)) {
+            $sql .= " AND t.user_id = ?";
+        }
+
+        // Apply LIMIT and OFFSET for pagination
+        $sql .= " ORDER BY t.transaction_date ASC LIMIT ? OFFSET ?";
+        $parameters[] = $perPage;
+        $parameters[] = $offset;
+
+        // Execute query
+        $transactions = DB::connection($this->dbConn)->select($sql, $parameters);
+
+        // Process transactions
+        foreach ($transactions as $trans) {
+            $val = [
+                'clearanceDate' => $trans->reconcilition_date ? Carbon::create($trans->reconcilition_date)->format('d-m-Y') : '',
+                'amount' => $trans->total_payable_amt,
+                'transactionNo' => $trans->transaction_no,
+                'transactionDate' => Carbon::create($trans->transaction_date)->format('d-m-Y'),
+                'transactionBy' => $this->GetUserDetails($trans->transby)->name ?? 'Unknown',
+                'consumerName' => $trans->name,
+                'wardNo' => $trans->ward_no,
+                'consumerNo' => $trans->consumer_no,
+                'apartmentName' => $trans->apt_name,
+                'apartmentCode' => $trans->apt_code,
+                'transactionMode' => $trans->payment_mode,
+                'chequeNo' => $trans->cheque_dd_no,
+                'chequeDate' => $trans->cheque_dd_date ? Carbon::create($trans->cheque_dd_date)->format('d-m-Y') : '',
+                'bankName' => $trans->bank_name,
+                'branchName' => $trans->branch_name,
+                'verifiedBy' => $this->GetUserDetails($trans->verify_by)->name ?? 'Unknown',
+                'remarks' => $trans->remarks,
+            ];
+            $response[] = $val;
+        }
+
+        // Return paginated response
+        return [
+            'data' => $response,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total' => $totalRecords,
+            'last_page' => ceil($totalRecords / $perPage),
+            'next_page_url' => ($page * $perPage < $totalRecords) ? url()->current() . '?page=' . ($page + 1) : null,
+            'prev_page_url' => ($page > 1) ? url()->current() . '?page=' . ($page - 1) : null,
+        ];
+    }
+
+
     #=============some modification by alok=====================
-    public function BankReconcilliation($From, $Upto, $tcId = null, $ulbId, $request, $consumerCategory, $consumerType, $mode)
+    public function BankReconcilliationOld($From, $Upto, $tcId = null, $ulbId, $request, $consumerCategory, $consumerType, $mode)
     {
         $response = [];
         $From = Carbon::create($From)->format('Y-m-d');
@@ -1269,7 +1668,55 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory)
+    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory , $request = null)
+    {
+        $response = array();
+        $From = Carbon::create($From);
+        $Upto = Carbon::create($Upto);
+        $perPage = $request->perPage ?? 50;
+        $mchange = $this->TransactionModeChange->select('swm_log_transaction_mode.*', 'transaction_date', 'total_payable_amt as amount', 't.user_id as transby', 'c.name as consumer_name', 'c.consumer_no', 'a.apt_name', 'a.apt_code')
+            ->join('swm_transactions as t', 'swm_log_transaction_mode.transaction_id', '=', 't.id')
+            ->leftjoin('swm_consumers as c', 't.consumer_id', '=', 'c.id')
+            ->leftjoin('swm_apartments as a', 't.apartment_id', '=', 'a.id')
+            ->whereBetween('swm_log_transaction_mode.date', [$From, $Upto])
+            ->where('swm_log_transaction_mode.is_deactivate', 0)
+            ->where('t.ulb_id', $ulbId);
+        if (isset($tcId)){
+        $mchange = $mchange->where('swm_log_transaction_mode.user_id', $tcId);
+        }
+        if (isset($consumerCategory)){
+        $mchange = $mchange->where('c.consumer_category_id', $consumerCategory);
+        }
+        $mchange = $mchange->latest('swm_log_transaction_mode.id')->paginate($perPage);
+        $ModeData = $mchange->map(function ($trans) {
+            return [
+                'changeDate' => Carbon::parse($trans->date)->format('d-m-Y'),
+                'transactionDate' => Carbon::parse($trans->transaction_date)->format('d-m-Y'),
+                'amount' => $trans->amount,
+                'transactionBy' => $trans->transby ? $this->GetUserDetails($trans->transby)->name : 'Unknown',
+                'consumerName' => $trans->consumer_name ?? 'N/A',
+                'consumerNo' => $trans->consumer_no ?? 'N/A',
+                'apartmentName' => $trans->apt_name ?? 'N/A',
+                'apartmentCode' => $trans->apt_code ?? 'N/A',
+                'oldTransactionMode' => $trans->previous_mode ?? 'N/A',
+                'newTransactionMode' => $trans->current_mode ?? 'N/A',
+                'changeBy' => $trans->user_id ? $this->GetUserDetails($trans->user_id)->name : 'Unknown',
+            ];
+        });
+        
+        $response = [
+            'data' => $ModeData,
+            'current_page' => $mchange->currentPage(),
+            'per_page' => $mchange->perPage(),
+            'total' => $mchange->total(),
+            'last_page' => $mchange->lastPage(),
+            'next_page_url' => $mchange->nextPageUrl(),
+            'prev_page_url' => $mchange->previousPageUrl(),
+        ];
+
+        return $response;
+    }
+    public function TransactionModeChangeOld($From, $Upto, $tcId = null, $ulbId, $consumerCategory)
     {
         $response = array();
         $From = Carbon::create($From);
@@ -1356,9 +1803,79 @@ class ReportRepository implements iReportRepository
  */
 
 
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $consumertype = null , Request $request)
+    {
+        $response = [];
 
+        // Format date inputs
+        $From = Carbon::parse($From)->format('Y-m-d 00:00:01');
+        $Upto = Carbon::parse($Upto)->format('Y-m-d 23:59:59');
+        $perPage = $request->perPage ?? 50;
+        // Build initial query
+        $query = $this->mConsumerEditLog
+            ->select(
+                'swm_log_consumers.id',
+                'swm_consumers.consumer_no',
+                'swm_consumers.ward_no',
+                'swm_consumers.name',
+                'swm_consumers.mobile_no',
+                'swm_consumers.address',
+                'swm_consumers.pincode',
+                'swm_log_consumers.stampdate',
+                'swm_log_consumers.user_id',
+                'swm_consumer_categories.name as consumerCategory',
+                'swm_consumer_types.name as consumerType'
+            )
+            ->join('swm_consumers', 'swm_consumers.id', '=', 'swm_log_consumers.consumer_id')
+            ->join('swm_consumer_categories', 'swm_consumer_categories.id', '=', 'swm_consumers.consumer_category_id')
+            ->join('swm_consumer_types', 'swm_consumer_types.id', '=', 'swm_consumers.consumer_type_id')
+            ->where('swm_log_consumers.ulb_id', $ulbId)
+            ->whereBetween('swm_log_consumers.stampdate', [$From, $Upto]);
+
+        // Apply filters
+        if (!empty($tcId)) {
+            $query->where('swm_log_consumers.user_id', $tcId);
+        }
+        if (!empty($wardNo)) {
+            $query->where('swm_consumers.ward_no', $wardNo);
+        }
+        if (!empty($consumerCategory)) {
+            $query->where('swm_consumers.consumer_category_id', $consumerCategory);
+        }
+        if (!empty($consumertype)) {
+            $query->where('swm_consumers.consumer_type_id', $consumertype);
+        }
+
+        // Fetch results
+        $mchange = $query->paginate($perPage);
+        $consumerLog = $mchange->map(function ($detail) {
+            $user = $this->GetUserDetails($detail->user_id);
+            return [
+                'id' => $detail->id,
+                'consumer_no' => $detail->consumer_no,
+                'ward_no' => $detail->ward_no,
+                'mobile_no' => $detail->mobile_no,
+                'address' => $detail->address,
+                'pincode' => $detail->pincode,
+                'consumerCategory' => $detail->consumerCategory,
+                'consumerType' => $detail->consumerType,
+                'changeBy' => $user ? $user->name : "",
+                'changedDate' => Carbon::parse($detail->stampdate)->format('d-m-Y h:i A'),
+            ];
+        });
+        $response= [
+            'data' => $consumerLog,
+            'current_page' => $mchange->currentPage(),
+            'total' => $mchange->total(),
+            'per_page' => $mchange->perPage(),
+            'last_page' => $mchange->lastPage(),
+            'next_page_url' => $mchange->nextPageUrl(),
+            'prev_page_url' => $mchange->previousPageUrl(),
+        ];
+        return $response;
+    }
     # =============added and Updateed by alok ===============
-    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $consumertype = null)
+    public function consumerEditLogOld($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $consumertype = null)
     {
         $response = [];
 
