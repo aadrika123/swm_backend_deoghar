@@ -95,7 +95,7 @@ class ReportRepository implements iReportRepository
                     $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,  $request->mode, $request->consumerType , $request);
 
                 if ($request->reportType == 'bankRec')
-                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory, $request->consumerType, $request->mode, $request->page, $request->perpage);
+                    $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory, $request->consumerType, $request->mode, $request->page, $request->perPage);
 
                 if ($request->reportType == 'tcDaily')
                   return  $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->consumerCategory);
@@ -1589,6 +1589,8 @@ class ReportRepository implements iReportRepository
 
         return $response;
     }
+    
+
     public function TcDailyActivity($From, $Upto, $tcId, $ulbId, $consumerCategory)
     {
         $response = array();
@@ -1596,75 +1598,45 @@ class ReportRepository implements iReportRepository
         $Upto = Carbon::create($Upto);
         $tc_details = $this->GetUserDetailsNew($tcId);
         foreach($tc_details as $details){
-            $vals=[
+            $response=[
                 "tcName" => $details->name,
                 "mobileNo" => $details->contactno,
                 "userType" => $details->user_type,
                 "tcid" => $details->id,
             ];
-             $response[] = $vals;
-        }
-        //return $response;
-        $maindata = array();
-
-
-        for ($i = $From; $i <= $Upto; $i->modify('+1 day')) {
+            $maindata = array();
             $loginarr = array();
             $transarr = array();
             $denayarr = array();
             $denayamountarr = array();
             $collectionarr = array();
-            $date = $i->format("Y-m-d");
-            $val['date'] = $date;
 
-            $user_login = UserLoginDetail::where('user_id', $tcId)
-                ->whereDate('timestamp', $date)
+            $user_login = UserLoginDetail::where('user_id', $details->id)
+                ->whereBetween('timestamp', [$From,$Upto])
                 ->get();
 
             foreach ($user_login as $log) {
                 $loginarr[] = $log->login_time;
             }
-
             $consumer_count = $this->Consumer->where('user_id', $tcId)
-                ->whereDate('entry_date', $date)
+                ->whereBetween('entry_date', [$From, $Upto])
                 ->where('ulb_id', $ulbId)
                 ->count();
             if (isset($consumer)) {
                 $consumer_count->where('swm_consumer.consumer_category_id', $consumerCategory);
             }
 
-
-            $trans = $this->Transaction->where('user_id', $tcId)
-                ->whereDate('transaction_date', $date)
-                ->where('ulb_id', $ulbId)
-                ->get();
-            foreach ($trans as $t) {
-                $collectionarr[] = $t->total_payable_amt;
-                $transarr[] = Carbon::create($t->stampdate)->format('h:i:s a');
-            }
-
-            $deny = $this->PaymentDeny->where('user_id', $tcId)
-                ->whereDate('deny_date', $date)
-                ->where('ulb_id', $ulbId)
-                ->get();
-
-            foreach ($deny as $d) {
-                $denayamountarr[] = $d->outstanding_amount;
-                $denayarr[] = Carbon::create($d->deny_date)->format('h:i:s a');
-            }
-
             if ($loginarr) {
-                $val['loginTime'] = $loginarr;
-                $val['addedConsumerQuantity'] = $consumer_count;
-                $val['collectionTime'] = $transarr;
-                $val['collectionAmount'] = $collectionarr;
-                $val['paymentDeniedTime'] = $denayarr;
-                $val['paymentDeniedAmount'] = $denayamountarr;
-                $maindata[] = $val;
+                $vals['loginTime'] = $loginarr;
+                $vals['addedConsumerQuantity'] = $consumer_count;
+                $vals['collectionTime'] = $transarr;
+                $vals['collectionAmount'] = $collectionarr;
+                $vals['paymentDeniedTime'] = $denayarr;
+                $vals['paymentDeniedAmount'] = $denayamountarr;
             }
+            $maindata[] = $vals;
         }
         $response['data'] = $maindata;
-
         return $response;
     }
 
@@ -2223,8 +2195,89 @@ class ReportRepository implements iReportRepository
     }
  */
 
-    # =============added and Updateed by alok ===============
     public function DemandReceipt(Request $request)
+    {
+        try {
+            $response = array();
+            $user = Auth()->user();
+            $ulbId = $user->ulb_id ?? 11;
+            $perPage = $request->perPage ?? 50; // Number of records per page
+            $page = $request->page ?? 1; // Current page
+            $fromDate = $request->fromDate ? Carbon::create($request->fromDate)->format('Y-m-d') : null;
+            $toDate = $request->toDate ? Carbon::create($request->toDate)->format('Y-m-d') : null;
+
+            $query = DB::connection($this->dbConn)->table('swm_log_demand_receipts as d')
+                ->leftJoin('swm_consumers as c', 'd.consumer_id', '=', 'c.id')
+                ->leftJoin('swm_apartments as a', 'd.apartment_id', '=', 'a.id')
+                ->select(
+                    'd.*',
+                    'c.consumer_no',
+                    'c.name',
+                    'c.ward_no',
+                    'c.address',
+                    'a.apt_code',
+                    'a.apt_name',
+                    'a.ward_no as apt_ward_no',
+                    'a.apt_address'
+                )
+                ->where('d.ulb_id', $ulbId);
+
+            if ($fromDate && $toDate) {
+                $query->whereBetween('print_datetime', [$fromDate, $toDate]);
+            }
+
+            if ($request->wardNo) {
+                $query->where('a.ward_no', $request->wardNo);
+                $query->where('c.ward_no', $request->wardNo);
+            }
+
+            if ($request->category) {
+                $query->where('c.consumer_category_id', $request->category);
+            }
+
+            if ($request->type) {
+                $query->where('c.consumer_type_id', $request->type);
+            }
+            if ($request->tcId) {
+                $query->where('printed_by', $request->tcId);
+            }
+
+
+            $demandLog = $query->orderBy('print_datetime', 'desc')->paginate($perPage, ['*'], 'page', $page);
+
+            foreach ($demandLog as $d) {
+                $val['receiptNo'] = $d->receipt_no;
+                $val['consumerNo'] = ($d->consumer_id > 0) ? $d->consumer_no : "";
+                $val['consumerName'] = ($d->consumer_id > 0) ? $d->name : "";
+                $val['apartmentCode'] = ($d->apartment_id > 0) ? $d->apt_code : "";
+                $val['apartmentName'] = ($d->apartment_id > 0) ? $d->apt_name : "";
+                $val['wardNo'] = ($d->ward_no) ? $d->ward_no : $d->apt_ward_no;
+                $val['address'] = ($d->address) ? $d->address : $d->apt_address;
+                $val['printedBy'] = $this->GetUserDetails($d->printed_by)->name ?? "";
+                $val['printDateTime'] = date('d-m-Y h:i A', strtotime($d->print_datetime));
+                $val['amount'] = $d->amount;
+                $response[] = $val;
+            }
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'data' => $response,                    
+                    'current_page' => $demandLog->currentPage(),
+                    'total' => $demandLog->total(),
+                    'per_page' => $demandLog->perPage(),
+                    'last_page' => $demandLog->lastPage(),
+                    'next_page_url' => $demandLog->nextPageUrl(),
+                    'prev_page_url' => $demandLog->previousPageUrl(),
+                ],
+                'msg' => ''
+            ], 200);
+            return response()->json(['status' => True, 'data' => ['data' => $response], 'msg' => ''], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+        }
+    }
+    # =============added and Updateed by alok ===============
+    public function DemandReceiptOld(Request $request)
     {
         try {
             $response = array();
