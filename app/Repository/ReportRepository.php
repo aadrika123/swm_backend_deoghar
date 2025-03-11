@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\Consumer;
 use App\Models\ConsumerDeactivateDeatils;
 use App\Models\Transaction;
@@ -1589,56 +1590,111 @@ class ReportRepository implements iReportRepository
 
         return $response;
     }
-    
 
-    public function TcDailyActivity($From, $Upto, $tcId, $ulbId, $consumerCategory)
+    
+    public function TcDailyActivity($From, $Upto, $Id = null, $ulbId, $consumerCategory = null)
     {
         $response = array();
         $From = Carbon::create($From);
         $Upto = Carbon::create($Upto);
-        $tc_details = $this->GetUserDetailsNew($tcId);
-        foreach($tc_details as $details){
-            $response=[
-                "tcName" => $details->name,
-                "mobileNo" => $details->contactno,
-                "userType" => $details->user_type,
-                "tcid" => $details->id,
-            ];
-            $maindata = array();
-            $loginarr = array();
-            $transarr = array();
-            $denayarr = array();
-            $denayamountarr = array();
-            $collectionarr = array();
+        $tcList = $this->GetUserDetailsNew($Id);
 
-            $user_login = UserLoginDetail::where('user_id', $details->id)
-                ->whereBetween('timestamp', [$From,$Upto])
-                ->get();
+        $allTcData = [];
 
-            foreach ($user_login as $log) {
-                $loginarr[] = $log->login_time;
-            }
-            $consumer_count = $this->Consumer->where('user_id', $tcId)
-                ->whereBetween('entry_date', [$From, $Upto])
-                ->where('ulb_id', $ulbId)
-                ->count();
-            if (isset($consumer)) {
-                $consumer_count->where('swm_consumer.consumer_category_id', $consumerCategory);
+        foreach ($tcList as $tc) {
+            $tcData = [];
+            $tcData['tcName'] = $tc->name;
+            $tcData['mobileNo'] = $tc->contactno;
+            $tcData['userType'] = $tc->user_type;
+            $tcId = $tc->id;
+
+            $maindata = [];
+
+            for ($date = clone $From; $date <= $Upto; $date->modify('+1 day')) {
+                $loginarr = [];
+                $transarr = [];
+                $denayarr = [];
+                $denayamountarr = [];
+                $collectionarr = [];
+                $val = [];
+                $val['date'] = $date->format("Y-m-d");
+
+                // Get user login details
+                $user_login = UserLoginDetail::where('user_id', $tcId)
+                    ->whereDate('timestamp', $val['date'])
+                    ->get();
+
+                foreach ($user_login as $log) {
+                    $loginarr[] = $log->login_time;
+                }
+
+                // Get added consumers count
+                $consumer_count_query = $this->Consumer->where('user_id', $tcId)
+                    ->whereDate('entry_date', $val['date'])
+                    ->where('ulb_id', $ulbId);
+
+                if ($consumerCategory) {
+                    $consumer_count_query->where('swm_consumers.consumer_category_id', $consumerCategory);
+                }
+
+                $consumer_count = $consumer_count_query->count();
+
+                // Get transactions (collections)
+                $trans = $this->Transaction->where('user_id', $tcId)
+                    ->whereDate('transaction_date', $val['date'])
+                    ->where('ulb_id', $ulbId)
+                    ->get();
+
+                foreach ($trans as $t) {
+                    $collectionarr[] = $t->total_payable_amt;
+                    $transarr[] = Carbon::create($t->stampdate)->format('h:i:s a');
+                }
+
+                // Get denied payments
+                $deny = $this->PaymentDeny->where('user_id', $tcId)
+                    ->whereDate('deny_date', $val['date'])
+                    ->where('ulb_id', $ulbId)
+                    ->get();
+
+                foreach ($deny as $d) {
+                    $denayamountarr[] = $d->outstanding_amount;
+                    $denayarr[] = Carbon::create($d->deny_date)->format('h:i:s a');
+                }
+
+                // Ensure data is always added
+                $val['loginTime'] = $loginarr ?: [];
+                $val['addedConsumerQuantity'] = $consumer_count;
+                $val['collectionTime'] = $transarr ?: [];
+                $val['collectionAmount'] = $collectionarr ?: [];
+                $val['paymentDeniedTime'] = $denayarr ?: [];
+                $val['paymentDeniedAmount'] = $denayamountarr ?: [];
+                $maindata[] = $val;
             }
 
-            if ($loginarr) {
-                $vals['loginTime'] = $loginarr;
-                $vals['addedConsumerQuantity'] = $consumer_count;
-                $vals['collectionTime'] = $transarr;
-                $vals['collectionAmount'] = $collectionarr;
-                $vals['paymentDeniedTime'] = $denayarr;
-                $vals['paymentDeniedAmount'] = $denayamountarr;
-            }
-            $maindata[] = $vals;
+            $tcData['data'] = $maindata;
+            $allTcData[] = $tcData;
         }
-        $response['data'] = $maindata;
-        return $response;
+
+        $perPage = 50; // Set items per page
+        $page = request()->get('page', 1); // Get current page
+        $total = count($allTcData);
+        $paginatedData = array_slice($allTcData, ($page - 1) * $perPage, $perPage);
+
+        $paginator = new LengthAwarePaginator($paginatedData, $total, $perPage, $page);
+        $response = [
+            'data' => $paginatedData,
+            'current_page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
+            'next_page_url' => $paginator->nextPageUrl(),
+            'prev_page_url' => $paginator->previousPageUrl(),
+        ];
+
+        return response()->json($response);
     }
+
+
 
     public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory , $request = null)
     {
