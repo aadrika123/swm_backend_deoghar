@@ -8,6 +8,7 @@ use App\Repository\iReportRepository;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\Api\Helpers;
 
@@ -153,4 +154,9 @@ class ReportController extends Controller
             return $this->responseMsgs(true,  $e->getMessage(), "");
         }
     }
+    // public function generateNextMonthDemand()
+    // {
+    //     Artisan::call('demand:generate-next-month');
+    //     return response()->json(['message' => 'Next month’s demands generation triggered successfully!']);
+    // }
 }
