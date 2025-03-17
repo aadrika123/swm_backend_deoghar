@@ -32,7 +32,7 @@ class swmDemand
             $nextMonthEnd = Carbon::now()->addMonth()->endOfMonth()->toDateString();
 
             // SQL to fetch consumers who have paid for the current month but not the next month
-            $sql = "WITH demand_generated AS (
+            $sql = "WIT0H demand_generated AS (
                            -- Find consumers who had a demand generated in the current month
                              SELECT DISTINCT consumer_id ,total_tax
                              FROM swm_demands

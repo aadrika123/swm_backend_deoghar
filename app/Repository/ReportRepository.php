@@ -24,8 +24,6 @@ use PhpOption\None;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 
-use Illuminate\Pagination\LengthAwarePaginator;
-
 /**
  * | Created On-09-24-2022 
  * | Created By-
@@ -78,7 +76,7 @@ class ReportRepository implements iReportRepository
 
                 //changed by talib
                 if ($request->reportType == 'dailyCollection')
-                    $response = $this->DailyCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId);
+                    $response = $this->DailyCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId ,$request);
 
                 if ($request->reportType == 'tcCollection')
                     $response = $this->TcCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId);
