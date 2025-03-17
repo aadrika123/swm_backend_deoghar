@@ -657,47 +657,6 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo, $consumerCategory)
-    {
-        $response = array();
-        $From = Carbon::create($From)->format('Y-m-d');
-        $Upto = Carbon::create($Upto)->format('Y-m-d');
-
-
-        $transaction = $this->TransactionDeactivate->latest('id')
-            ->select('swm_transaction_deactivates.*', 'transaction_date', 'total_payable_amt', 'swm_transactions.user_id as transby', 'name', 'consumer_no', 'swm_transactions.payment_mode', 'a.apt_code', 'a.apt_name', 'swm_consumers.ward_no')
-            ->join('swm_transactions', 'swm_transaction_deactivates.transaction_id', '=', 'swm_transactions.id')
-            ->leftjoin('swm_consumers', 'swm_transactions.consumer_id', '=', 'swm_consumers.id')
-            ->leftjoin('swm_apartments as a', 'swm_transactions.apartment_id', '=', 'a.id')
-            ->where('swm_transactions.ulb_id', $ulbId);
-        if (isset($tcId))
-            $transaction = $transaction->where('swm_transactions.user_id', $tcId);
-        if (isset($wardNo))
-            $transaction = $transaction->where('swm_consumers.ward_no', $wardNo);
-        if (isset($consumerCategory))
-            $transaction = $transaction->where('swm_consumers.consumer_category_id', $consumerCategory);
-
-        $transaction = $transaction->whereBetween('date', [$From, $Upto])
-            ->paginate(1000);
-
-        foreach ($transaction as $trans) {
-            $val['deactivateDate'] = Carbon::create($trans->date)->format('d-m-Y');
-            $val['transactionDate'] = Carbon::create($trans->transaction_date)->format('d-m-Y');
-            $val['amount'] = $trans->total_payable_amt;
-            $val['transactionBy'] = $this->GetUserDetails($trans->transby)->name;
-            $val['consumerName'] = $trans->name;
-            $val['wardNo'] = $trans->ward_no;
-            $val['consumerNo'] = $trans->consumer_no;
-            $val['apartmentName'] = $trans->apt_name;
-            $val['apartmentCode'] = $trans->apt_code;
-            $val['transactionMode'] = $trans->payment_mode;
-            $val['deactivateBy'] = $this->GetUserDetails($trans->user_id)->name;
-            $val['remarks'] = $trans->remarks;
-            $response[] = $val;
-        }
-        return $response;
-    } 
-
     public function TransactionDeactivate($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $paymentMode = null, $consumerType = null, Request $request)
     {
         $response = [];
