@@ -37,6 +37,7 @@ use PhpOption\None;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Razorpay\Api\Card;
+use App\BLL\SwmDemand;
 
 /**
  * | Created On-08-09-2022 
@@ -1870,10 +1871,10 @@ class ConsumerRepository implements iConsumerRepository
                             " . $checkTc . "
                             GROUP BY 
                             t.user_id, 
-                            t.transaction_date"; 
+                            t.transaction_date";
 
-                 $collections = DB::connection($this->dbConn)->select($sql);
-                 foreach ($collections as $collection) {
+                $collections = DB::connection($this->dbConn)->select($sql);
+                foreach ($collections as $collection) {
 
                     # New Query
                     $userDtls = DB::table('tbl_user_mstr')
@@ -1908,7 +1909,7 @@ class ConsumerRepository implements iConsumerRepository
     public function getCashVerificationFullDetails(Request $request)
     {
         try {
-            
+
             $response = array();
             $ulbId = $this->GetUlbId($request->user()->id);
             if (isset($request->tcId) and isset($request->date)) {
@@ -1962,7 +1963,7 @@ class ConsumerRepository implements iConsumerRepository
                         $totalCheque += $collection->totaldd;
 
                     if ($collection->payment_mode == 'online') //added
-                        $totalOnline += $collection->total_payable_amt;    
+                        $totalOnline += $collection->total_payable_amt;
 
                     $val['transactionId'] = $collection->trans_id;
                     $val['transactionNo'] = $collection->transaction_no;
@@ -2229,7 +2230,7 @@ class ConsumerRepository implements iConsumerRepository
             WHERE (transaction_date BETWEEN '$From' and '$Upto') and t.paid_status>0 and t.ulb_id=" . $ulbId . " " . $whereparam . " order by t.id desc";
 
 
-           $transactions = DB::connection($this->dbConn)->select($sql);
+            $transactions = DB::connection($this->dbConn)->select($sql);
 
             foreach ($transactions as $transaction) {
                 $collection  = $this->Collections->where('transaction_id', $transaction->trans_id)->where('ulb_id', $ulbId)->orderBy('id')->get();
@@ -2313,7 +2314,7 @@ class ConsumerRepository implements iConsumerRepository
 
             $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
             if ($consumerList->isEmpty()) {
-                 throw new Exception("No consumers found");
+                throw new Exception("No consumers found");
             }
             //     $perPage = $request->perPage,
             //     $columns = ['*'],
@@ -2540,7 +2541,7 @@ class ConsumerRepository implements iConsumerRepository
 
             // $ulbId = $this->GetUlbIds($request->userId);
             $ulbId = $request->ulbId ?? 11;
-            $dbReceipt="db_swm";
+            $dbReceipt = "db_swm";
             $response = array();
             if (isset($request->transactionNo)) {
                 $transactionNo = $request->transactionNo;
@@ -2948,42 +2949,42 @@ class ConsumerRepository implements iConsumerRepository
             $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
     
             $query = $this->DemandAdjustment->select(
-                DB::raw('swm_demand_adjustments.*, c.name, consumer_no, address, c.ward_no, apt_name, apt_code, apt_address, a.ward_no as apt_ward, c.consumer_type_id, c.consumer_category_id') 
+                DB::raw('swm_demand_adjustments.*, c.name, consumer_no, address, c.ward_no, apt_name, apt_code, apt_address, a.ward_no as apt_ward, c.consumer_type_id, c.consumer_category_id')
             )
-            ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
-            ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
+                ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
+                ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
 
-            ->leftjoin('swm_consumer_types as ct', 'ct.id', 'c.consumer_type_id') //added
-            ->leftjoin('swm_consumer_categories as cc', 'cc.id', 'c.consumer_category_id') //added
+                ->leftjoin('swm_consumer_types as ct', 'ct.id', 'c.consumer_type_id') //added
+                ->leftjoin('swm_consumer_categories as cc', 'cc.id', 'c.consumer_category_id') //added
 
-            ->where('swm_demand_adjustments.ulb_id', $ulbId)
-            ->where('swm_demand_adjustments.is_deactivate', 0)
-            ->whereBetween(DB::raw('DATE(swm_demand_adjustments.stampdate)'), [$fromDate, $uptoDate]);
-    
+                ->where('swm_demand_adjustments.ulb_id', $ulbId)
+                ->where('swm_demand_adjustments.is_deactivate', 0)
+                ->whereBetween(DB::raw('DATE(swm_demand_adjustments.stampdate)'), [$fromDate, $uptoDate]);
+
             // ADDED: Apply filters dynamically based on input values
             if (isset($request->wardNo) && $request->wardNo !== '') {
                 $query->where('c.ward_no', $request->wardNo);
             }
-            
+
             if (isset($request->consumerType) && $request->consumerType !== '') {
                 $query->where('c.consumer_type_id', $request->consumerType);
             }
-            
+
             if (isset($request->consumerCategory) && $request->consumerCategory !== '') {
                 $query->where('c.consumer_category_id', $request->consumerCategory);
             }
-            
+
             if (isset($request->tcId) && $request->tcId !== '') {
                 $query->where('swm_demand_adjustments.user_id', $request->tcId);
             }
 
-            
+
             $paymentAdjustment = $query->get();
-            
+
             if ($paymentAdjustment->isEmpty()) {
                 return response()->json(['status' => true, 'data' => [], 'msg' => 'No data found for the given filters.'], 200);
             }
-            
+
             foreach ($paymentAdjustment as $adj) {
                 $val = [];
                 $val['consumerName'] = $adj->name;
@@ -3001,15 +3002,15 @@ class ConsumerRepository implements iConsumerRepository
                 $val['consumerType'] = $adj->consumer_type_name; // Added consumer type to response
                 $response[] = $val;
             }
-    
+
             return response()->json(['status' => true, 'data' => $response, 'msg' => ''], 200);
         } catch (Exception $e) {
             return response()->json(['status' => false, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
 
- 
-    
+
+
 
     public function ConsumerOrApartmentList(Request $request)
     {
@@ -3456,7 +3457,7 @@ class ConsumerRepository implements iConsumerRepository
                         'paidUpto'    => $req->payUpto,
                         'paidAmount'  => $req->amount,
                         'paymentMode' => 'ONLINE',
-                        'userId'=> $req->userId
+                        'userId' => $req->userId
                     ]);
                     $responseData = $consumerRepo->makePayment($newReqs);
                 }
@@ -4627,21 +4628,34 @@ class ConsumerRepository implements iConsumerRepository
     {
         try {
             $ulbDetails = DB::table('tbl_ulb_list')
-                ->select('id', 'ulb_name', 'ulb', 
-                DB::raw("CASE WHEN status = 1 THEN true ELSE false END as Is_active"))        
+                ->select(
+                    'id',
+                    'ulb_name',
+                    'ulb',
+                    DB::raw("CASE WHEN status = 1 THEN true ELSE false END as Is_active")
+                )
                 ->where('id', 11)
                 ->first();
 
-            if (!$ulbDetails) {               
+            if (!$ulbDetails) {
                 return response()->json(['status' => false, 'message' => 'No record found'], 200);
             }
-            
+
             return response()->json(['status' => true, 'message' => "Detail Retrieved", 'data' => $ulbDetails], 200);
-
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null ], 500);
+            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null], 500);
         }
-                
     }
-
+    public function demandGenerate(Request $req)
+    {
+        $swmBll = new SwmDemand($req);
+        try {
+            $shop = $swmBll->demandGenerate($req);
+            DB::commit();
+            // $tranId = isset($response['TranId']) ? $response['TranId'] : null;
+            return response()->json(['status' => true, 'message' => "Detail Retrieved",], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => null], 500);
+        }
+    }
 }

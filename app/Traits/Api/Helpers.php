@@ -58,6 +58,12 @@ trait Helpers
             $user = ViewUser::where('id', $user_id)->first();
         return $user;
     }
+    static function GetAllUserDetails()
+    {
+        $user = "";
+        $user = ViewUser::where('status', 1)->get();
+        return $user;
+    }
 
     static function GetUserDetailsNew($user_id)
     {
