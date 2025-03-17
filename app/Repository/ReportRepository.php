@@ -1806,63 +1806,63 @@ class ReportRepository implements iReportRepository
         ]);
     }
 
-    public function DemandReceipt(Request $request)
-    {
-        try {
-            $response = array();
-            $user = Auth()->user();
-            $ulbId = $user->ulb_id ?? 11;
-            $userId = $user->id;
-            $whereParam = "";
-            $whereParam1 = "";
-            $whereConsumer = "";
+    // public function DemandReceipt(Request $request)
+    // {
+    //     try {
+    //         $response = array();
+    //         $user = Auth()->user();
+    //         $ulbId = $user->ulb_id ?? 11;
+    //         $userId = $user->id;
+    //         $whereParam = "";
+    //         $whereParam1 = "";
+    //         $whereConsumer = "";
 
-            if (isset($request->fromDate) && isset($request->toDate)) {
-                $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
-                $toDate = Carbon::create($request->toDate)->format('Y-m-d');
-                $whereParam .= " and (DATE(print_datetime) between '" . $fromDate . "' and '" . $toDate . "')";
-            }
-            if (isset($request->tcId))
-                $whereParam .= " and printed_by=" . $request->tcId;
+    //         if (isset($request->fromDate) && isset($request->toDate)) {
+    //             $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
+    //             $toDate = Carbon::create($request->toDate)->format('Y-m-d');
+    //             $whereParam .= " and (DATE(print_datetime) between '" . $fromDate . "' and '" . $toDate . "')";
+    //         }
+    //         if (isset($request->tcId))
+    //             $whereParam .= " and printed_by=" . $request->tcId;
 
-            if (isset($request->wardNo)) {
-                $whereParam1 .= " and a.ward_no='" . $request->wardNo . "'";
-                $whereConsumer .= " and c.ward_no='" . $request->wardNo . "'";
-            }
+    //         if (isset($request->wardNo)) {
+    //             $whereParam1 .= " and a.ward_no='" . $request->wardNo . "'";
+    //             $whereConsumer .= " and c.ward_no='" . $request->wardNo . "'";
+    //         }
 
-            if (isset($request->category))
-                $whereConsumer .= " and consumer_category_id=" . $request->category;
+    //         if (isset($request->category))
+    //             $whereConsumer .= " and consumer_category_id=" . $request->category;
 
-            if (isset($request->type))
-                $whereConsumer .= " and consumer_type_id=" . $request->type;
+    //         if (isset($request->type))
+    //             $whereConsumer .= " and consumer_type_id=" . $request->type;
 
-            $sql = "SELECT d.*,c.consumer_no,c.name,c.ward_no,c.address,a.apt_code,a.apt_name,a.ward_no as apt_ward_no,a.apt_address from swm_log_demand_receipts d 
-                    LEFT JOIN swm_consumers c on d.consumer_id=c.id " . $whereConsumer . "
-                    LEFT JOIN swm_apartments a on d.apartment_id=a.id " . $whereParam1 . "
-                    WHERE d.ulb_id = " . $ulbId . " " . $whereParam . "
-                    ORDER BY print_datetime desc";
+    //         $sql = "SELECT d.*,c.consumer_no,c.name,c.ward_no,c.address,a.apt_code,a.apt_name,a.ward_no as apt_ward_no,a.apt_address from swm_log_demand_receipts d 
+    //                 LEFT JOIN swm_consumers c on d.consumer_id=c.id " . $whereConsumer . "
+    //                 LEFT JOIN swm_apartments a on d.apartment_id=a.id " . $whereParam1 . "
+    //                 WHERE d.ulb_id = " . $ulbId . " " . $whereParam . "
+    //                 ORDER BY print_datetime desc";
 
-            $demandLog = DB::connection($this->dbConn)->select($sql);
+    //         $demandLog = DB::connection($this->dbConn)->select($sql);
 
-            foreach ($demandLog as $d) {
-                $val['receiptNo'] = $d->receipt_no;
-                $val['consumerNo'] = ($d->consumer_id > 0) ? $d->consumer_no : "";
-                $val['consumerName'] = ($d->consumer_id > 0) ? $d->name : "";
-                $val['apartmentCode'] = ($d->apartment_id > 0) ? $d->apt_code : "";
-                $val['apartmentName'] = ($d->apartment_id > 0) ? $d->apt_name : "";
-                $val['wardNo'] = ($d->ward_no) ? $d->ward_no : $d->apt_ward_no;
-                $val['address'] = ($d->address) ? $d->address : $d->apt_address;
-                $val['printedBy'] = $this->GetUserDetails($d->printed_by)->name ?? "";
-                $val['printDateTime'] = date('d-m-Y h:i A', strtotime($d->print_datetime));
-                $val['amount'] = $d->amount;
-                $response[] = $val;
-            }
+    //         foreach ($demandLog as $d) {
+    //             $val['receiptNo'] = $d->receipt_no;
+    //             $val['consumerNo'] = ($d->consumer_id > 0) ? $d->consumer_no : "";
+    //             $val['consumerName'] = ($d->consumer_id > 0) ? $d->name : "";
+    //             $val['apartmentCode'] = ($d->apartment_id > 0) ? $d->apt_code : "";
+    //             $val['apartmentName'] = ($d->apartment_id > 0) ? $d->apt_name : "";
+    //             $val['wardNo'] = ($d->ward_no) ? $d->ward_no : $d->apt_ward_no;
+    //             $val['address'] = ($d->address) ? $d->address : $d->apt_address;
+    //             $val['printedBy'] = $this->GetUserDetails($d->printed_by)->name ?? "";
+    //             $val['printDateTime'] = date('d-m-Y h:i A', strtotime($d->print_datetime));
+    //             $val['amount'] = $d->amount;
+    //             $response[] = $val;
+    //         }
 
-            return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
-        } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
-        }
-    }
+    //         return response()->json(['status' => True, 'data' => $response, 'msg' => ''], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
 
 
     public function DemandReceipt(Request $request)
