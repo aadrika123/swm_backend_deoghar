@@ -68,10 +68,16 @@ trait Helpers
     static function GetUserDetailsNew($user_id)
     {
         $user = "";
+        $ulbId = 11;
         if ($user_id)
-            $user = ViewUser::where('id', $user_id)->get();
+            $sql = "SELECT distinct um.name,um.contactno,um.user_type,um.id FROM view_user_mstr um
+            left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
+            WHERE um.user_type IN ('Tax Collector', 'Team Leader', 'Jsk') and uw.ulb_id=$ulbId and um.id=$user_id order by name asc";
         else
-        $user = ViewUser::where('status',1)->get();
+        $sql = "SELECT distinct um.name,um.contactno,um.user_type,um.id FROM view_user_mstr um
+            left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
+            WHERE um.user_type IN ('Tax Collector', 'Team Leader', 'Jsk') and uw.ulb_id=$ulbId order by name asc";
+        $user = DB::select($sql);
         return $user;
     }
     static function GetMonthlyFee($dbConn, $responseId, $type, $ulbId)

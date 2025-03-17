@@ -1,6 +1,9 @@
 #!/usr/bin/env php
 <?php
 
+// use App\Console\Commands\GenerateNextMonthDemand;
+use Illuminate\Http\Request;
+
 define('LARAVEL_START', microtime(true));
 
 /*
@@ -47,7 +50,14 @@ $status = $kernel->handle(
 | down the process. This is the last thing to happen to the request.
 |
 */
+// Create an instance of the command
+// $command = new GenerateNextMonthDemand(new Request());
 
-$kernel->terminate($input, $status);
+// Execute the handle method
+// $command->handle();
 
-exit($status);
+// echo "Next month’s demands generated successfully!\n";
+
+// $kernel->terminate($input, $status);
+
+// exit($status);
