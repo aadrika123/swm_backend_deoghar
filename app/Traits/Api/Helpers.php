@@ -69,7 +69,7 @@ trait Helpers
     {
         $user = "";
         $ulbId = 11;
-        if ($user_id)
+        if (isset($user_id))
             $sql = "SELECT distinct um.name,um.contactno,um.user_type,um.id FROM view_user_mstr um
             left join (select user_id,ulb_id from tbl_user_ward group by user_id,ulb_id) uw on uw.user_id=um.id 
             WHERE um.user_type IN ('Tax Collector', 'Team Leader', 'Jsk') and uw.ulb_id=$ulbId and um.id=$user_id order by name asc";

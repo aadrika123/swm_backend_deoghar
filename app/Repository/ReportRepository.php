@@ -76,36 +76,36 @@ class ReportRepository implements iReportRepository
 
                 //changed by talib
                 if ($request->reportType == 'dailyCollection')
-                    $response = $this->DailyCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId ,$request);
+                    $response = $this->DailyCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId, $request);
 
                 if ($request->reportType == 'tcCollection')
                     $response = $this->TcCollection($request->fromDate, $request->toDate, $request->tcId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request->apartmentId, $request->mode, $ulbId);
                 // changed by talib
 
                 if ($request->reportType == 'conAdd')
-                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType , $request);
+                    $response = $this->ConsumerAdd($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType, $request);
 
                 if ($request->reportType == 'conDect')
-                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType , $request);
+                    $response = $this->ConsumerDect($request->fromDate, $request->toDate, $ulbId, $request->wardNo, $request->consumerCategory, $request->tcId, $request->consumerType, $request);
 
                 if ($request->reportType == 'tranDect')
 
-                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->mode, $request->consumerType , $request);
+                    $response = $this->TransactionDeactivate($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->mode, $request->consumerType, $request);
 
                 if ($request->reportType == 'cashVeri')
-                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,  $request->mode, $request->consumerType , $request);
+                    $response = $this->CashVerification($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,  $request->mode, $request->consumerType, $request);
 
                 if ($request->reportType == 'bankRec')
                     $response = $this->BankReconcilliation($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request, $request->consumerCategory, $request->consumerType, $request->mode, $request->page, $request->perPage);
 
                 if ($request->reportType == 'tcDaily')
-                  $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->consumerCategory);
+                    $response = $this->TcDailyActivity($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->consumerCategory, $request);
 
                 if ($request->reportType == 'tranModeChange')
-                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory,$request);
+                    $response = $this->TransactionModeChange($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request);
 
                 if ($request->reportType == 'consumereditlog')
-                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType,$request);
+                    $response = $this->consumerEditLog($request->fromDate, $request->toDate, $request->tcId, $ulbId, $request->wardNo, $request->consumerCategory, $request->consumerType, $request);
 
                 // if ($request->reportType == 'monthlyComparison')
                 //     $response = $this->monthlyComparison($request->fromMonth, $request->wardNo, $request->consumerCategory, $request->tcId);
@@ -217,7 +217,7 @@ class ReportRepository implements iReportRepository
         //  Return Paginated Response
         return $list;
     }
-   
+
     public function DailyCollection_old($From, $Upto, $tcId = null, $wardNo = null, $consumerCategory = null, $consumertype = null, $apartmentId = null, $mode = null, $ulbId, $request)
     {
         $perPage = $request->perPage ? $request->perPage : 10;
@@ -475,13 +475,13 @@ class ReportRepository implements iReportRepository
             ];
         });
         $response = [
-        'data' => $consumerDetails,
-        'current_page' => $consumers->currentPage(),
-        'total' => $consumers->total(),
-        'per_page' => $consumers->perPage(),
-        'last_page' => $consumers->lastPage(),
-        'next_page_url' => $consumers->nextPageUrl(),
-        'prev_page_url' => $consumers->previousPageUrl(),
+            'data' => $consumerDetails,
+            'current_page' => $consumers->currentPage(),
+            'total' => $consumers->total(),
+            'per_page' => $consumers->perPage(),
+            'last_page' => $consumers->lastPage(),
+            'next_page_url' => $consumers->nextPageUrl(),
+            'prev_page_url' => $consumers->previousPageUrl(),
         ];
         return $response;
     }
@@ -600,14 +600,14 @@ class ReportRepository implements iReportRepository
         $DeactConsumers = $consumers->map(function ($consumer) {
             $user = $this->GetUserDetails($consumer->deactivated_by);
             return [
-                    'deactivateDate' => Carbon::parse($consumer->deactivation_date)->format('d-m-Y'),
-                    'consumerNo' => $consumer->consumer_no,
-                    'consumerName' => $consumer->name,
-                    'wardNo' => $consumer->ward_no,
-                    'consumerMobile' => $consumer->mobile_no,
-                    'deactivateBy' => $user ? $user->name : "",
-                    'remarks' => $consumer->remarks,
-                ];
+                'deactivateDate' => Carbon::parse($consumer->deactivation_date)->format('d-m-Y'),
+                'consumerNo' => $consumer->consumer_no,
+                'consumerName' => $consumer->name,
+                'wardNo' => $consumer->ward_no,
+                'consumerMobile' => $consumer->mobile_no,
+                'deactivateBy' => $user ? $user->name : "",
+                'remarks' => $consumer->remarks,
+            ];
         });
         $response = [
             'data' => $DeactConsumers,
@@ -867,7 +867,7 @@ class ReportRepository implements iReportRepository
             'next_page_url' => $transactions->nextPageUrl(),
             'prev_page_url' => $transactions->previousPageUrl(),
         ];
-        
+
         return $response;
     }
 
@@ -1267,7 +1267,7 @@ class ReportRepository implements iReportRepository
         return $response;
     }
 
-    public function TcDailyActivity($From, $Upto, $tcId = null, $ulbId, $consumerCategory = null)
+    public function TcDailyActivity($From, $Upto, $tcId = null, $ulbId, $consumerCategory = null, Request $request)
     {
         $From = Carbon::create($From);
         $Upto = Carbon::create($Upto);
@@ -1344,7 +1344,7 @@ class ReportRepository implements iReportRepository
             $allTcData[] = $tcData;
         }
 
-        $perPage = 50;
+        $perPage = $request->perPage ?? 10;
         $page = request()->get('page', 1);
         $total = count($allTcData);
         $paginatedData = array_slice($allTcData, ($page - 1) * $perPage, $perPage);
@@ -1360,7 +1360,7 @@ class ReportRepository implements iReportRepository
         ];
     }
 
-    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory , $request = null)
+    public function TransactionModeChange($From, $Upto, $tcId = null, $ulbId, $consumerCategory, $request = null)
     {
         $response = array();
         $From = Carbon::create($From);
@@ -1373,11 +1373,11 @@ class ReportRepository implements iReportRepository
             ->whereBetween('swm_log_transaction_mode.date', [$From, $Upto])
             ->where('swm_log_transaction_mode.is_deactivate', 0)
             ->where('t.ulb_id', $ulbId);
-        if (isset($tcId)){
-        $mchange = $mchange->where('swm_log_transaction_mode.user_id', $tcId);
+        if (isset($tcId)) {
+            $mchange = $mchange->where('swm_log_transaction_mode.user_id', $tcId);
         }
-        if (isset($consumerCategory)){
-        $mchange = $mchange->where('c.consumer_category_id', $consumerCategory);
+        if (isset($consumerCategory)) {
+            $mchange = $mchange->where('c.consumer_category_id', $consumerCategory);
         }
         $mchange = $mchange->latest('swm_log_transaction_mode.id')->paginate($perPage);
         $ModeData = $mchange->map(function ($trans) {
@@ -1395,7 +1395,7 @@ class ReportRepository implements iReportRepository
                 'changeBy' => $trans->user_id ? $this->GetUserDetails($trans->user_id)->name : 'Unknown',
             ];
         });
-        
+
         $response = [
             'data' => $ModeData,
             'current_page' => $mchange->currentPage(),
@@ -1445,7 +1445,7 @@ class ReportRepository implements iReportRepository
     }
 
 
-    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $consumertype = null , Request $request)
+    public function consumerEditLog($From, $Upto, $tcId = null, $ulbId, $wardNo = null, $consumerCategory = null, $consumertype = null, Request $request)
     {
         $response = [];
 
@@ -1505,7 +1505,7 @@ class ReportRepository implements iReportRepository
                 'changedDate' => Carbon::parse($detail->stampdate)->format('d-m-Y h:i A'),
             ];
         });
-        $response= [
+        $response = [
             'data' => $consumerLog,
             'current_page' => $mchange->currentPage(),
             'total' => $mchange->total(),
@@ -1876,7 +1876,8 @@ class ReportRepository implements iReportRepository
             $fromDate = $request->fromDate ? Carbon::create($request->fromDate)->format('Y-m-d') : null;
             $toDate = $request->toDate ? Carbon::create($request->toDate)->format('Y-m-d') : null;
 
-            $query = DB::connection($this->dbConn)->table('swm_log_demand_receipts as d')
+            $query = DB::connection($this->dbConn)
+                ->table('swm_log_demand_receipts as d')
                 ->leftJoin('swm_consumers as c', 'd.consumer_id', '=', 'c.id')
                 ->leftJoin('swm_apartments as a', 'd.apartment_id', '=', 'a.id')
                 ->select(
@@ -1931,7 +1932,7 @@ class ReportRepository implements iReportRepository
             return response()->json([
                 'status' => true,
                 'data' => [
-                    'data' => $response,                    
+                    'data' => $response,
                     'current_page' => $demandLog->currentPage(),
                     'total' => $demandLog->total(),
                     'per_page' => $demandLog->perPage(),
