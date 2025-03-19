@@ -29,12 +29,10 @@ class MasterRepository implements iMasterRepository
     protected $ConsumerType;
     protected $ConsumerCategory;
     protected $Ward;
-
     public function __construct(Request $request)
     {
 
-        $this->dbConn = $this->GetSchema($request->bearerToken());
-
+       $this->dbConn = $this->GetSchema($request->bearerToken());
         $this->Ward = new Ward($this->dbConn);
         $this->Apartment = new Apartment($this->dbConn);
         $this->ConsumerType = new ConsumerType($this->dbConn);
@@ -65,26 +63,26 @@ class MasterRepository implements iMasterRepository
         try {
             $responseData = array();
             $wardPermission = UserWardPermission::select("ward_id")
-                                                ->where('user_id', $userId)
-                                                ->where('ulb_id', $ulbId)
-                                                ->get();
+                ->where('user_id', $userId)
+                ->where('ulb_id', $ulbId)
+                ->get();
 
             $wards = collect($wardPermission)->pluck('ward_id');
 
             if (isset($request->wardNo)) {
                 $aptlist = $this->Apartment
-                            ->where('ward_no', $request->wardNo)
-                            ->where('ulb_id', $ulbId)
-                            ->orderBy('id', 'DESC')
-                            ->get();
+                    ->where('ward_no', $request->wardNo)
+                    ->where('ulb_id', $ulbId)
+                    ->orderBy('id', 'DESC')
+                    ->get();
             } else
                 $aptlist = $this->Apartment->select('swm_apartments.*')
-                            ->join('swm_wards', 'swm_apartments.ward_no', 'swm_wards.name')
-                            ->where('swm_apartments.ulb_id', $ulbId)
-                            ->where('swm_wards.ulb_id', $ulbId)
-                            ->whereIn('ward_no', $wards)
-                            ->orderByDesc('swm_apartments.id')
-                            ->get();
+                    ->join('swm_wards', 'swm_apartments.ward_no', 'swm_wards.name')
+                    ->where('swm_apartments.ulb_id', $ulbId)
+                    ->where('swm_wards.ulb_id', $ulbId)
+                    ->whereIn('ward_no', $wards)
+                    ->orderByDesc('swm_apartments.id')
+                    ->get();
 
             $responseData['apartmentList'] = $aptlist;
             return response()->json(['status' => True, 'data' => $responseData, 'msg' => ''], 200);
@@ -620,10 +618,10 @@ class MasterRepository implements iMasterRepository
 
     public function WardUpdate(Request $request)
     {
-         # updated by sam
-         $ulbuserId = $request->user()->id;
-         $ulbId = $this->GetUlbId($ulbuserId);
-         # edited end
+        # updated by sam
+        $ulbuserId = $request->user()->id;
+        $ulbId = $this->GetUlbId($ulbuserId);
+        # edited end
         try {
             $validator = Validator::make($request->all(), [
                 'wardNo' => 'required',
@@ -668,4 +666,5 @@ class MasterRepository implements iMasterRepository
             return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
         }
     }
+    
 }

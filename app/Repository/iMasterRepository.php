@@ -56,4 +56,5 @@ interface iMasterRepository
     public function WardUpdate(Request $request);
 
     public function WardById(Request $request);
+
 }
