@@ -1269,8 +1269,8 @@ class ReportRepository implements iReportRepository
 
     public function TcDailyActivity($From, $Upto, $tcId = null, $ulbId, $consumerCategory = null, Request $request)
     {
-        $From = Carbon::create($From);
-        $Upto = Carbon::create($Upto);
+        $From = Carbon::create($From)->startOfDay();
+        $Upto = Carbon::create($Upto)->endOfDay();
         $tcList = $this->GetUserDetailsNew($tcId);
 
         if (empty($tcList)) {
