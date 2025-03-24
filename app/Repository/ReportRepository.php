@@ -128,7 +128,10 @@ class ReportRepository implements iReportRepository
         $Upto = Carbon::parse($Upto)->format('Y-m-d');
         //  Use Query Builder Instead of Raw SQL
         $query = $this->Transaction->select(
-            'swm_transactions.*',
+            'swm_transactions.transaction_no',
+            'swm_transactions.payment_mode',
+            'swm_transactions.transaction_date',
+            'swm_transactions.stampdate',
             'swm_consumers.ward_no',
             'swm_consumers.consumer_no',
             'swm_consumers.name',
