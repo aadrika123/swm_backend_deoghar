@@ -2868,7 +2868,7 @@ class ConsumerRepository implements iConsumerRepository
             $perPage = $request->perPage ?? 50; // Number of records per page
             $page = $request->page ?? 1; // Current page
             $query = $this->DemandAdjustment->select(
-                DB::raw('swm_demand_adjustments.*, c.name, consumer_no, address, c.ward_no, apt_name, apt_code, apt_address, a.ward_no as apt_ward, c.consumer_type_id, c.consumer_category_id')
+                DB::raw('swm_demand_adjustments.adjust_from,swm_demand_adjustments.adjust_upto,swm_demand_adjustments.adjust_amount,swm_demand_adjustments.bill_file,swm_demand_adjustments.remarks,swm_demand_adjustments.user_id, c.name, c.consumer_no, c.address, c.ward_no, a.apt_name, a.apt_code, a.apt_address, a.ward_no as apt_ward, consumer_type_id, c.consumer_category_id')
             )
                 ->leftjoin('swm_consumers as c', 'swm_demand_adjustments.consumer_id', 'c.id')
                 ->leftjoin('swm_apartments as a', 'swm_demand_adjustments.apartment_id', 'a.id')
