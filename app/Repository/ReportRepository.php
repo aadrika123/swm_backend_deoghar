@@ -579,10 +579,14 @@ class ReportRepository implements iReportRepository
         // Build initial query
         $query = $this->ConsumerDeactivateDeatils->latest('id')
             ->select(
-                'swm_consumer_deactivates.*',
+                'swm_consumer_deactivates.id',
+                'swm_consumer_deactivates.consumer_id',
+                'swm_consumer_deactivates.ulb_id',
+                'swm_consumer_deactivates.deactivated_by',
+                'swm_consumer_deactivates.remarks',
                 'swm_consumers.name',
-                'consumer_no',
-                'mobile_no',
+                'swm_consumers.consumer_no',
+                'swm_consumers.mobile_no',
                 'swm_consumers.ward_no'
             )
             ->join('swm_consumers', 'swm_consumer_deactivates.consumer_id', '=', 'swm_consumers.id')
@@ -674,12 +678,15 @@ class ReportRepository implements iReportRepository
         // Build query
         $transaction = $this->TransactionDeactivate->latest('id')
             ->select(
-                'swm_transaction_deactivates.*',
-                'transaction_date',
-                'total_payable_amt',
+                'swm_transaction_deactivates.id',
+                'swm_transaction_deactivates.date',
+                'swm_transaction_deactivates.user_id',
+                'swm_transaction_deactivates.remarks',
+                'swm_transactions.transaction_date',
+                'swm_transactions.total_payable_amt',
                 'swm_transactions.user_id as transby',
-                'name',
-                'consumer_no',
+                'swm_consumers.name',
+                'swm_consumers.consumer_no',
                 'swm_transactions.payment_mode',
                 'a.apt_code',
                 'a.apt_name',
@@ -815,12 +822,17 @@ class ReportRepository implements iReportRepository
 
         $transaction = $this->TransactionVerification->latest('id')
             ->select(
-                'swm_transaction_verifications.*',
-                'transaction_date',
-                'total_payable_amt',
+                'swm_transaction_verifications.id',
+                'swm_transaction_verifications.transaction_id',
+                'swm_transaction_verifications.verify_date',
+                'swm_transaction_verifications.amount',
+                'swm_transaction_verifications.verify_by',
+                'swm_transaction_verifications.remarks',
+                'swm_transactions.transaction_date',
+                'swm_transactions.total_payable_amt',
                 'swm_transactions.user_id as transby',
-                'name',
-                'consumer_no',
+                'swm_consumers.name',
+                'swm_consumers.consumer_no',
                 'swm_transactions.payment_mode',
                 'a.apt_code',
                 'a.apt_name',
@@ -1375,7 +1387,7 @@ class ReportRepository implements iReportRepository
         $From = Carbon::create($From);
         $Upto = Carbon::create($Upto);
         $perPage = $request->perPage ?? 50;
-        $mchange = $this->TransactionModeChange->select('swm_log_transaction_mode.*', 'transaction_date', 'total_payable_amt as amount', 't.user_id as transby', 'c.name as consumer_name', 'c.consumer_no', 'a.apt_name', 'a.apt_code')
+        $mchange = $this->TransactionModeChange->select('swm_log_transaction_mode.id', 'swm_log_transaction_mode.user_id', 'swm_log_transaction_mode.date', 'swm_log_transaction_mode.previous_mode', 'swm_log_transaction_mode.current_mode', 't.transaction_date', 't.total_payable_amt as amount', 't.user_id as transby', 'c.name as consumer_name', 'c.consumer_no', 'a.apt_name', 'a.apt_code')
             ->join('swm_transactions as t', 'swm_log_transaction_mode.transaction_id', '=', 't.id')
             ->leftjoin('swm_consumers as c', 't.consumer_id', '=', 'c.id')
             ->leftjoin('swm_apartments as a', 't.apartment_id', '=', 'a.id')
@@ -1890,7 +1902,12 @@ class ReportRepository implements iReportRepository
                 ->leftJoin('swm_consumers as c', 'd.consumer_id', '=', 'c.id')
                 ->leftJoin('swm_apartments as a', 'd.apartment_id', '=', 'a.id')
                 ->select(
-                    'd.*',
+                    'd.receipt_no',
+                    'd.printed_by',
+                    'd.print_datetime',
+                    'd.amount',
+                    'd.consumer_id',
+                    'd.apartment_id',
                     'c.consumer_no',
                     'c.name',
                     'c.ward_no',
