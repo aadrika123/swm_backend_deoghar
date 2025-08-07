@@ -2467,7 +2467,9 @@ class ConsumerRepository implements iConsumerRepository
                 $conArr[] = $con;
             }
             $response = [
-                'data' => $conArr
+                'data' => $conArr,
+                'total' => $isPaginated ? $consumerList->total() : count($conArr),
+                'lastPage' => $isPaginated ? $consumerList->lastPage() : 1,
             ];
 
             return response()->json([
