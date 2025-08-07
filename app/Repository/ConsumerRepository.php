@@ -2273,55 +2273,159 @@ class ConsumerRepository implements iConsumerRepository
 
 
 
+    // public function ConsumerListByCategory(Request $request)
+    // {
+
+    //     try {
+    //         $ulbId = $this->GetUlbId($request->user()->id);
+    //         $conArr = array();
+
+    //         if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype) || isset($request->mobileNo) || isset($request->consumerName)) {
+
+    //             $consumerList = $this->Consumer
+    //                 ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
+    //                 ->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+    //                 ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+    //                 ->where('swm_consumers.is_deactivate', 0);
+
+    //             if (isset($request->wardNo))
+    //                 $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
+
+    //             if (isset($request->consumerCategory))
+    //                 $consumerList = $consumerList->where('swm_consumers.consumer_category_id', $request->consumerCategory);
+
+    //             if (isset($request->consumertype))
+    //                 $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
+
+    //             if (isset($request->mobileNo))
+    //                 $consumerList = $consumerList->where('swm_consumers.mobile_no', $request->mobileNo);
+
+    //             if (isset($request->consumerName))
+    //                 $consumerList = $consumerList->where('swm_consumers.name', 'ILIKE', "%$request->consumerName%");
+    //         }
+
+    //         if (isset($request->consumerNo))
+    //             $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+    //                 ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+    //                 ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
+    //                 ->where('swm_consumers.consumer_no', $request->consumerNo)
+    //                 ->where('swm_consumers.is_deactivate', 0);
+
+
+    //         $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
+    //         if ($consumerList->isEmpty()) {
+    //             throw new Exception("No consumers found");
+    //         }
+    //         //     $perPage = $request->perPage,
+    //         //     $columns = ['*'],
+    //         //     $pageName = 'consumers'
+    //         // );
+
+    //         //echo "<pre/>";print_r($consumerList);
+    //         foreach ($consumerList as $consumer) {
+    //             $demand = $this->Demand->where('consumer_id', $consumer->id)
+    //                 ->where('ulb_id', $ulbId)
+    //                 ->where('paid_status', 0)
+    //                 ->where('is_deactivate', 0)
+    //                 ->orderBy('id', 'asc')
+    //                 ->get();
+    //             $total_tax = 0.00;
+    //             $demand_upto = '';
+    //             $paid_status = 'Paid';
+    //             foreach ($demand as $dmd) {
+    //                 $total_tax += $dmd->total_tax;
+    //                 $demand_upto = $dmd->demand_date;
+    //                 $paid_status = 'Unpaid';
+    //             }
+
+    //             $con['id'] = $consumer->id;
+    //             $con['wardNo'] = $consumer->ward_no;
+    //             $con['holdingNo'] = $consumer->holding_no;
+    //             $con['consumerName'] = $consumer->name;
+    //             $con['apartmentId'] = $consumer->apartment_id;
+    //             $con['consumerNo'] = $consumer->consumer_no;
+    //             $con['Address'] = $consumer->address;
+    //             $con['pinCode'] = $consumer->pincode;
+    //             $con['cansumerCategory'] = $consumer->category;
+    //             $con['cansumerType'] = $consumer->type;
+    //             $con['mobileNo'] = $consumer->mobile_no;
+    //             // $con['activeDemandDetails'] = $demand;
+    //             $con['totalDemand'] = $total_tax;
+    //             $con['demandUpto'] = $demand_upto;
+    //             $con['paidStatus'] = $paid_status;
+    //             $con['consumer_category_id'] = $consumer->category_id;
+    //             $con['consumer_type_id'] = $consumer->consumer_type_id;
+    //             $con['applyBy'] = ($consumer->user_id) ? $this->GetUserDetails($consumer->user_id)->name : '';
+    //             $con['applyDate'] = date("d-m-Y", strtotime($consumer->entry_date));
+    //             $con['status'] = ($consumer->is_deactivate == 0) ? 'Active' : 'Deactive';
+
+    //             $conArr[] = $con;
+    //         }
+    //         // $data['data']        = $conArr;
+    //         // $data['total']       = $consumerList->total();
+    //         // $data['lastPage']    = $consumerList->lastPage();
+    //         // $data['currentPage'] = $consumerList->currentPage();
+    //         // $data['perPage']     = $request->perPage;
+    //         return response()->json(['status' => True, 'data' => $conArr, 'msg' => '', 'total' => $consumerList->total(), 'lastPage' => $consumerList->lastPage()], 200);
+
+    //         // else
+    //         //     return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+    //     }
+    // }
+
     public function ConsumerListByCategory(Request $request)
     {
-
         try {
             $ulbId = $this->GetUlbId($request->user()->id);
             $conArr = array();
 
-            if (isset($request->wardNo) || isset($request->consumerCategory) || isset($request->consumertype) || isset($request->mobileNo) || isset($request->consumerName)) {
+            $consumerList = $this->Consumer
+                ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
+                ->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
+                ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
+                ->where('swm_consumers.is_deactivate', 0);
 
+            if (isset($request->wardNo))
+                $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
+
+            if (isset($request->consumerCategory))
+                $consumerList = $consumerList->where('swm_consumers.consumer_category_id', $request->consumerCategory);
+
+            if (isset($request->consumertype))
+                $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
+
+            if (isset($request->mobileNo))
+                $consumerList = $consumerList->where('swm_consumers.mobile_no', $request->mobileNo);
+
+            if (isset($request->consumerName))
+                $consumerList = $consumerList->where('swm_consumers.name', 'ILIKE', "%$request->consumerName%");
+
+            if (isset($request->consumerNo)) {
                 $consumerList = $this->Consumer
-                    ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
                     ->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
-                    ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
-                    ->where('swm_consumers.is_deactivate', 0);
-
-                if (isset($request->wardNo))
-                    $consumerList = $consumerList->where('swm_consumers.ward_no', $request->wardNo);
-
-                if (isset($request->consumerCategory))
-                    $consumerList = $consumerList->where('swm_consumers.consumer_category_id', $request->consumerCategory);
-
-                if (isset($request->consumertype))
-                    $consumerList = $consumerList->where('swm_consumers.consumer_type_id', $request->consumertype);
-
-                if (isset($request->mobileNo))
-                    $consumerList = $consumerList->where('swm_consumers.mobile_no', $request->mobileNo);
-
-                if (isset($request->consumerName))
-                    $consumerList = $consumerList->where('swm_consumers.name', 'ILIKE', "%$request->consumerName%");
-            }
-
-            if (isset($request->consumerNo))
-                $consumerList = $this->Consumer->join('swm_consumer_categories', 'swm_consumers.consumer_category_id', '=', 'swm_consumer_categories.id')
                     ->join('swm_consumer_types', 'swm_consumers.consumer_type_id', '=', 'swm_consumer_types.id')
                     ->select(DB::raw('swm_consumers.*, swm_consumer_categories.name as category, swm_consumer_types.name as type'))
                     ->where('swm_consumers.consumer_no', $request->consumerNo)
                     ->where('swm_consumers.is_deactivate', 0);
+            }
 
+            $consumerList = $consumerList->where('ulb_id', $ulbId);
 
-            $consumerList = $consumerList->where('ulb_id', $ulbId)->paginate($request->perPage);
+            // Handle no pagination case
+            $isPaginated = true;
+            if (empty($request->page) && ($request->perPage == 0 || empty($request->perPage))) {
+                $consumerList = $consumerList->get();
+                $isPaginated = false;
+            } else {
+                $consumerList = $consumerList->paginate($request->perPage);
+            }
+
             if ($consumerList->isEmpty()) {
                 throw new Exception("No consumers found");
             }
-            //     $perPage = $request->perPage,
-            //     $columns = ['*'],
-            //     $pageName = 'consumers'
-            // );
 
-            //echo "<pre/>";print_r($consumerList);
             foreach ($consumerList as $consumer) {
                 $demand = $this->Demand->where('consumer_id', $consumer->id)
                     ->where('ulb_id', $ulbId)
@@ -2329,9 +2433,11 @@ class ConsumerRepository implements iConsumerRepository
                     ->where('is_deactivate', 0)
                     ->orderBy('id', 'asc')
                     ->get();
+
                 $total_tax = 0.00;
                 $demand_upto = '';
                 $paid_status = 'Paid';
+
                 foreach ($demand as $dmd) {
                     $total_tax += $dmd->total_tax;
                     $demand_upto = $dmd->demand_date;
@@ -2349,7 +2455,6 @@ class ConsumerRepository implements iConsumerRepository
                 $con['cansumerCategory'] = $consumer->category;
                 $con['cansumerType'] = $consumer->type;
                 $con['mobileNo'] = $consumer->mobile_no;
-                // $con['activeDemandDetails'] = $demand;
                 $con['totalDemand'] = $total_tax;
                 $con['demandUpto'] = $demand_upto;
                 $con['paidStatus'] = $paid_status;
@@ -2361,19 +2466,23 @@ class ConsumerRepository implements iConsumerRepository
 
                 $conArr[] = $con;
             }
-            // $data['data']        = $conArr;
-            // $data['total']       = $consumerList->total();
-            // $data['lastPage']    = $consumerList->lastPage();
-            // $data['currentPage'] = $consumerList->currentPage();
-            // $data['perPage']     = $request->perPage;
-            return response()->json(['status' => True, 'data' => $conArr, 'msg' => '', 'total' => $consumerList->total(), 'lastPage' => $consumerList->lastPage()], 200);
 
-            // else
-            //     return response()->json(['status' => False, 'data' => $conArr, 'msg' => 'Undefined parameter supply'], 200);
+            return response()->json([
+                'status' => True,
+                'data' => $conArr,
+                'msg' => '',
+                'total' => $isPaginated ? $consumerList->total() : count($conArr),
+                'lastPage' => $isPaginated ? $consumerList->lastPage() : 1
+            ], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => False, 'data' => '', 'msg' => $e->getMessage()], 400);
+            return response()->json([
+                'status' => False,
+                'data' => '',
+                'msg' => $e->getMessage()
+            ], 400);
         }
     }
+
 
 
     public function PaymentDeny(Request $request)
@@ -2947,7 +3056,7 @@ class ConsumerRepository implements iConsumerRepository
             $response = [];
             $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
             $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
-    
+
             $query = $this->DemandAdjustment->select(
                 DB::raw('swm_demand_adjustments.*, c.name, consumer_no, address, c.ward_no, apt_name, apt_code, apt_address, a.ward_no as apt_ward, c.consumer_type_id, c.consumer_category_id')
             )
