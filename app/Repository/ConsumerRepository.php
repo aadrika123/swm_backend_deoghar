@@ -2468,8 +2468,11 @@ class ConsumerRepository implements iConsumerRepository
             }
             $response = [
                 'data' => $conArr,
+                'current_page' => $consumerList->currentPage(),
                 'total' => $isPaginated ? $consumerList->total() : count($conArr),
                 'lastPage' => $isPaginated ? $consumerList->lastPage() : 1,
+                'next_page_url' => $consumerList->nextPageUrl(),
+                'prev_page_url' => $consumerList->previousPageUrl(),
             ];
 
             return response()->json([
